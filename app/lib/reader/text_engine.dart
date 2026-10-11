@@ -5,14 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import '../models/models.dart';
+import '../services/speech_engine.dart';
+import '../util/format.dart';
 import 'content.dart';
 import 'pagination.dart';
+import 'read_aloud.dart';
 import 'reader_engine.dart';
 import 'reader_settings.dart';
 
 /// Our own renderer: paragraphs from the book's HTML or text, drawn by the app
 /// and paginated with [TextPainter]. Used where flutter_readium is not set up
-/// yet (everywhere but web). It has no EPUB, images or TTS.
+/// yet (everywhere but web). It has no EPUB or images. It reads aloud with the
+/// [SpeechEngine] it is given (none: no read aloud), one chunk of a sentence or
+/// more at a time, highlighting the word being spoken and turning the page.
 ///
 /// Counting the pages of a novel takes about half a second, so it runs in slices of a few milliseconds
 /// between frames. Until it is done, the text from the reader's place is shown without page numbers.
@@ -20,9 +25,15 @@ import 'reader_settings.dart';
 /// Its locator is the index of the first word on screen ("word:123"), which
 /// survives a change of font, size or view.
 class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
-  TextReaderEngine(this._loader);
+  TextReaderEngine(this._loader, {SpeechEngine? speech}) {
+    if (speech != null) _readAloud = _TextReadAloud(this, speech);
+  }
 
   final ContentLoader _loader;
+  _TextReadAloud? _readAloud;
+
+  // The word being read aloud, highlighted.
+  int? _spoken;
   final _positions = StreamController<ReaderPosition>.broadcast();
 
   BookText? _book;
@@ -118,10 +129,46 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   }
 
   @override
-  Future<void> next() async => _scrolling ? _scrollBy(0.9) : _goToPage(_page + 1);
+  ReadAloud? get readAloud => _readAloud;
+
+  /// The first word on screen: where reading aloud starts.
+  int get _firstWord => _scrolling ? (_scroll?.anchor() ?? _anchor) : _anchor;
+
+  /// The reader is reading word [word]: show it, and move to the page or paragraph it is on.
+  void _follow(int word, {bool mark = true}) {
+    if (mark) _spoken = word;
+    final book = _book;
+    if (book == null) return;
+    if (_scrolling) {
+      _scroll?.reveal(book.paragraphOfWord[word], book.wordOffsets[word]);
+    } else if (_paginated) {
+      final page = pageOf(_pageStarts, word);
+      if (page != _page) _anchor = _pageStarts[page];
+    } else if (word >= _anchor + _wordsPerPage) {
+      _anchor = word;
+    }
+    _changed();
+  }
+
+  void _unmark() {
+    if (_spoken == null) return;
+    _spoken = null;
+    _changed();
+  }
 
   @override
-  Future<void> previous() async => _scrolling ? _scrollBy(-0.9) : _goToPage(_page - 1);
+  Future<void> next() async {
+    if (_scrolling) return _scrollBy(0.9);
+    _goToPage(_page + 1);
+    await _readAloud?._moved();
+  }
+
+  @override
+  Future<void> previous() async {
+    if (_scrolling) return _scrollBy(-0.9);
+    _goToPage(_page - 1);
+    await _readAloud?._moved();
+  }
 
   void _goTo(ReaderPosition position) {
     final word = int.tryParse(position.locator?.replaceFirst('word:', '') ?? '');
@@ -140,6 +187,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   Future<void> goTo(ReaderPosition position) async {
     _goTo(position);
     _changed();
+    await _readAloud?._moved();
   }
 
   @override
@@ -160,6 +208,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   Future<void> dispose() async {
     _disposed = true;
     _job++;
+    await _readAloud?._stopSpeech();
     _scroll?.controller.dispose();
     _scroll = null;
     await _positions.close();
@@ -190,7 +239,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
           itemCount: book.paragraphs.length,
           itemBuilder: (context, i) => Padding(
             padding: EdgeInsets.only(bottom: layout.gap),
-            child: Text(book.paragraphs[i], key: Key('reader-paragraph-$i'), style: style),
+            child: _paragraph(book, i, style),
           ),
         );
       }
@@ -214,8 +263,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
             padding: const EdgeInsets.all(padding),
             child: Align(
               alignment: Alignment.topLeft,
-              child: Text(book.text(_anchor, end, paragraphBreak),
-                  key: const Key('reader-page-pending'), style: style),
+              child: _pageText(book, _anchor, end, paragraphBreak, style, const Key('reader-page-pending')),
             ),
           ),
         );
@@ -229,14 +277,39 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
         padding: const EdgeInsets.all(padding),
         child: Align(
           alignment: Alignment.topLeft,
-          child: Text(
-            book.text(_pageStarts[page], end, paragraphBreak),
-            key: const Key('reader-page-text'),
-            style: style,
-          ),
+          child: _pageText(book, _pageStarts[page], end, paragraphBreak, style, const Key('reader-page-text')),
         ),
       );
     });
+  }
+
+  /// The word being read aloud, in the colours of the page swapped.
+  TextStyle get _markStyle => TextStyle(color: _settings.backgroundColor, backgroundColor: _settings.textColor);
+
+  Widget _marked(String text, int start, int end, TextStyle style, Key key) => Text.rich(
+        TextSpan(children: [
+          TextSpan(text: text.substring(0, start)),
+          TextSpan(text: text.substring(start, end), style: _markStyle),
+          TextSpan(text: text.substring(end)),
+        ]),
+        key: key,
+        style: style,
+      );
+
+  Widget _paragraph(BookText book, int i, TextStyle style) {
+    final key = Key('reader-paragraph-$i');
+    final word = _spoken;
+    if (word == null || book.paragraphOfWord[word] != i) return Text(book.paragraphs[i], key: key, style: style);
+    final start = book.wordOffsets[word];
+    return _marked(book.paragraphs[i], start, start + book.words[word].replaceFirst('\n', '').length, style, key);
+  }
+
+  Widget _pageText(BookText book, int start, int end, String paragraphBreak, TextStyle style, Key key) {
+    final text = book.text(start, end, paragraphBreak);
+    final word = _spoken;
+    if (word == null || word < start || word >= end) return Text(text, key: key, style: style);
+    final (from, to) = book.wordRange(start, word, paragraphBreak);
+    return _marked(text, from, to, style, key);
   }
 
   /// Counts the pages in slices, one per frame, so the screen keeps drawing. Stops if the layout changes
@@ -260,6 +333,8 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
     _pageStarts = paginator.finish();
     _paginated = true;
     _wordsPerPage = max(50, (book.length / _pageStarts.length).ceil());
+    final spoken = _spoken;
+    if (spoken != null) _anchor = _pageStarts[pageOf(_pageStarts, spoken)]; // the layout changed under it
     if (!_disposed) _changed();
   }
 }
@@ -315,6 +390,32 @@ class _ScrollLayout {
     return _tops[paragraph];
   }
 
+  /// Scrolls so that the word at [offset] in [paragraph] is on screen: the whole paragraph when it fits, else
+  /// the word, a fifth of the way down.
+  void reveal(int paragraph, int offset) {
+    final c = _controller;
+    if (c == null || !c.hasClients) return;
+    final p = c.position;
+    final top = _top(paragraph), bottom = _top(paragraph + 1) - gap;
+    final double target;
+    if (bottom - top <= p.viewportDimension) {
+      if (top >= p.pixels && bottom <= p.pixels + p.viewportDimension) return;
+      target = top;
+    } else {
+      final painter = TextPainter(
+          text: TextSpan(text: book.paragraphs[paragraph], style: style),
+          textDirection: TextDirection.ltr,
+          textScaler: scaler)
+        ..layout(maxWidth: width);
+      final y = top + painter.getOffsetForCaret(TextPosition(offset: offset), Rect.zero).dy;
+      painter.dispose();
+      if (y >= p.pixels && y <= p.pixels + p.viewportDimension * 0.75) return;
+      target = y - p.viewportDimension * 0.2;
+    }
+    c.animateTo(target.clamp(0.0, p.maxScrollExtent),
+        duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
+  }
+
   /// The first word of the paragraph at the top of the view.
   int anchor() {
     final offset = _controller?.hasClients == true ? _controller!.offset : 0.0;
@@ -323,5 +424,153 @@ class _ScrollLayout {
       p++;
     }
     return book.paragraphStarts[p];
+  }
+}
+
+
+/// Reading a book aloud with a [SpeechEngine]: a chunk (a sentence or more, inside one paragraph) at a time, so the
+/// word being spoken can be highlighted and the page turned. Pausing stops the speech and remembers the word,
+/// since not every platform can pause in the middle of a chunk.
+class _TextReadAloud implements ReadAloud {
+  _TextReadAloud(this._engine, this._speech);
+
+  /// A chunk ends at a sentence end once it has this many characters, and at the latest at [_maxChunk].
+  static const _minChunk = 100;
+  static const _maxChunk = 800;
+  static final _sentenceEnd = RegExp(r'[.!?\u2026]["\x27\u201d\u2019)\]]*$');
+
+  final TextReaderEngine _engine;
+  final SpeechEngine _speech;
+  @override
+  final ValueNotifier<ReadAloudState> state = ValueNotifier(const ReadAloudState());
+
+  String _language = 'en';
+  int _session = 0; // a newer session ends the loop of an older one
+  int _current = 0; // the word being spoken, or the next to speak
+
+  ReadAloudState get _now => state.value;
+
+  @override
+  Future<void> start({String? language}) async {
+    _language = language ?? 'en';
+    if (!await _speech.hasVoice(_language)) {
+      state.value = _now.copyWith(
+          status: ReadAloudStatus.stopped, error: 'This device has no voice for ${languageName(_language)}.');
+      return;
+    }
+    await _read(_engine._firstWord);
+  }
+
+  @override
+  Future<void> pause() async {
+    if (_now.status != ReadAloudStatus.reading) return;
+    _session++;
+    state.value = _now.copyWith(status: ReadAloudStatus.paused);
+    await _speech.stop();
+  }
+
+  @override
+  Future<void> resume() async {
+    if (_now.status != ReadAloudStatus.paused) return;
+    await _read(_current);
+  }
+
+  @override
+  Future<void> stop() async {
+    _session++;
+    state.value = _now.copyWith(status: ReadAloudStatus.stopped, clearError: true);
+    _engine._unmark();
+    await _speech.stop();
+  }
+
+  @override
+  Future<void> setRate(double rate) async {
+    state.value = _now.copyWith(rate: rate);
+    if (_now.status == ReadAloudStatus.reading) await _read(_current);
+  }
+
+  /// The reader turned the page or went to a place: go on from there.
+  Future<void> _moved() async {
+    switch (_now.status) {
+      case ReadAloudStatus.reading:
+        await _read(_engine._firstWord);
+      case ReadAloudStatus.paused:
+        _current = _engine._firstWord;
+        _engine._unmark();
+      case ReadAloudStatus.stopped:
+        break;
+    }
+  }
+
+  /// Ends the speech when the book closes.
+  Future<void> _stopSpeech() async {
+    _session++;
+    state.value = const ReadAloudState();
+    await _speech.stop();
+  }
+
+  int _chunkEnd(BookText book, int from) {
+    final paragraph = book.paragraphOfWord[from];
+    var i = from, chars = 0;
+    while (i < book.length && book.paragraphOfWord[i] == paragraph) {
+      chars += book.words[i].length + 1;
+      i++;
+      if (chars >= _maxChunk || (chars >= _minChunk && _sentenceEnd.hasMatch(book.words[i - 1]))) break;
+    }
+    return i;
+  }
+
+  /// Starts reading at word [from]. Completes once the speech has started; the reading goes on by itself.
+  Future<void> _read(int from) async {
+    if (_engine._book == null) return;
+    final session = ++_session;
+    state.value = _now.copyWith(status: ReadAloudStatus.reading, clearError: true);
+    await _speech.stop(); // a speech service may queue what it is given instead of replacing what it says
+    if (session == _session) unawaited(_run(session, from));
+  }
+
+  /// Speaks chunk after chunk until the book ends or a newer session takes over.
+  Future<void> _run(int session, int from) async {
+    final book = _engine._book!;
+    var word = from;
+    while (session == _session && word < book.length) {
+      final end = _chunkEnd(book, word);
+      final text = StringBuffer();
+      final starts = <int>[];
+      for (var i = word; i < end; i++) {
+        if (i > word) text.write(book.words[i].startsWith('\n') ? '\n' : ' ');
+        starts.add(text.length);
+        text.write(book.words[i].replaceFirst('\n', ''));
+      }
+      _current = word;
+      final first = word;
+      _engine._follow(first, mark: false);
+      try {
+        await _speech.speak(text.toString(), language: _language, rate: _now.rate, onWord: (start, _) {
+          if (session != _session) return;
+          var k = 0;
+          while (k + 1 < starts.length && starts[k + 1] <= start) {
+            k++;
+          }
+          _current = first + k;
+          _engine._follow(_current);
+        });
+      } on Object catch (e) {
+        if (session == _session) {
+          _session++;
+          state.value = _now.copyWith(
+              status: ReadAloudStatus.stopped,
+              error: 'Reading aloud stopped: ${e is SpeechException ? e.message : e}');
+          _engine._unmark();
+        }
+        return;
+      }
+      word = end;
+    }
+    if (session == _session) {
+      _session++;
+      state.value = _now.copyWith(status: ReadAloudStatus.stopped);
+      _engine._unmark();
+    }
   }
 }

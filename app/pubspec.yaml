@@ -10,6 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_readium: 0.6.1 # pre-1.0: pinned (decision_reader.md)
+  flutter_tts: ^4.2.5
   html: ^0.15.7
   http: ^1.2.0
   just_audio: ^0.10.6

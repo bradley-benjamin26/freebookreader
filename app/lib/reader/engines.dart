@@ -1,5 +1,6 @@
 import '../models/models.dart';
 import 'content.dart';
+import '../services/speech_engine.dart';
 import 'reader_engine.dart';
 import 'readium_engine.dart';
 import 'text_engine.dart';
@@ -14,10 +15,11 @@ ReaderEngine? chooseReaderEngine(
   required bool web,
   required Uri backend,
   required ContentLoader loader,
+  SpeechEngine? speech,
 }) {
   final publication = book.publication;
   if (web && publication != null) return ReadiumReaderEngine(backendUrl(backend, publication));
-  if (book.kind == 'html' || book.kind == 'text') return TextReaderEngine(loader);
+  if (book.kind == 'html' || book.kind == 'text') return TextReaderEngine(loader, speech: speech);
   return null;
 }
 

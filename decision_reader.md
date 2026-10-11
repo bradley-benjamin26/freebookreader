@@ -45,7 +45,15 @@ buildView(context)                        // the book itself
 dispose()
 ```
 
-Not yet: TTS (`start, pause, resume, stop, setRate, setVoice; Stream<TtsState>`), and a local file path in `open` for offline use.
+```
+readAloud                                 // ReadAloud?, null when the engine cannot read aloud
+  state (ValueListenable<ReadAloudState>: stopped|reading|paused, rate, error)
+  start({language}), pause(), resume(), stop(), setRate(rate)
+```
+
+Read aloud (built 2026-10-11): `TextReaderEngine` reads with a `SpeechEngine` (`services/speech_engine.dart`, `flutter_tts`: Android TextToSpeech, iOS AVSpeechSynthesizer, the browser's speechSynthesis). It speaks a chunk at a time (a sentence or more inside one paragraph, 100 to 800 characters), highlights the word being spoken (the page's colours swapped, so contrast is the page's own), turns the page or scrolls when the speech moves on, and starts at the first word on screen. Pause stops the speech and remembers the word, since not every platform can pause in the middle of an utterance; resume and a speed change start again from that word. Turning the page by hand while reading continues from the new page. `ReadiumReaderEngine` hands the work to Readium (`ttsEnable`, `play`, `pause`, `resume`, `stop`), after choosing a voice on the device for the book's language, a local one when there is one (`ttsSetVoice`; the spike found Chrome's default voice stalls). Both say "This device has no voice for <language>." when there is none. The reader page shows the controls (`read-aloud-bar`: read/pause/resume, stop, slower, faster; speeds 0.5 to 2) under the book, and a recording and read aloud do not play together: starting one pauses the other. Still to do: choosing a voice (the engines use the device's default for the language), the Readium side is untested outside a browser, and a screen reader's own speech will talk over read aloud (see Open questions).
+
+Not yet: a local file path in `open` for offline use.
 
 `ReaderPosition` holds the engine's own locator (a Readium locator as JSON, or `word:<index>` in our renderer) plus a progress fraction from 0 to 1, and the page number and count when the engine knows them. Bookmarks keep both progress and locator. The fraction keeps working across font and view changes and across engines; the locator restores the exact place. The page indicator shows "Page 3 of 12", or "29% read" when the engine has no page numbers (Readium's positions are per chapter when the manifest has no position list).
 
@@ -53,7 +61,7 @@ Engines ([app/lib/reader/engines.dart](app/lib/reader/engines.dart) picks one):
 
 * `ReadiumReaderEngine` (flutter_readium 0.6.1, pinned): on web, for books with `reading.publication` (Gutenberg, via the backend's manifest). Our settings map to `EPUBPreferences` with `publisherStyles: false`; font size is a ratio of 18 pt; spacing is passed in rem.
 * `TextReaderEngine` (our own renderer): everywhere else, for HTML and plain text. It stays until Readium's native setup is done on Android and iOS.
-* PDFs do not use an engine yet; they go to the PDF viewer (currently a link out).
+* PDFs do not use an engine yet; they go to the PDF viewer (currently a link out). The viewer is deferred (user decision 2026-10-11) until OAPEN answers whether our server's IP may fetch its PDFs; see "Getting OAPEN PDFs".
 
 ## Spike plan
 
@@ -129,8 +137,8 @@ Spike checks 12 and 13 test this.
 
 ## Open questions
 
-* Which TTS voices and languages do we need? Books are in several languages and the voice must match the book's language.
-* Should a TTS read-along and a LibriVox recording be allowed at the same time? Probably not. One should stop the other.
+* Which TTS voices and languages do we need? Books are in several languages and the voice must match the book's language. Built 2026-10-11: the device's own voice for the book's language (an ISO 639-1 code matched to the device's locale list); no voice means an error message. Not built: letting the reader pick a voice.
+* Should a TTS read-along and a LibriVox recording be allowed at the same time? Decided 2026-10-11 (built, my default; say if you disagree): no. Starting one pauses the other.
 * Offline downloads: which milestone, and whether audiobooks are included (they are large).
 
 ## Sources

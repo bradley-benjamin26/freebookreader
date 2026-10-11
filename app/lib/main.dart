@@ -9,6 +9,7 @@ import 'reader/content.dart';
 import 'reader/engines.dart';
 import 'reader/reader_settings.dart';
 import 'services/audio_engine.dart';
+import 'services/speech_engine.dart';
 import 'services/url_opener.dart';
 import 'storage/bookmark_store.dart';
 import 'ui/pdf_link_out.dart';
@@ -22,11 +23,12 @@ Future<void> main() async {
   final client = http.Client();
   final backend = Uri.parse(backendUrl);
   final loader = HttpContentLoader(client);
+  final speech = FlutterSpeechEngine();
   runApp(FreeBookReaderApp(
     api: HttpSearchApi(client: client, baseUrl: backend),
     bookmarks: BookmarkStore(prefs),
     settingsStore: ReaderSettingsStore(prefs),
-    readerEngine: (book) => chooseReaderEngine(book, web: kIsWeb, backend: backend, loader: loader),
+    readerEngine: (book) => chooseReaderEngine(book, web: kIsWeb, backend: backend, loader: loader, speech: speech),
     urlOpener: const LauncherUrlOpener(),
     audio: JustAudioEngine(),
     // No PDF package yet (decision_reader.md): PDFs open outside the app.

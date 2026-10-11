@@ -10,6 +10,7 @@ import '../storage/bookmark_store.dart';
 import '../ui/audio_player.dart';
 import '../ui/common.dart';
 import '../util/format.dart';
+import 'read_aloud.dart';
 import 'reader_engine.dart';
 import 'reader_settings.dart';
 import 'settings_sheet.dart';
@@ -36,6 +37,7 @@ class _ReaderPageState extends State<ReaderPage> {
   bool _started = false;
 
   ReaderEngine? _engine;
+  ReadAloud? _readAloud;
   StreamSubscription<ReaderPosition>? _positionSub;
   ReaderPosition _position = ReaderPosition.start;
   ReaderPosition? _startAt;
@@ -62,7 +64,7 @@ class _ReaderPageState extends State<ReaderPage> {
     _started = true;
     _settings = ValueNotifier(_services.settingsStore.load())..addListener(_settingsChanged);
     final recording = widget.work.recordingsFor(widget.book).firstOrNull;
-    if (recording != null && !_isPdf) _audio = AudioController(_services.audio, recording);
+    if (recording != null && !_isPdf) _audio = AudioController(_services.audio, recording)..addListener(_audioChanged);
     final bookmark = _services.bookmarks.load(widget.book.key);
     _bookmarked = bookmark != null;
     if (bookmark != null) _startAt = ReaderPosition(progress: bookmark.progress, locator: bookmark.locator);
@@ -72,6 +74,7 @@ class _ReaderPageState extends State<ReaderPage> {
       _loadError = const ReaderOpenException('No reader for this book');
       return;
     }
+    _readAloud = _engine!.readAloud;
     _positionSub = _engine!.positions.listen((p) {
       if (mounted) setState(() => _position = p);
     });
@@ -81,6 +84,7 @@ class _ReaderPageState extends State<ReaderPage> {
   @override
   void dispose() {
     _limit?.cancel();
+    _audio?.removeListener(_audioChanged);
     _audio?.dispose();
     _positionSub?.cancel();
     _engine?.dispose();
@@ -110,6 +114,25 @@ class _ReaderPageState extends State<ReaderPage> {
       _limit?.cancel();
       setState(() => _loadError = error);
     });
+  }
+
+  /// The recording and read aloud do not play together: whichever starts second stops the first.
+  void _audioChanged() {
+    if (_audio!.playing && _readAloud?.state.value.status == ReadAloudStatus.reading) _readAloud!.pause();
+  }
+
+  Future<void> _toggleReadAloud() async {
+    final readAloud = _readAloud!;
+    switch (readAloud.state.value.status) {
+      case ReadAloudStatus.reading:
+        return readAloud.pause();
+      case ReadAloudStatus.paused:
+        if (_audio?.playing == true) await _audio!.togglePlay();
+        return readAloud.resume();
+      case ReadAloudStatus.stopped:
+        if (_audio?.playing == true) await _audio!.togglePlay();
+        return readAloud.start(language: widget.book.language);
+    }
   }
 
   void _settingsChanged() {
@@ -219,6 +242,11 @@ class _ReaderPageState extends State<ReaderPage> {
                       ),
                     ),
                     if (showText && settings.viewMode == ViewMode.pageTurner) _pageControls(context),
+                    if (showText && _readAloud != null) ...[
+                      const Divider(height: 1),
+                      _ReadAloudBar(
+                          key: const Key('read-aloud-bar'), readAloud: _readAloud!, onToggle: _toggleReadAloud),
+                    ],
                     if (_audio != null) ...[
                       const Divider(height: 1),
                       Padding(
@@ -305,6 +333,79 @@ class _ReaderPageState extends State<ReaderPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+/// Play/pause, stop and speed for reading aloud.
+class _ReadAloudBar extends StatelessWidget {
+  const _ReadAloudBar({super.key, required this.readAloud, required this.onToggle});
+
+  final ReadAloud readAloud;
+  final VoidCallback onToggle;
+
+  static String speedLabel(double rate) => 'Speed ${rate == rate.roundToDouble() ? rate.round() : rate}×';
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<ReadAloudState>(
+      valueListenable: readAloud.state,
+      builder: (context, state, _) {
+        final reading = state.status == ReadAloudStatus.reading;
+        final index = readAloudRates.indexOf(state.rate);
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  IconButton.filled(
+                    key: const Key('read-aloud-toggle'),
+                    onPressed: onToggle,
+                    icon: Icon(reading ? Icons.pause : Icons.record_voice_over,
+                        semanticLabel: switch (state.status) {
+                          ReadAloudStatus.reading => 'Pause reading aloud',
+                          ReadAloudStatus.paused => 'Resume reading aloud',
+                          ReadAloudStatus.stopped => 'Read aloud',
+                        }),
+                  ),
+                  if (state.status != ReadAloudStatus.stopped)
+                    IconButton(
+                      key: const Key('read-aloud-stop'),
+                      onPressed: readAloud.stop,
+                      icon: const Icon(Icons.stop, semanticLabel: 'Stop reading aloud'),
+                    ),
+                  IconButton(
+                    key: const Key('read-aloud-slower'),
+                    onPressed: index > 0 ? () => readAloud.setRate(readAloudRates[index - 1]) : null,
+                    icon: const Icon(Icons.remove, semanticLabel: 'Read slower'),
+                  ),
+                  Text(speedLabel(state.rate), key: const Key('read-aloud-speed')),
+                  IconButton(
+                    key: const Key('read-aloud-faster'),
+                    onPressed: index < readAloudRates.length - 1
+                        ? () => readAloud.setRate(readAloudRates[index + 1])
+                        : null,
+                    icon: const Icon(Icons.add, semanticLabel: 'Read faster'),
+                  ),
+                ],
+              ),
+              if (state.error != null)
+                LiveRegion(
+                  key: const Key('read-aloud-error'),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(state.error!, textAlign: TextAlign.center),
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

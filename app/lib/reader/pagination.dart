@@ -54,6 +54,26 @@ class BookText {
     }
     return out.toString();
   }
+
+  /// Where [word] is in `text(first, ...)`: its start and end offsets, without the line break before it.
+  (int, int) wordRange(int first, int word, String paragraphBreak) {
+    var start = 0;
+    if (word > first) {
+      start = text(first, word, paragraphBreak).length;
+      if (paragraphOfWord[word] != paragraphOfWord[word - 1]) {
+        start += paragraphBreak.length;
+      } else if (!words[word].startsWith('\n')) {
+        start += 1;
+      }
+    }
+    final piece = words[word];
+    if (piece.startsWith('\n')) {
+      // The line break is part of the text before the word (but not before the first word shown).
+      if (word > first) start += 1;
+      return (start, start + piece.length - 1);
+    }
+    return (start, start + piece.length);
+  }
 }
 
 /// Splits [book] into pages that fit [width] x [height] in [style]. Returns

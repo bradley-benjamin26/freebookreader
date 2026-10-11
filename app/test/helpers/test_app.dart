@@ -23,6 +23,8 @@ class TestEnv {
     required this.textEngine,
     required this.urls,
     required this.audio,
+    required this.speech,
+    required this.withSpeech,
   });
 
   final FakeSearchApi api;
@@ -38,10 +40,15 @@ class TestEnv {
   final FakeUrlOpener urls;
   final FakeAudioEngine audio;
 
+  /// The speech service of [textEngine]'s renderer, unless [withSpeech] is false.
+  final FakeSpeechEngine speech;
+  final bool withSpeech;
+
   static Future<TestEnv> create({
     SearchResponse? response,
     Map<String, Object> prefsValues = const {},
     bool textEngine = false,
+    bool speech = true,
   }) async {
     SharedPreferences.setMockInitialValues(prefsValues);
     final prefs = await SharedPreferences.getInstance();
@@ -60,6 +67,8 @@ class TestEnv {
       textEngine: textEngine,
       urls: FakeUrlOpener(),
       audio: FakeAudioEngine(),
+      speech: FakeSpeechEngine(),
+      withSpeech: speech,
     );
   }
 
@@ -90,7 +99,9 @@ Future<void> pumpApp(
     api: env.api,
     bookmarks: env.bookmarks,
     settingsStore: env.settingsStore,
-    readerEngine: env.textEngine ? (_) => TextReaderEngine(env.loader) : env.engines.call,
+    readerEngine: env.textEngine
+        ? (_) => TextReaderEngine(env.loader, speech: env.withSpeech ? env.speech : null)
+        : env.engines.call,
     urlOpener: env.urls,
     audio: env.audio,
     themeMode: themeMode,

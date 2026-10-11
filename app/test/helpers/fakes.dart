@@ -1,13 +1,16 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:free_book_reader/api/search_api.dart';
 import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/reader/content.dart';
+import 'package:free_book_reader/reader/read_aloud.dart';
 import 'package:free_book_reader/reader/reader_engine.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/services/audio_engine.dart';
+import 'package:free_book_reader/services/speech_engine.dart';
 import 'package:free_book_reader/services/url_opener.dart';
 
 class FakeSearchApi implements SearchApi {
@@ -102,6 +105,10 @@ class FakeReaderEngine implements ReaderEngine {
   final List<String> calls = [];
   final _positions = StreamController<ReaderPosition>.broadcast();
 
+  /// Null, like an engine that cannot read aloud, unless a test sets it.
+  @override
+  FakeReadAloud? readAloud;
+
   @override
   Future<void> open(ReadingOptions book, {required ReaderSettings settings, ReaderPosition? at}) {
     opens.add((book: book, at: at));
@@ -181,6 +188,9 @@ class FakeReaderEngines {
   bool never = false;
   bool failNext = false;
   bool none = false;
+
+  /// Whether the engines can read aloud.
+  bool readAloud = false;
   final List<FakeReaderEngine> created = [];
   final List<ReadingOptions> asked = [];
 
@@ -192,6 +202,7 @@ class FakeReaderEngines {
     if (none) return null;
     final engine = FakeReaderEngine(
         pageCount: pageCount, pageNumbers: pageNumbers, never: never, failNext: failNext);
+    if (readAloud) engine.readAloud = FakeReadAloud();
     failNext = false;
     created.add(engine);
     return engine;
@@ -267,5 +278,126 @@ class FakeAudioEngine implements AudioEngine {
   Future<void> dispose() async {
     await _position.close();
     await _status.close();
+  }
+}
+
+
+/// A read-aloud that records what the reader page asks of it.
+class FakeReadAloud implements ReadAloud {
+  final _state = ValueNotifier(const ReadAloudState());
+  final List<String> calls = [];
+  String? language;
+
+  /// When set, the next [start] fails with this message.
+  String? failNext;
+
+  @override
+  ValueListenable<ReadAloudState> get state => _state;
+
+  /// Changes the state from outside, like speech that ends by itself.
+  void emit(ReadAloudState state) => _state.value = state;
+
+  @override
+  Future<void> start({String? language}) async {
+    calls.add('start');
+    this.language = language;
+    final error = failNext;
+    failNext = null;
+    _state.value = error != null
+        ? _state.value.copyWith(status: ReadAloudStatus.stopped, error: error)
+        : _state.value.copyWith(status: ReadAloudStatus.reading, clearError: true);
+  }
+
+  @override
+  Future<void> pause() async {
+    calls.add('pause');
+    _state.value = _state.value.copyWith(status: ReadAloudStatus.paused);
+  }
+
+  @override
+  Future<void> resume() async {
+    calls.add('resume');
+    _state.value = _state.value.copyWith(status: ReadAloudStatus.reading);
+  }
+
+  @override
+  Future<void> stop() async {
+    calls.add('stop');
+    _state.value = _state.value.copyWith(status: ReadAloudStatus.stopped);
+  }
+
+  @override
+  Future<void> setRate(double rate) async {
+    calls.add('rate $rate');
+    _state.value = _state.value.copyWith(rate: rate);
+  }
+}
+
+/// Speech that waits for the test: [say] speaks a word of the current text, [finish] ends it.
+class FakeSpeechEngine implements SpeechEngine {
+  /// Languages with a voice.
+  Set<String> languages = {'en', 'es'};
+
+  /// Everything handed to [speak], oldest first.
+  final List<({String text, String language, double rate})> spoken = [];
+  int stops = 0;
+  bool disposed = false;
+
+  /// When set, the next [speak] throws this.
+  SpeechException? failNext;
+
+  Completer<void>? _pending;
+  void Function(int, int)? _onWord;
+
+  bool get speaking => _pending != null && !_pending!.isCompleted;
+  String get text => spoken.last.text;
+
+  @override
+  Future<bool> hasVoice(String language) async => languages.contains(language);
+
+  @override
+  Future<void> speak(String text,
+      {required String language, required double rate, required void Function(int, int) onWord}) {
+    spoken.add((text: text, language: language, rate: rate));
+    if (failNext != null) {
+      final e = failNext!;
+      failNext = null;
+      return Future.error(e);
+    }
+    _pending?.complete();
+    _onWord = onWord;
+    return (_pending = Completer<void>()).future;
+  }
+
+  /// The engine speaks the [index]th word (0-based, split on spaces and line breaks) of the current text.
+  void say(int index) {
+    var at = 0, i = 0;
+    for (final m in RegExp(r'\S+').allMatches(text)) {
+      if (i++ == index) {
+        at = m.start;
+        _onWord!(at, m.end);
+        return;
+      }
+    }
+    throw StateError('The text has no word $index');
+  }
+
+  /// The engine has read everything it was given.
+  void finish() {
+    final pending = _pending;
+    _pending = null;
+    pending?.complete();
+  }
+
+  @override
+  Future<void> stop() async {
+    stops++;
+    finish();
+  }
+
+  @override
+  Future<void> dispose() async {
+    disposed = true;
+    finish();
   }
 }

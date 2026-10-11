@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../models/models.dart';
+import 'read_aloud.dart';
 import 'reader_settings.dart';
 
 /// A place in a book.
@@ -66,6 +67,9 @@ abstract class ReaderEngine {
 
   /// Display settings: theme, font, size, spacing, page-turner or scroll.
   Future<void> apply(ReaderSettings settings);
+
+  /// Text-to-speech for this engine's book, or null when it cannot read aloud.
+  ReadAloud? get readAloud;
 
   /// The book itself, once [open] has completed.
   Widget buildView(BuildContext context);
