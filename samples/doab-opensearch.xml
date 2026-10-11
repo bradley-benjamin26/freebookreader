@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<title>DOAB PROD Instance</title>
+<link href="https://directory.doabooks.org" rel="alternate"/>
+<subtitle>The DOAB digital repository system captures, stores, indexes,
+    preserves, and distributes digital research material.
+  </subtitle>
+<id xmlns="http://apache.org/cocoon/i18n/2.1">https://directory.doabooks.org</id>
+<updated>2026-10-10T23:41:16Z</updated>
+<dc:date>2026-10-10T23:41:16Z</dc:date>
+<opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+<opensearch:totalResults>117</opensearch:totalResults>
+<opensearch:startIndex>1</opensearch:startIndex>
+<opensearch:Query role="request" searchTerms="pride" startPage="1"/>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/123766" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/123766</id>
+<updated>2026-02-22T08:37:07Z</updated>
+</entry>
+<entry>
+<title>12: (Dis)placing Pride in Copenhagen, or the socio-spatial lives of queer/trans migrant critique</title>
+<link href="https://directory.doabooks.org/handle/20.500.12854/171014" rel="alternate"/>
+<author>
+<name>Ruez, Derek</name>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/171014</id>
+<updated>2026-01-21T15:58:51Z</updated>
+<published>2025-11-04T00:00:00Z</published>
+<summary type="text">12: (Dis)placing Pride in Copenhagen, or the socio-spatial lives of queer/trans migrant critique
+Ruez, Derek
+Queer geographic scholarship has been marked by important interventions emphasizing place-sensitivity, set against both a-contextual narratives of queer recognition and top-down critiques of normativities. At the same time, critical work on queer and trans migrations has brought the translocal character of LGBTQI+ spaces and communities to the fore, including attention to the trajectories of queer and trans people on the move, as well as to the racial-colonial geographies shaping these spaces and mobilities. Across these conversations, Pride events have held an important place as sites through which the dynamics of place and normativities are examined. Focusing on political claims and critiques articulated in/of Pride events in Copenhagen, the paper examines moments where migrant and minoritized queer and trans appraisals in/of Pride complicate imagined geographies of Nordic LGBTQI+ progress and resituate the place of Pride in queer geographic conversations about normativities and critique.
+</summary>
+<dc:date>2025-11-04T00:00:00Z</dc:date>
+</entry>
+<entry>
+<title>Pride Parades and LGBT Movements</title>
+<link href="https://directory.doabooks.org/handle/20.500.12854/159907" rel="alternate"/>
+<author>
+<name>Peterson, Abby</name>
+</author>
+<author>
+<name>Wahlström, Mattias</name>
+</author>
+<author>
+<name>Wennerhag, Magnus</name>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/159907</id>
+<updated>2025-05-20T05:43:30Z</updated>
+<published>2018-01-01T00:00:00Z</published>
+<summary type="text">Pride Parades and LGBT Movements
+Peterson, Abby; Wahlström, Mattias; Wennerhag, Magnus
+The Open Access version of this book, available at http://www.tandfebooks.com/doi/view/10.4324/9781315474052, has been made available under a Creative Commons Attribution-Non Commercial-No Derivatives 4.0 license Today, Pride parades are staged in countries and localities across the globe, providing the most visible manifestations of lesbian, gay, bisexual, trans, queer and intersex movements and politics. Pride Parades and LGBT Movements contributes to a better understanding of LGBT protest dynamics through a comparative study of eleven Pride parades in seven European countries – Czech Republic, Italy, Netherlands, Poland, Sweden, Switzerland, the UK – and Mexico. Peterson, Wahlström and Wennerhag uncover the dynamics producing similarities and differences between Pride parades, using unique data from surveys of Pride participants and qualitative interviews with parade organizers and key LGBT activists. In addition to outlining the histories of Pride in the respective countries, the authors explore how the different political and cultural contexts influence:Who participates, in terms of socio-demographic characteristics and political orientations; what Pride parades mean for their participants; how participants were mobilized; how Pride organizers relate to allies and what strategies they employ for their performances of Pride. This book will be of interest to political scientists and sociologists with an interest in LGBT studies, social movements, comparative politics and political behavior and participation.
+</summary>
+<dc:date>2018-01-01T00:00:00Z</dc:date>
+</entry>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/120944" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/120944</id>
+<updated>2025-11-01T22:20:10Z</updated>
+</entry>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/126048" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/126048</id>
+<updated>2025-10-19T01:52:01Z</updated>
+</entry>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/1082" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/1082</id>
+<updated>2023-11-15T09:16:12Z</updated>
+</entry>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/125879" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/125879</id>
+<updated>2025-10-19T01:43:39Z</updated>
+</entry>
+<entry>
+<title>Untitled</title>
+<link xmlns="http://apache.org/cocoon/i18n/2.1" href="https://directory.doabooks.org/handle/20.500.12854/167449" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/167449</id>
+<updated>2025-10-19T04:49:27Z</updated>
+</entry>
+<entry>
+<title>Pride in the Projects</title>
+<link href="https://directory.doabooks.org/handle/20.500.12854/180381" rel="alternate"/>
+<author>
+<name>Deutsch, Nancy L.</name>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/180381</id>
+<updated>2026-08-01T05:23:10Z</updated>
+<published>2008-01-01T00:00:00Z</published>
+<summary type="text">Pride in the Projects
+Deutsch, Nancy L.
+Teens in America’s inner cities grow up and construct identities amidst a landscape of relationships and violence, support and discrimination, games and gangs. In such contexts, local environments such as after-school programs may help youth to mediate between social stereotypes and daily experience, or provide space for them to consider themselves as contributing members of a community. Based on four years of field work with both the adolescent members and staff of an inner-city youth organization in a large Midwestern city, Pride in the Projects examines the construction of identity as it occurs within this local context, emphasizing the relationships within which identities are formed. Drawing on research in psychology, sociology, education, and race and gender studies, the volume highlights the inadequacies in current identity development theories, expanding our understanding of the lives of urban teens and the ways in which interpersonal connections serve as powerful contexts for self-construction. The adolescents’ stories illuminate how they find ways to discover who they are, and who they would like to be — in positive and healthy ways — in the face of very real obstacles. The book closes with implications for practice, alerting scholars, educators, practitioners, and concerned citizens of the positive developmental possibilities inherent in youth settings when we pay attention to the voices of youth.
+</summary>
+<dc:date>2008-01-01T00:00:00Z</dc:date>
+</entry>
+<entry>
+<title>How Prides of Lion Researchers are Evolving to be Interdisciplinary</title>
+<link href="https://directory.doabooks.org/handle/20.500.12854/73393" rel="alternate"/>
+<author>
+<name/>
+</author>
+<id>https://directory.doabooks.org/handle/20.500.12854/73393</id>
+<updated>2024-04-04T19:19:59Z</updated>
+<published>2019-01-01T00:00:00Z</published>
+<summary type="text">How Prides of Lion Researchers are Evolving to be Interdisciplinary
+Montgomery, Robert A.; Hayward, Matt W.; Mombo Kissui, Bernard
+This eBook is a collection of articles from a Frontiers Research Topic. Frontiers Research Topics are very popular trademarks of the Frontiers Journals Series: they are collections of at least ten articles, all centered on a particular subject. With their unique mix of varied contributions from Original Research to Review Articles, Frontiers Research Topics unify the most influential researchers, the latest key findings and historical advances in a hot research area! Find out more on how to host your own Frontiers Research Topic or contribute to one as an author by contacting the Frontiers Editorial Office: frontiersin.org/about/contact
+</summary>
+<dc:date>2019-01-01T00:00:00Z</dc:date>
+</entry>
+</feed>

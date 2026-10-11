@@ -1,0 +1,275 @@
+{
+  "works": [
+    {
+      "id": "w-pride",
+      "title": "Pride and Prejudice",
+      "authors": [
+        "Jane Austen"
+      ],
+      "language": "en",
+      "sources": [
+        "gutenberg",
+        "librivox",
+        "openlibrary"
+      ],
+      "source_ids": {
+        "gutenberg": [
+          "1342"
+        ],
+        "librivox": [
+          "253"
+        ],
+        "openlibrary": [
+          "OL66554W"
+        ]
+      },
+      "identifiers": {
+        "gutenberg": [
+          "1342"
+        ],
+        "isbn": [
+          "9780140430721"
+        ]
+      },
+      "urls": [
+        "https://www.gutenberg.org/ebooks/1342",
+        "https://librivox.org/pride-and-prejudice-by-jane-austen/",
+        "https://openlibrary.org/works/OL66554W"
+      ],
+      "cover_url": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg",
+      "formats": [
+        "audio",
+        "text"
+      ],
+      "books": [
+        {
+          "source": "gutenberg",
+          "source_id": "1342",
+          "title": "Pride and Prejudice",
+          "authors": [
+            "Jane Austen"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "en",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {},
+          "url": "https://www.gutenberg.org/ebooks/1342",
+          "cover_url": "https://www.gutenberg.org/cache/epub/1342/pg1342.cover.medium.jpg",
+          "content": {
+            "text/html": "https://www.gutenberg.org/ebooks/1342.html.images",
+            "application/epub+zip": "https://www.gutenberg.org/ebooks/1342.epub3.images"
+          },
+          "chapters": [],
+          "access": "open",
+          "reading": {
+            "mode": "in_app",
+            "kind": "html",
+            "url": "https://www.gutenberg.org/ebooks/1342.html.images"
+          }
+        },
+        {
+          "source": "librivox",
+          "source_id": "253",
+          "title": "Pride and Prejudice",
+          "authors": [
+            "Jane Austen"
+          ],
+          "narrators": [
+            "Chris Goringe",
+            "Kara Shallenberg"
+          ],
+          "contributors": [],
+          "language": "en",
+          "format": "audio",
+          "pages": null,
+          "audio_seconds": 47204,
+          "identifiers": {
+            "gutenberg": [
+              "1342"
+            ]
+          },
+          "url": "https://librivox.org/pride-and-prejudice-by-jane-austen/",
+          "cover_url": "https://archive.org/download/pride_and_prejudice_librivox/Pride_Prejudice_1104.jpg",
+          "content": {},
+          "chapters": [
+            {
+              "title": "Chapters 1-3",
+              "url": "https://archive.org/download/p/01.mp3",
+              "duration_seconds": 1132
+            },
+            {
+              "title": "Chapters 4-7",
+              "url": "https://archive.org/download/p/02.mp3",
+              "duration_seconds": 2000
+            },
+            {
+              "title": "Chapters 8-10",
+              "url": "https://archive.org/download/p/03.mp3",
+              "duration_seconds": 1500
+            }
+          ],
+          "access": "open",
+          "reading": {
+            "mode": "in_app",
+            "kind": "audio",
+            "url": "https://archive.org/download/p/01.mp3"
+          }
+        },
+        {
+          "source": "openlibrary",
+          "source_id": "OL66554W",
+          "title": "Pride and Prejudice",
+          "authors": [
+            "Jane Austen"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": null,
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "isbn": [
+              "9780140430721"
+            ],
+            "gutenberg": [
+              "1342"
+            ]
+          },
+          "url": "https://openlibrary.org/works/OL66554W",
+          "cover_url": "https://covers.openlibrary.org/b/id/14348537-M.jpg",
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://openlibrary.org/works/OL66554W"
+          }
+        }
+      ]
+    },
+    {
+      "id": "w-quijote",
+      "title": "Don Quijote de la Mancha",
+      "authors": [
+        "Miguel de Cervantes"
+      ],
+      "language": "es",
+      "sources": [
+        "openlibrary"
+      ],
+      "source_ids": {
+        "openlibrary": [
+          "OL503666W"
+        ]
+      },
+      "identifiers": {},
+      "urls": [
+        "https://openlibrary.org/works/OL503666W"
+      ],
+      "cover_url": null,
+      "formats": [
+        "text"
+      ],
+      "books": [
+        {
+          "source": "openlibrary",
+          "source_id": "OL503666W",
+          "title": "Don Quijote de la Mancha",
+          "authors": [
+            "Miguel de Cervantes"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "es",
+          "format": "text",
+          "pages": 863,
+          "audio_seconds": null,
+          "identifiers": {},
+          "url": "https://openlibrary.org/works/OL503666W",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "borrow",
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://openlibrary.org/works/OL503666W"
+          }
+        }
+      ]
+    },
+    {
+      "id": "w-kinder",
+      "title": "Kinder in Jugendverbänden",
+      "authors": [
+        "Gunda Voigts"
+      ],
+      "language": "de",
+      "sources": [
+        "doab"
+      ],
+      "source_ids": {
+        "doab": [
+          "20.500.12854/95506"
+        ]
+      },
+      "identifiers": {
+        "isbn": [
+          "9783847406334"
+        ],
+        "doi": [
+          "10.3224/84740633"
+        ]
+      },
+      "urls": [
+        "https://directory.doabooks.org/handle/20.500.12854/95506"
+      ],
+      "cover_url": null,
+      "formats": [
+        "text"
+      ],
+      "books": [
+        {
+          "source": "doab",
+          "source_id": "20.500.12854/95506",
+          "title": "Kinder in Jugendverbänden",
+          "authors": [
+            "Gunda Voigts"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "de",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "isbn": [
+              "9783847406334"
+            ],
+            "doi": [
+              "10.3224/84740633"
+            ]
+          },
+          "url": "https://directory.doabooks.org/handle/20.500.12854/95506",
+          "cover_url": null,
+          "content": {
+            "application/pdf": "https://library.oapen.org/bitstream/20.500.12657/60336/1/9783847408130.pdf"
+          },
+          "chapters": [],
+          "access": "open",
+          "reading": {
+            "mode": "in_app",
+            "kind": "pdf",
+            "url": "https://library.oapen.org/bitstream/20.500.12657/60336/1/9783847408130.pdf"
+          }
+        }
+      ]
+    }
+  ],
+  "unavailable_sources": []
+}

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-10-10T23:41:18Z</responseDate><request verb="GetRecord" identifier="oai:directory.doabooks.org:20.500.12854/171014" metadataPrefix="xoai">https://directory.doabooks.org/oai/request</request><GetRecord><record><header><identifier>oai:directory.doabooks.org:20.500.12854/171014</identifier><datestamp>2026-01-21T15:58:51Z</datestamp><setSpec>com_20.500.12854_7</setSpec><setSpec>col_20.500.12854_8</setSpec></header><metadata><metadata xmlns="http://www.lyncode.com/xoai" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+<element name="dc">
+<element name="contributor">
+<element name="author">
+<element name="none">
+<field name="value">Ruez, Derek</field>
+<field name="authority">872a6dac-ab12-44d0-b7a9-f7508f79a58a</field>
+</element>
+</element>
+</element>
+<element name="date">
+<element name="accessioned">
+<element name="none">
+<field name="value">2026-01-21T15:58:49Z</field>
+</element>
+</element>
+<element name="available">
+<element name="none">
+<field name="value">2026-01-21T15:58:49Z</field>
+</element>
+</element>
+<element name="issued">
+<element name="none">
+<field name="value">2025-11-04</field>
+</element>
+</element>
+</element>
+<element name="identifier">
+<element name="uri">
+<element name="none">
+<field name="value">https://directory.doabooks.org/handle/20.500.12854/171014</field>
+</element>
+</element>
+</element>
+<element name="description">
+<element name="abstract">
+<element name="en_US">
+<field name="value">Queer geographic scholarship has been marked by important interventions emphasizing place-sensitivity, set against both a-contextual narratives of queer recognition and top-down critiques of normativities. At the same time, critical work on queer and trans migrations has brought the translocal character of LGBTQI+ spaces and communities to the fore, including attention to the trajectories of queer and trans people on the move, as well as to the racial-colonial geographies shaping these spaces and mobilities. Across these conversations, Pride events have held an important place as sites through which the dynamics of place and normativities are examined. Focusing on political claims and critiques articulated in/of Pride events in Copenhagen, the paper examines moments where migrant and minoritized queer and trans appraisals in/of Pride complicate imagined geographies of Nordic LGBTQI+ progress and resituate the place of Pride in queer geographic conversations about normativities and critique.</field>
+</element>
+</element>
+<element name="version">
+<element name="en_US">
+<field name="value">Published</field>
+</element>
+</element>
+</element>
+<element name="language">
+<element name="en_US">
+<field name="value">eng</field>
+</element>
+</element>
+<element name="subject">
+<element name="classification">
+<element name="en_US">
+<field name="value">RGC</field>
+<field name="value">JBSJ</field>
+<field name="value">JBSF</field>
+<field name="value">JBSF11</field>
+</element>
+</element>
+<element name="other">
+<element name="en_US">
+<field name="value">Queer migrations; Pride events; Normativity; Place; Critique; Queer geographies</field>
+</element>
+</element>
+</element>
+<element name="title">
+<element name="en_US">
+<field name="value">12: (Dis)placing Pride in Copenhagen, or the socio-spatial lives of queer/trans migrant critique</field>
+</element>
+</element>
+<element name="type">
+<element name="none">
+<field name="value">chapter</field>
+</element>
+</element>
+</element>
+<element name="oapen">
+<element name="identifier">
+<element name="doi">
+<element name="en_US">
+<field name="value">10.4337/9781035323227.00021</field>
+</element>
+</element>
+</element>
+<element name="relation">
+<element name="isPublishedBy">
+<element name="none">
+<field name="value">01ceac28-75b4-492a-8eec-f9b98bc6b28c</field>
+</element>
+</element>
+<element name="isFundedBy">
+<element name="en_US">
+<field name="value">https://creativecommons.org/licenses/by-nc-nd/4.0/</field>
+</element>
+</element>
+<element name="isbn">
+<element name="en_US">
+<field name="value">9781035323227</field>
+</element>
+</element>
+</element>
+<element name="imprint">
+<element name="en_US">
+<field name="value">Edward Elgar Publishing</field>
+</element>
+</element>
+<element name="place">
+<element name="publication">
+<element name="en_US">
+<field name="value">Cheltenham, UK</field>
+</element>
+</element>
+</element>
+<element name="grant">
+<element name="number">
+<element name="none">
+<field name="value"/>
+</element>
+</element>
+<element name="program">
+<element name="none">
+<field name="value"/>
+</element>
+</element>
+<element name="project">
+<element name="none">
+<field name="value"/>
+</element>
+</element>
+</element>
+</element>
+<element name="bundles">
+<element name="bundle">
+<field name="name">THUMBNAIL</field>
+<element name="bitstreams">
+<element name="bitstream">
+<field name="name">Bain Queer.jpg</field>
+<field name="originalName">Bain Queer.jpg</field>
+<field name="description"/>
+<field name="format">image/jpeg</field>
+<field name="size">20172346</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/171014/1/Bain%20Queer.jpg</field>
+<field name="checksum">bf7822b50a2b83f7837fd6796d1f21ca</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">1</field>
+<field name="oapenidentifierdownloadUrl">https://www.elgaronline.com/edcollchap-oa/book/9781035323227/chapter12.xml</field>
+<field name="oapenrelationisbn">9781035323227</field>
+<field name="dcidentifierurlwebshop">https://www.e-elgar.com/shop/gbp/queer-geographies-9781035323210.html</field>
+<field name="rightsuri">https://creativecommons.org/licenses/by-nc-nd/4.0/</field>
+<field name="rights">CC-BY-NC-ND</field>
+</element>
+</element>
+</element>
+</element>
+<element name="others">
+<field name="uuid">7c19d41e-e899-4b72-b501-13a27b477f36</field>
+<field name="handle">20.500.12854/171014</field>
+<field name="identifier">oai:directory.doabooks.org:20.500.12854/171014</field>
+<field name="lastModifyDate">2026-01-21 15:58:51.395</field>
+</element>
+<element name="repository">
+<field name="name">DOAB PROD Instance</field>
+<field name="mail">info@oapen.org</field>
+</element>
+<element name="linkedItemsMetadata">
+<element name="oapen.relation.isPublishedBy">
+<field name="uuid">01ceac28-75b4-492a-8eec-f9b98bc6b28c</field>
+<field name="handle">20.500.12854/25374</field>
+<element name="publisher.name">
+<field name="value">Edward Elgar Publishing</field>
+</element>
+</element>
+</element>
+</metadata></metadata></record></GetRecord></OAI-PMH>

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-10-10T23:41:21Z</responseDate><request verb="GetRecord" identifier="oai:directory.doabooks.org:20.500.12854/73393" metadataPrefix="xoai">https://directory.doabooks.org/oai/request</request><GetRecord><record><header><identifier>oai:directory.doabooks.org:20.500.12854/73393</identifier><datestamp>2024-04-04T19:19:59Z</datestamp><setSpec>com_20.500.12854_5</setSpec><setSpec>col_20.500.12854_6</setSpec></header><metadata><metadata xmlns="http://www.lyncode.com/xoai" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+<element name="dc">
+<element name="contributor">
+<element name="editor">
+<element name="none">
+<field name="value">Montgomery, Robert A.</field>
+<field name="authority">3efcd619-9d8d-43f0-a864-28acacad25d8</field>
+<field name="confidence">300</field>
+<field name="value">Hayward, Matt W.</field>
+<field name="authority">4bba80e5-81ab-4ab2-8a54-386883a59f90</field>
+<field name="confidence">300</field>
+<field name="value">Mombo Kissui, Bernard</field>
+<field name="authority">4b7defff-2665-4549-91d3-099bed9407e4</field>
+<field name="confidence">300</field>
+</element>
+</element>
+</element>
+<element name="date">
+<element name="accessioned">
+<element name="none">
+<field name="value">2021-11-18T16:16:19Z</field>
+</element>
+</element>
+<element name="available">
+<element name="none">
+<field name="value">2021-11-18T16:16:19Z</field>
+</element>
+</element>
+<element name="issued">
+<element name="none">
+<field name="value">2019</field>
+</element>
+</element>
+</element>
+<element name="identifier">
+<element name="none">
+<field name="value">ONIX_20211118_9782889632381_525</field>
+</element>
+<element name="uri">
+<element name="none">
+<field name="value">https://directory.doabooks.org/handle/20.500.12854/73393</field>
+</element>
+</element>
+</element>
+<element name="description">
+<element name="abstract">
+<element name="none">
+<field name="value">This eBook is a collection of articles from a Frontiers Research Topic. Frontiers Research Topics are very popular trademarks of the Frontiers Journals Series: they are collections of at least ten articles, all centered on a particular subject. With their unique mix of varied contributions from Original Research to Review Articles, Frontiers Research Topics unify the most influential researchers, the latest key findings and historical advances in a hot research area! Find out more on how to host your own Frontiers Research Topic or contribute to one as an author by contacting the Frontiers Editorial Office: frontiersin.org/about/contact</field>
+</element>
+</element>
+</element>
+<element name="language">
+<element name="none">
+<field name="value">eng</field>
+</element>
+</element>
+<element name="subject">
+<element name="classification">
+<element name="en_US">
+<field name="value">thema EDItEUR::P Mathematics and Science::PD Science: general issues</field>
+<field name="value">thema EDItEUR::P Mathematics and Science::PS Biology, life sciences::PSA Life sciences: general issues::PSAF Ecological science, the Biosphere</field>
+</element>
+</element>
+<element name="other">
+<element name="none">
+<field name="value">carnivore</field>
+<field name="value">conflict</field>
+<field name="value">conservation</field>
+<field name="value">interdisciplinary</field>
+<field name="value">lion</field>
+<field name="value">multidisciplinary</field>
+<field name="value">Panthera leo</field>
+</element>
+</element>
+</element>
+<element name="title">
+<element name="none">
+<field name="value">How Prides of Lion Researchers are Evolving to be Interdisciplinary</field>
+</element>
+</element>
+<element name="type">
+<element name="none">
+<field name="value">book</field>
+</element>
+</element>
+</element>
+<element name="oapen">
+<element name="identifier">
+<element name="doi">
+<element name="none">
+<field name="value">10.3389/978-2-88963-238-1</field>
+</element>
+</element>
+</element>
+<element name="relation">
+<element name="isPublishedBy">
+<element name="none">
+<field name="value">bf5ce210-e72e-4860-ba9b-c305640ff3ae</field>
+<field name="authority">bf5ce210-e72e-4860-ba9b-c305640ff3ae</field>
+<field name="confidence">600</field>
+</element>
+</element>
+<element name="isbn">
+<element name="none">
+<field name="value">9782889632381</field>
+</element>
+</element>
+</element>
+<element name="pages">
+<element name="none">
+<field name="value">130</field>
+</element>
+</element>
+</element>
+<element name="bundles">
+<element name="bundle">
+<field name="name">THUMBNAIL</field>
+<element name="bitstreams">
+<element name="bitstream">
+<field name="name">Thumb_166.jpg</field>
+<field name="originalName">Thumb_166.jpg</field>
+<field name="format">image/jpeg</field>
+<field name="size">4837</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/73393/1/Thumb_166.jpg</field>
+<field name="checksum">b6dbba59ead773b678d2a93d5ab2cbb7</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">1</field>
+<field name="oapenidentifierdownloadUrl">https://www.frontiersin.org/research-topics/6768/how-prides-of-lion-researchers-are-evolving-to-be-interdisciplinary#articles</field>
+<field name="oapenrelationisbn">9782889632381</field>
+<field name="dcidentifierurlwebshop">https://www.frontiersin.org/research-topics/6768/how-prides-of-lion-researchers-are-evolving-to-be-interdisciplinary#articles</field>
+<field name="rightsuri">https://creativecommons.org/licenses/by/4.0/</field>
+<field name="rights">CC-BY</field>
+</element>
+</element>
+</element>
+<element name="bundle">
+<field name="name">EXPORT</field>
+<element name="bitstreams">
+<element name="bitstream">
+<field name="name">4db24ce0-0e0d-47db-97b5-0443ea701203.marc.xml</field>
+<field name="format">application/octet-stream</field>
+<field name="size">6876</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/73393/2/4db24ce0-0e0d-47db-97b5-0443ea701203.marc.xml</field>
+<field name="checksum">2d11abb745602e3bf888299e5099dc7e</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">2</field>
+</element>
+<element name="bitstream">
+<field name="name">4db24ce0-0e0d-47db-97b5-0443ea701203.onix_3.0.xml</field>
+<field name="format">application/octet-stream</field>
+<field name="size">6367</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/73393/3/4db24ce0-0e0d-47db-97b5-0443ea701203.onix_3.0.xml</field>
+<field name="checksum">1819514f2a52926543cbfd770e1cbaf6</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">3</field>
+</element>
+<element name="bitstream">
+<field name="name">4db24ce0-0e0d-47db-97b5-0443ea701203.ris</field>
+<field name="format">application/octet-stream</field>
+<field name="size">1299</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/73393/4/4db24ce0-0e0d-47db-97b5-0443ea701203.ris</field>
+<field name="checksum">88ceac9d379795e31bc684674fb2c612</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">4</field>
+</element>
+<element name="bitstream">
+<field name="name">4db24ce0-0e0d-47db-97b5-0443ea701203.tsv</field>
+<field name="format">application/octet-stream</field>
+<field name="size">437</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/73393/-1/4db24ce0-0e0d-47db-97b5-0443ea701203.tsv</field>
+<field name="checksum">46fcff21ceec414f6a819426217ec177</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">-1</field>
+</element>
+</element>
+</element>
+</element>
+<element name="others">
+<field name="uuid">4db24ce0-0e0d-47db-97b5-0443ea701203</field>
+<field name="handle">20.500.12854/73393</field>
+<field name="identifier">oai:directory.doabooks.org:20.500.12854/73393</field>
+<field name="lastModifyDate">2024-04-04 19:19:59.418</field>
+</element>
+<element name="repository">
+<field name="name">DOAB PROD Instance</field>
+<field name="mail">info@oapen.org</field>
+</element>
+<element name="linkedItemsMetadata">
+<element name="oapen.relation.isPublishedBy">
+<field name="uuid">bf5ce210-e72e-4860-ba9b-c305640ff3ae</field>
+<field name="handle">20.500.12854/25393</field>
+<element name="publisher.name">
+<field name="value">Frontiers Media SA</field>
+</element>
+</element>
+</element>
+</metadata></metadata></record></GetRecord></OAI-PMH>

@@ -1,0 +1,1388 @@
+{
+    "count": 43,
+    "next": "http://localhost:8001/books/?languages=fr&mime_type=text%2Fhtml&page=2&search=hugo",
+    "previous": null,
+    "results": [
+        {
+            "id": 17489,
+            "title": "Les misérables Tome I: Fantine",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les misérables Tome I: Fantine\" by Victor Hugo is a French epic historical novel first published in 1862. Set between 1815 and the 1832 June Rebellion in Paris, it follows ex-convict Jean Valjean's struggle for redemption. The novel explores law and grace, justice and mercy, while examining the lives of society's most downtrodden members. Hugo weaves together themes of poverty, love, and moral philosophy against the backdrop of French history and Parisian life, creating what many consider one of the greatest novels of the 19th century. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Epic literature",
+                "Ex-convicts -- Fiction",
+                "Historical fiction",
+                "Orphans -- Fiction",
+                "Paris (France) -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/17489.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/17489.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/17489.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/17489.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/17489/17489-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/17489.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/17489/pg17489.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/17489/17489-8.zip"
+            },
+            "download_count": 7808
+        },
+        {
+            "id": 70891,
+            "title": "Notre-Dame de Paris - Tome 1",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Notre-Dame de Paris - Tome 1\" by Victor Hugo is a French Gothic novel published in 1831. Set in 15th-century Paris, it tells the tragic story of Quasimodo, the deformed bell-ringer of Notre-Dame Cathedral, the beautiful Romani dancer Esmeralda, and the tormented Archdeacon Claude Frollo. Their intertwined fates unfold against the backdrop of the iconic cathedral, exploring themes of obsession, unrequited love, and social outcasts. Written during cultural upheaval, Hugo's work championed the preservation of Gothic architecture while creating a timeless masterpiece of Romantic literature. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Clergy -- Fiction",
+                "France -- History -- Louis XI, 1461-1483 -- Fiction",
+                "Historical fiction",
+                "Man-woman relationships -- Fiction",
+                "Notre-Dame de Paris (Cathedral) -- Fiction",
+                "Paris (France) -- History -- To 1515 -- Fiction",
+                "People with disabilities -- Fiction",
+                "Romances"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/70891.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/70891.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/70891.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/70891.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/70891/70891-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/70891.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/70891/pg70891.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/70891/70891-0.zip"
+            },
+            "download_count": 2890
+        },
+        {
+            "id": 17519,
+            "title": "Les misérables Tome V: Jean Valjean",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les misérables Tome V: Jean Valjean\" by Victor Hugo is the fifth and final volume of an epic historical novel first published in 1862. Beginning in 1815 and culminating in the 1832 June Rebellion in Paris, the work follows ex-convict Jean Valjean's struggle for redemption as his life intertwines with other characters in turbulent France. Hugo examines law and grace, justice and mercy, exploring the depths of human misery and the possibility of transformation from darkness to light, from despair to hope. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Epic literature",
+                "Ex-convicts -- Fiction",
+                "Historical fiction",
+                "Orphans -- Fiction",
+                "Paris (France) -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/17519.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/17519.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/17519.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/17519.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/17519/17519-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/17519.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/17519/pg17519.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/17519/17519-8.zip"
+            },
+            "download_count": 2402
+        },
+        {
+            "id": 19657,
+            "title": "Notre-Dame de Paris",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Notre-Dame de Paris\" by Victor Hugo is a French Gothic novel published in 1831. Set in 15th-century Paris, it tells the tragic story of Quasimodo, the deformed bell-ringer of Notre-Dame Cathedral, the beautiful Romani dancer Esmeralda, and the obsessed Archdeacon Claude Frollo. Their intertwined fates unfold against the backdrop of the magnificent cathedral itself. A cornerstone of Romanticism featuring impossible love and marginalized characters, the novel also served as Hugo's passionate plea for preserving France's endangered Gothic architecture. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Clergy -- Fiction",
+                "France -- History -- Louis XI, 1461-1483 -- Fiction",
+                "Historical fiction",
+                "Man-woman relationships -- Fiction",
+                "Notre-Dame de Paris (Cathedral) -- Fiction",
+                "Paris (France) -- History -- To 1515 -- Fiction",
+                "People with disabilities -- Fiction",
+                "Romances"
+            ],
+            "bookshelves": [
+                "Banned Books from Anne Haight's list",
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels",
+                "FR Littérature",
+                "Harvard Classics"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/19657.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/19657.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/19657.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/19657.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/19657/19657-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/19657.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/19657/pg19657.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/19657/19657-8.zip"
+            },
+            "download_count": 2266
+        },
+        {
+            "id": 17518,
+            "title": "Les misérables Tome IV: L'idylle rue Plumet et l'épopée rue Saint-Denis",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les misérables Tome IV: L'idylle rue Plumet et l'épopée rue Saint-Denis\" by Victor Hugo is the fourth volume of an epic historical novel first published in 1862. This installment continues the story of ex-convict Jean Valjean's quest for redemption as events build toward the 1832 June Rebellion in Paris. The novel examines law and grace, justice and love, while following the intersecting lives of characters caught between personal struggles and revolutionary upheaval in nineteenth-century France. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Epic literature",
+                "Ex-convicts -- Fiction",
+                "Historical fiction",
+                "Orphans -- Fiction",
+                "Paris (France) -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/17518.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/17518.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/17518.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/17518.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/17518/17518-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/17518.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/17518/pg17518.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/17518/17518-8.zip"
+            },
+            "download_count": 1875
+        },
+        {
+            "id": 17494,
+            "title": "Les misérables Tome III: Marius",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les misérables Tome III: Marius\" by Victor Hugo is the third volume of an epic historical novel first published in 1862. This section follows the lives of characters caught in the tumultuous period between 1815 and the 1832 June Rebellion in Paris. The novel examines themes of law and grace, redemption, justice, and love while exploring the struggles of France's most downtrodden citizens. Hugo drew inspiration from real events he witnessed, including street arrests, barricades, and the social inequalities of nineteenth-century Paris. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Epic literature",
+                "Ex-convicts -- Fiction",
+                "Historical fiction",
+                "Orphans -- Fiction",
+                "Paris (France) -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/17494.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/17494.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/17494.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/17494.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/17494/17494-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/17494.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/17494/pg17494.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/17494/17494-8.zip"
+            },
+            "download_count": 1843
+        },
+        {
+            "id": 17493,
+            "title": "Les misérables Tome II: Cosette",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les misérables Tome II: Cosette\" by Victor Hugo is part of a French epic historical novel first published in 1862. This monumental work follows ex-convict Jean Valjean's journey toward redemption amid the turbulent backdrop of early 19th-century France. The narrative examines profound themes of justice, grace, love, and moral philosophy while chronicling the lives of society's most downtrodden members. Set between 1815 and the 1832 June Rebellion, the novel explores how law, poverty, and social condemnation shape human destinies in their struggle from darkness toward light. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Epic literature",
+                "Ex-convicts -- Fiction",
+                "Historical fiction",
+                "Orphans -- Fiction",
+                "Paris (France) -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/17493.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/17493.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/17493.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/17493.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/17493/17493-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/17493.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/17493/pg17493.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/17493/17493-8.zip"
+            },
+            "download_count": 1588
+        },
+        {
+            "id": 79493,
+            "title": "Les travailleurs de la mer - tome 1",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Channel Islands -- Fiction",
+                "Fishers -- Fiction",
+                "French fiction -- 19th century",
+                "Guernsey (Channel Islands) -- Fiction",
+                "Sailors -- Fiction"
+            ],
+            "bookshelves": [],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/79493.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/79493.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/79493.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/79493.txt.utf-8",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/79493.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/79493/pg79493.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/79493/pg79493-h.zip"
+            },
+            "download_count": 1178
+        },
+        {
+            "id": 5423,
+            "title": "L'homme Qui Rit",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"L'homme Qui Rit\" by Victor Hugo is a philosophical and dramatic novel published in April 1869. Set in late 17th and early 18th century England, it follows the fate of Gwynplaine, a young boy abandoned by comprachicos—child traders who mutilate children for profit. Left with a face carved into a permanent smile, Gwynplaine's path crosses with Ursus, a wandering philosopher, and his wolf companion. Hugo weaves together themes of aristocracy, human cruelty, and social injustice in this sweeping tale. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Clowns -- Fiction",
+                "England -- Fiction",
+                "Great Britain -- History -- Anne, 1702-1714 -- Fiction",
+                "Great Britain -- History -- James II, 1685-1688 -- Fiction",
+                "Historical fiction",
+                "Mouth -- Wounds and injuries -- Fiction",
+                "Traveling theater -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/5423.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/5423.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/5423.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/5423.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/5423/5423-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/5423.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/5423/pg5423.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/5423/5423-0.zip"
+            },
+            "download_count": 1072
+        },
+        {
+            "id": 6838,
+            "title": "Le Dernier Jour d'un Condamné",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Le Dernier Jour d'un Condamné\" by Victor Hugo is a thesis novel published in 1829. The work takes the form of a condemned man's journal during his final twenty-four hours, chronicling approximately five weeks from his trial's verdict to his execution. Through this interior monologue filled with anguished reflections and memories, Hugo creates a political plea against the death penalty, presenting raw testimony of a prisoner's psychological and physical suffering without revealing the man's identity or crime. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Capital punishment -- Fiction",
+                "France -- Fiction",
+                "Prisoners -- France -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/6838.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/6838.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/6838.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/6838.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/6838/6838-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/6838.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/6838/pg6838.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/6838/6838-8.zip"
+            },
+            "download_count": 1002
+        },
+        {
+            "id": 12137,
+            "title": "La Légende des Siècles",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"La Légende des Siècles\" by Victor Hugo is a collection of poems written intermittently between 1855 and 1876. Conceived as an epic depiction of human history and evolution, the work traces humanity's journey from biblical times through the distant future. Published in three series while Hugo lived in exile, the poems span civilizations and centuries—from Eve to Christ, through Rome's decline and the age of knights, to visions of the twentieth century and beyond. Often considered a modern French epic, it presents Hugo's sweeping vision of mankind's struggles and progress. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Poetry",
+                "FR Poésie"
+            ],
+            "languages": [
+                "en",
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/12137.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/12137.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/12137.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/12137.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/12137/12137-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/12137.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/12137/pg12137.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/12137/12137-8.zip"
+            },
+            "download_count": 896
+        },
+        {
+            "id": 15739,
+            "title": "Traité de la Vérité de la Religion Chrétienne",
+            "authors": [
+                {
+                    "name": "Grotius, Hugo",
+                    "birth_year": 1583,
+                    "death_year": 1645
+                }
+            ],
+            "summaries": [
+                "\"Traité de la Vérité de la Religion Chrétienne\" by Hugo Grotius is a theological treatise written in the late 17th century. The work seeks to establish the validity of the Christian faith through reasoned arguments and evidence, addressing doubts and counterarguments from atheists and skeptics. It serves as a defense of Christianity, emphasizing a rational foundation for belief.  The opening of the treatise introduces the author's intention to clarify the foundations of Christian faith, encouraging readers to examine their beliefs critically rather than accepting them passively. Grotius highlights the necessity of understanding divine revelation and the existence of God, presenting logical proofs for both concepts. He aims to reinforce the belief in a singular, eternal God, arguing against atheistic views by asserting that the presence of a divine creator is evident through the nature of existence itself and the universal acknowledgment of a higher power across different cultures and epochs. This opening sets the stage for a detailed exploration of Christian doctrines in the chapters that follow. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Apologetics -- Early works to 1800",
+                "Indifferentism (Religion)"
+            ],
+            "bookshelves": [
+                "Category: Philosophy & Ethics",
+                "Category: Religion/Spirituality",
+                "FR Philosophie, Religion et Morale"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/15739.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/15739.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/15739.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/15739.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/15739/15739-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/15739.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/15739/pg15739.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/15739/15739-0.zip"
+            },
+            "download_count": 773
+        },
+        {
+            "id": 29844,
+            "title": "Les contemplations: Aujourd'hui, 1843-1856",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les contemplations: Aujourd'hui, 1843-1856\" by Victor Hugo is a collection of poems published in 1856. This autobiographical work spans 158 poems across six books, divided into two parts: \"Autrefois\" (Before) and \"Aujourd'hui\" (Today). The collection explores themes of love, joy, death, and grief, centered around the drowning death of Hugo's daughter Léopoldine in 1843. Through verse, Hugo chronicles his journey through mourning, moving from youthful romance and early happiness toward darker contemplations of loss, mystical faith, and ultimately hope beyond suffering. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Poetry",
+                "FR Poésie"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/29844.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/29844.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/29844.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/29844.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/29844/29844-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/29844.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/29844/pg29844.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/29844/29844-8.zip"
+            },
+            "download_count": 753
+        },
+        {
+            "id": 9645,
+            "title": "Quatrevingt-Treize",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Quatrevingt-Treize\" by Victor Hugo is a novel published in 1874. Set during the Terror of 1793, it follows the Marquis de Lantenac, a royalist leader fighting to overthrow the French Republic, and his grand-nephew Gauvain, an idealistic republican commander. As civil war rages in Brittany, their opposing convictions clash through dramatic encounters and impossible choices. Between them stands Cimourdain, a revolutionary envoy demanding absolute justice. Hugo explores the moral complexities of revolution through these three men embodying different visions of France's future. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- History -- Revolution, 1789-1799 -- Fiction"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/9645.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/9645.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/9645.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/9645.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/9645/9645-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/9645.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/9645/pg9645.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/9645/9645-8.zip"
+            },
+            "download_count": 684
+        },
+        {
+            "id": 9976,
+            "title": "Hernani",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Hernani\" by Victor Hugo is a drama written in August and September 1829. Set in 1519 Spain, it tells the story of three men—an elderly nobleman, a bandit hiding noble origins, and the King of Spain himself—who all compete for the love of the beautiful Dona Sol. Their rivalry unfolds against a backdrop of political conspiracy and questions of honor, leading to a tragic resolution. The play's premiere sparked such intense controversy that it became known as the \"Battle of Hernani,\" marking a revolutionary moment in French theater. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Hernani (Fictitious character) -- Drama",
+                "Tragedies (Drama)"
+            ],
+            "bookshelves": [
+                "Banned Books from Anne Haight's list",
+                "Category: French Literature",
+                "Category: Plays/Films/Dramas",
+                "FR Théâtre",
+                "Opera"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/9976.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/9976.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/9976.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/9976.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/9976/9976-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/9976.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/9976/pg9976.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/9976/9976-8.zip"
+            },
+            "download_count": 680
+        },
+        {
+            "id": 8454,
+            "title": "Actes et Paroles, Volume 3",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Actes et Paroles, Volume 3\" by Victor Hugo is a collection of political writings and reflections penned during the late 19th century. This volume explores themes related to exile, the nature of insurrections, and the responsibilities of citizens within a republic, reflecting Hugo's deep engagement with the socio-political landscape of his time. The text delves into poignant meditations on patriotism, the struggles faced during periods of conflict, and the moral imperatives of clemency and resistance.  The opening of this volume reveals reflections on exile, specifically the author's return to France after years of political banishment. Hugo discusses the emotional weight of returning to a homeland marked by suffering and devastation, particularly in the context of the Franco-Prussian War. He poignantly contrasts two distinct crowds—the impoverished and those in power—highlighting the revolutionary fervor of the former against the complacency of the latter. Hugo's discourse also touches upon the nature of insurrection and the vital role of education, suggesting that the influences around an individual shape their capacity for civility and compassion. Overall, the beginning sets a tone of urgency and moral clarity, inviting readers to contemplate the reconciliation of past injustices with a vision for a more equitable future. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- Politics and government -- 1789-1900",
+                "Hugo, Victor, 1802-1885"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "Category: History - Modern (1750+)",
+                "Category: Philosophy & Ethics",
+                "Category: Politics",
+                "FR Biographie, Mémoires, Journal intime, Correspondance"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/8454.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/8454.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/8454.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/8454.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/8454/8454-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/8454.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/8454/pg8454.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/8454/8454-8.zip"
+            },
+            "download_count": 663
+        },
+        {
+            "id": 29843,
+            "title": "Les contemplations: Autrefois, 1830-1843",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Les contemplations: Autrefois, 1830-1843\" by Victor Hugo is a collection of poems published in 1856. This work explores love, joy, death, and grief through versified autobiography. The collection serves as a tribute to Hugo's daughter Léopoldine, who drowned in 1843—an event that divides the work into two parts: \"Autrefois\" (Before) and \"Aujourd'hui\" (Today). Through memory and mourning, Hugo experiments with poetic form to channel profound loss, moving from youthful romance through sorrow toward mystical contemplation and renewed hope. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Poetry",
+                "FR Poésie"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/29843.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/29843.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/29843.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/29843.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/29843/29843-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/29843.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/29843/pg29843.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/29843/29843-8.zip"
+            },
+            "download_count": 663
+        },
+        {
+            "id": 8186,
+            "title": "Actes et Paroles, Volume 1",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Actes et Paroles, Volume 1\" by Victor Hugo is a collection of essays and speeches written during the mid-19th century, reflecting Hugo's thoughts on law, liberty, and the human condition. The text touches on profound philosophical debates, notably the conflict between rights and laws, illustrating the evolution of society and civilization through the lens of justice, progress, and morality.  The opening of the work introduces a rich tapestry of ideas as Hugo argues that all human eloquence can be distilled into the struggle between what is just (the right) and what is lawful (the law). He reflects on the future of civilization, articulating a vision where human rights are harmonized with societal laws, leading to peace and intellectual enlightenment. Hugo’s narrative is deeply personal, sharing anecdotes from his own childhood in Paris, highlighting formative influences such as his mother and a family friend, the proscribed general Lahorie, who instilled in him the core belief of prioritizing liberty above all else. This blend of personal reflection with wide-ranging social commentary sets the tone for the philosophical explorations that follow in his essays. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- Politics and government -- 1789-1900",
+                "Hugo, Victor, 1802-1885"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "Category: Philosophy & Ethics",
+                "FR Biographie, Mémoires, Journal intime, Correspondance"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/8186.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/8186.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/8186.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/8186.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/8186/8186.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/8186.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/8186/pg8186.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/8186/8186.zip"
+            },
+            "download_count": 661
+        },
+        {
+            "id": 13628,
+            "title": "La Esmeralda",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"La Esmeralda\" by Victor Hugo is a dramatic work written in the 19th century, likely in the mid-1800s during the Romantic period. The book serves as a libretto for an opera and is based on Hugo's well-known novel \"Notre-Dame de Paris.\" It revolves around themes of love, jealousy, and social injustice, focusing on the tragic fate of the beautiful Romani girl Esmeralda, who becomes embroiled in a conflict involving a tormented priest, a nobleman, and a bell-ringer.  The storyline follows Esmeralda, whose enchanting dance captivates the heart of Captain Phoebus de Châteaupers. However, her life takes a dark turn when she becomes the object of obsession for the sinister Claude Frollo, the archdeacon of Notre-Dame, leading to a series of tragic events. The narrative explores the complexities of unrequited love, betrayal, and the harsh realities of societal prejudices. As Esmeralda navigates through danger and desire, her fate is sealed by Frollo’s jealousy and Phoebus's cowardice, culminating in a tragic end that reflects the brutalities of a society unwilling to accept those who are different. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Operas -- Librettos"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Plays/Films/Dramas",
+                "FR Théâtre",
+                "Opera"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/13628.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/13628.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/13628.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/13628.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/13628/13628-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/13628.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/13628/pg13628.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/13628/pg13628-h.zip"
+            },
+            "download_count": 617
+        },
+        {
+            "id": 6994,
+            "title": "Han d'Islande",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Han d'Islande\" by Victor Hugo is a novel published in 1823. Set in 1699 Norway, it follows young nobleman Ordener Guldenlew on a perilous quest to find the savage Han of Iceland, who possesses documents that could save his beloved Ethel's dishonored father. Meanwhile, Han terrorizes the region with his polar bear companion, seeking vengeance against humanity. Political conspiracies, a miners' revolt, and dark intrigue converge in this early Gothic tale that explores themes of capital punishment and social injustice. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Christian IV, King of Denmark and Norway, 1577-1648 -- Fiction",
+                "Friendship -- Fiction",
+                "Man-woman relationships -- Fiction",
+                "Murderers -- Fiction",
+                "Norway -- History -- Christian IV, 1588-1648 -- Fiction",
+                "Political prisoners -- Fiction",
+                "Suspense fiction"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Novels",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/6994.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/6994.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/6994.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/6994.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/6994/6994-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/6994.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/6994/pg6994.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/6994/6994-0.zip"
+            },
+            "download_count": 610
+        },
+        {
+            "id": 8453,
+            "title": "Actes et Paroles, Volume 2: Pendant l'exil 1852-1870",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Actes et Paroles, Volume 2: Pendant l'exil 1852-1870\" by Victor Hugo is a collection of reflections and political writings penned during the mid-19th century. The work offers a deep insight into Hugo's thoughts and experiences during his exile after opposing Louis Napoleon’s coup d'état. It focuses on themes of justice, freedom, and the moral implications of exile, illustrating both the personal and societal sufferings inflicted by tyranny and oppression.  The opening of the book sets the stage for Hugo's meditations on exile, where he discusses the concepts of law, force, and the moral weight of being a proscribed individual. He articulates that while the exiled may suffer from physical separation, it is the tyrants who inflict greater spiritual and ethical damage upon themselves. Hugo reflects on his own feelings of isolation, alongside the beauty and power of truth in the face of oppression. As he begins his journey through exile—from Belgium to Jersey—Hugo underscores the solidarity among proscribed individuals and the communal determination to uphold the ideals of the Republic, even from afar. The prose is rich with philosophical musings, painting a vivid picture of struggle, hope, and resilience against tyranny. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- Politics and government -- 1789-1900",
+                "Hugo, Victor, 1802-1885"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "Category: Philosophy & Ethics",
+                "Category: Politics",
+                "FR Biographie, Mémoires, Journal intime, Correspondance"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/8453.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/8453.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/8453.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/8453.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/8453/8453.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/8453.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/8453/pg8453.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/8453/8453.zip"
+            },
+            "download_count": 606
+        },
+        {
+            "id": 12289,
+            "title": "Quelques écrivains français: Flaubert, Zola, Hugo, Goncourt, Huysmans, etc.",
+            "authors": [
+                {
+                    "name": "Hennequin, Emile",
+                    "birth_year": 1858,
+                    "death_year": 1888
+                }
+            ],
+            "summaries": [
+                "\"Quelques écrivains français : Flaubert, Zola, Hugo, Goncourt, Huysmans, etc.\" by Émile Hennequin is a collection of critical studies written in the late 19th century. The work provides an in-depth analysis of various notable French writers, particularly focusing on the styles and contributions of figures such as Gustave Flaubert, Émile Zola, and Victor Hugo, among others. Through a detailed exploration of their works and influences, Hennequin seeks to underscore the literary significance of these authors within the context of French literature.  The opening of the text presents a preface and an analytical study of Gustave Flaubert, emphasizing his meticulous style characterized by precise word choice and rhythmical sentence structure. Hennequin discusses how Flaubert’s prose exhibits a duality of stark realism and poetic beauty, using various examples from Flaubert's novels such as \"Madame Bovary\" and \"Salammbô\" to illustrate his points. The author notes Flaubert’s ability to evoke strong emotions through a combination of succinct descriptions and elaborate language, highlighting the contrast between his detailed depictions of ordinary life and the grand themes he explores. Overall, this initial section establishes a foundation for understanding Flaubert's artistry, setting the tone for the subsequent studies of other literary figures in the collection. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French literature -- 19th century -- History and criticism"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/12289.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/12289.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/12289.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/12289.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/12289/12289-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/12289.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/12289/pg12289.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/12289/pg12289-h.zip"
+            },
+            "download_count": 596
+        },
+        {
+            "id": 72885,
+            "title": "La Légende des siècles tome I",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"La Légende des siècles tome I\" by Victor Hugo is a collection of poems published in three series between 1859 and 1883. The work depicts the history and evolution of humanity through epic verses. Hugo presents scattered scenes from past, present, and future, focusing on obscure or invented figures who symbolize their ages. Rather than historical accuracy, he creates \"history heard at the doors of legend,\" tracing humanity's journey from darkness toward light through lyric, epic, and satirical poems. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Poetry"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/72885.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/72885.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/72885.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/72885.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/72885/72885-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/72885.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/72885/pg72885.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/72885/pg72885-h.zip"
+            },
+            "download_count": 586
+        },
+        {
+            "id": 71445,
+            "title": "Notre-Dame de Paris - Tome 2",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Notre-Dame de Paris - Tome 2\" by Victor Hugo is a French Gothic novel published in 1831. Set in 15th-century Paris, it tells the tragic story of Quasimodo, the deformed bell-ringer of Notre-Dame Cathedral, the beautiful Romani dancer Esmeralda, and the tormented Archdeacon Claude Frollo. Their lives intertwine in a tale of obsession, unrequited love, and jealousy against the backdrop of the magnificent cathedral. A masterpiece of Romanticism, the novel championed the preservation of Gothic architecture while creating an enduring classic of French literature. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Clergy -- Fiction",
+                "France -- History -- Louis XI, 1461-1483 -- Fiction",
+                "Historical fiction",
+                "Man-woman relationships -- Fiction",
+                "Notre-Dame de Paris (Cathedral) -- Fiction",
+                "Paris (France) -- History -- To 1515 -- Fiction",
+                "People with disabilities -- Fiction",
+                "Romances"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Historical Novels",
+                "Category: Novels"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/71445.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/71445.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/71445.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/71445.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/71445/71445-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/71445.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/71445/pg71445.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/71445/71445-h.zip"
+            },
+            "download_count": 578
+        },
+        {
+            "id": 8490,
+            "title": "Actes et Paroles, Volume 4: Depuis l'Exil 1876-1885",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Actes et Paroles, Volume 4: Depuis l'Exil 1876-1885\" by Victor Hugo is a collection of political writings and speeches penned during the late 19th century. This volume reflects Hugo's impassioned advocacy for social justice, human rights, and political reform, particularly in the context of the political turmoil in Europe during that period. The book serves as a clarion call against the atrocities committed against nations, with a particular emphasis on the plight of the Serbian people and the broader implications for European societies.  The opening of the text presents a powerful indictment of the European governments for their indifference to the suffering of the Serbian population, which Hugo describes in graphic detail. He invokes the concept of collective human responsibility, arguing that the actions of the people should rise above the apathy of their rulers. Hugo expresses a deep desire for a united Europe that transcends national boundaries, advocating for a federation of peoples grounded in democratic values and human fraternity. This opening segment sets the tone for a series of impassioned discourses calling for social and political awakening, making it clear that Hugo is committed to fighting against tyranny and advocating for the protection of basic human rights. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- Politics and government -- 1789-1900",
+                "Hugo, Victor, 1802-1885"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "Category: History - European",
+                "Category: Politics",
+                "FR Biographie, Mémoires, Journal intime, Correspondance"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/8490.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/8490.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/8490.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/8490.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/8490/8490-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/8490.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/8490/pg8490.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/8490/8490-8.zip"
+            },
+            "download_count": 571
+        },
+        {
+            "id": 22048,
+            "title": "Napoléon Le Petit",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Napoléon Le Petit\" by Victor Hugo is a historical account written in the late 19th century. The text primarily critiques the rise of Louis-Napoléon Bonaparte, recounting the significant political events that led to his presidency and highlighting the implications of his actions for the French Republic. Through this examination, Hugo provides insight into the tumultuous nature of French politics during a crucial period.  The opening of the work sets the stage on December 20, 1848, when the French National Assembly declares Louis-Napoléon Bonaparte as president. The atmosphere is tense, filled with the murmurs of representatives reflecting on Bonaparte's stormy past—his attempts to gain power through military means and the emotions surrounding his election as a harbinger of an uncertain future. Hugo illustrates the mixed emotions of admiration and skepticism that Bonaparte inspires among his peers, while also foreshadowing the tragic political events that will unfold under his rule, including the eventual dissolution of the Republic he pledged to uphold. The narrative unfolds with a dramatic portrayal of the moment, illustrating both the solemnity of the presidential oath and the looming shadow of betrayal that would characterize Bonaparte's presidency. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "France -- History -- Coup d'état, 1851",
+                "France -- History -- Second Republic, 1848-1852",
+                "Napoleon III, Emperor of the French, 1808-1873"
+            ],
+            "bookshelves": [
+                "Banned Books from Anne Haight's list",
+                "Category: French Literature",
+                "Category: History - European",
+                "Category: History - Modern (1750+)",
+                "FR Politique"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/22048.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/22048.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/22048.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/22048.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/22048/22048-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/22048.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/22048/pg22048.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/22048/22048-8.zip"
+            },
+            "download_count": 555
+        },
+        {
+            "id": 76638,
+            "title": "La Légende des siècles tome III",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"La Légende des siècles tome III\" by Victor Hugo is a collection of poems written between 1855 and 1876 and published in three series. This monumental work depicts the history and evolution of humanity through scattered scenes glimpsed on the wall of centuries. Hugo presents epic, lyric, and satiric poems featuring obscure and often invented figures who embody their ages. Rather than seeking historical accuracy, he illustrates humanity's journey from darkness to light, creating what is considered France's only true epic. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Poetry"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/76638.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/76638.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/76638.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/76638.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/76638/76638-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/76638.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/76638/pg76638.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/76638/pg76638-h.zip"
+            },
+            "download_count": 504
+        },
+        {
+            "id": 76396,
+            "title": "La Légende des siècles tome II",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"La Légende des siècles tome II\" by Victor Hugo is a collection of poems written between 1855 and 1876. This second volume forms part of Hugo's monumental work depicting humanity's journey through history. Through scattered visions of past, present, and future, Hugo presents symbolic figures—often obscure or invented—representing different ages. These lyric, epic, and satiric poems illustrate humanity's long progression from darkness toward light, creating what many consider France's only true epic and the only possible modern epic. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French poetry -- 19th century"
+            ],
+            "bookshelves": [
+                "Category: Classics of Literature",
+                "Category: French Literature",
+                "Category: Mythology, Legends & Folklore",
+                "Category: Poetry"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/76396.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/76396.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/76396.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/76396.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/76396/76396-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/76396.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/76396/pg76396.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/76396/pg76396-h.zip"
+            },
+            "download_count": 503
+        },
+        {
+            "id": 51977,
+            "title": "Victor Hugo",
+            "authors": [
+                {
+                    "name": "Gautier, Théophile",
+                    "birth_year": 1811,
+                    "death_year": 1872
+                }
+            ],
+            "summaries": [
+                "\"Victor Hugo\" by Théophile Gautier is a literature-focused memoir written in the early 20th century. The text reflects on the life and impact of Victor Hugo, framed within the context of the Romantic literary movement in France. It particularly highlights the tumultuous atmosphere surrounding the first performances of Hugo's plays, especially \"Hernani,\" and the passionate debates between the Romantic and classical schools.   The opening of the memoir immerses readers in the vibrant literary landscape of 1830 Paris, a period characterized by creative effervescence and the resurgence of poetry and art. Gautier recalls excitement and fervor as young artists and poets rallied around Hugo’s works, eagerly anticipating the premiere of \"Hernani.\" With vivid descriptions, he paints a picture of his youthful ambitions, the camaraderie among artists in their struggle against classical norms, and their overwhelming admiration for Hugo, whom they regarded as a champion of their cause. As Gautier navigates his experiences leading up to and during the revolutionary premiere, he conveys the intense emotions of both anticipation and fear that defined that pivotal moment in literary history. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Authors, French -- 19th century -- Biography",
+                "Hugo, Victor, 1802-1885",
+                "Hugo, Victor, 1802-1885 -- Criticism and interpretation"
+            ],
+            "bookshelves": [
+                "Category: Biographies",
+                "Category: French Literature",
+                "FR Biographie, Mémoires, Journal intime, Correspondance",
+                "FR Littérature"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/51977.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/51977.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/51977.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/51977.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/51977/51977-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/51977.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/51977/pg51977.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/51977/pg51977-h.zip"
+            },
+            "download_count": 493
+        },
+        {
+            "id": 9644,
+            "title": "Littérature et Philosophie mêlées",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Littérature et Philosophie mêlées\" by Victor Hugo is a collection of philosophical essays and reflections written during the early 19th century. The work is structured as a personal exploration of the author's evolving thoughts and ideas over a span of fifteen years, examining the intersection of literature and philosophy while contemplating the transformations within his own intellectual landscape. Hugo emphasizes the significance of the writer's journey and the moral responsibilities that come with artistic creation.  The opening of the book presents Hugo's intent to introspectively catalog his thoughts since his youth, from 1819 to 1834, using journals from different stages of his life. He articulates a desire to document how his opinions have developed in response to the tumultuous social and political landscape of his time. The text discusses the role of art and the writer's obligation to contribute to societal enlightenment while cautioning against succumbing to fleeting political trends. The fragmented nature of his writings reflects a chaotic yet sincere process of intellectual development, leading to a broader assertion about the coexistence and evolution of personal and societal revolutions. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Literature, Modern",
+                "Philosophy, Modern"
+            ],
+            "bookshelves": [
+                "Category: Essays, Letters & Speeches",
+                "Category: French Literature",
+                "Category: Philosophy & Ethics",
+                "FR Biographie, Mémoires, Journal intime, Correspondance"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/9644.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/9644.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/9644.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/9644.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/9644/9644-8.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/9644.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/9644/pg9644.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/9644/9644-8.zip"
+            },
+            "download_count": 473
+        },
+        {
+            "id": 29549,
+            "title": "Le Roi s'amuse",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Le Roi s'amuse\" by Victor Hugo is a French play in five acts written in 1832. It follows Triboulet, a hunchbacked court jester who serves the womanizing King Francis I while secretly protecting his innocent daughter Blanche from the corruption he witnesses daily. When vengeful courtiers abduct Blanche, believing her to be Triboulet's mistress, the jester's carefully guarded world collapses. His quest for revenge through a hired assassin leads to devastating consequences, as a nobleman's curse haunts both king and jester alike. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "Francis I, King of France, 1494-1547 -- Drama",
+                "French drama -- 19th century"
+            ],
+            "bookshelves": [
+                "Banned Books from Anne Haight's list",
+                "Category: French Literature",
+                "Category: Plays/Films/Dramas",
+                "FR Théâtre",
+                "Opera"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/29549.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/29549.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/29549.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/29549.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/29549/29549-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/29549.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/29549/pg29549.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/files/29549/29549-0.zip"
+            },
+            "download_count": 464
+        },
+        {
+            "id": 60354,
+            "title": "Ruy Blas: Drame",
+            "authors": [
+                {
+                    "name": "Hugo, Victor",
+                    "birth_year": 1802,
+                    "death_year": 1885
+                }
+            ],
+            "summaries": [
+                "\"Ruy Blas: Drame\" by Victor Hugo is a five-act verse drama written in 1838. Set in late seventeenth-century Spain, it tells the story of Ruy Blas, a valet who secretly loves the Queen. His master, a disgraced nobleman seeking revenge against the Queen, forces Ruy Blas to pose as a nobleman and win her heart. As Ruy Blas rises to become Prime Minister and earns the Queen's love, he remains trapped by his true identity and his master's sinister plot. (This is an automatically generated summary.)"
+            ],
+            "editors": [],
+            "translators": [],
+            "subjects": [
+                "French drama -- 19th century",
+                "Indentured servants -- Drama",
+                "Love -- Drama",
+                "Madrid (Spain) -- Drama",
+                "Mariana, de Neoburgo, Queen, consort of Charles II, King of Spain, 1667-1740 -- Drama",
+                "Revenge -- Drama",
+                "Spain -- History -- Charles II, 1665-1700 -- Drama"
+            ],
+            "bookshelves": [
+                "Category: French Literature",
+                "Category: Plays/Films/Dramas",
+                "FR Théâtre"
+            ],
+            "languages": [
+                "fr"
+            ],
+            "copyright": false,
+            "media_type": "Text",
+            "formats": {
+                "text/html": "https://www.gutenberg.org/ebooks/60354.html.images",
+                "application/epub+zip": "https://www.gutenberg.org/ebooks/60354.epub3.images",
+                "application/x-mobipocket-ebook": "https://www.gutenberg.org/ebooks/60354.kf8.images",
+                "text/plain; charset=utf-8": "https://www.gutenberg.org/ebooks/60354.txt.utf-8",
+                "text/plain; charset=us-ascii": "https://www.gutenberg.org/files/60354/60354-0.txt",
+                "application/rdf+xml": "https://www.gutenberg.org/ebooks/60354.rdf",
+                "image/jpeg": "https://www.gutenberg.org/cache/epub/60354/pg60354.cover.medium.jpg",
+                "application/octet-stream": "https://www.gutenberg.org/cache/epub/60354/pg60354-h.zip"
+            },
+            "download_count": 463
+        }
+    ]
+}

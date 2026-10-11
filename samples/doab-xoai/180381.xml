@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="static/style.xsl"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-10-10T23:41:20Z</responseDate><request verb="GetRecord" identifier="oai:directory.doabooks.org:20.500.12854/180381" metadataPrefix="xoai">https://directory.doabooks.org/oai/request</request><GetRecord><record><header><identifier>oai:directory.doabooks.org:20.500.12854/180381</identifier><datestamp>2026-08-01T05:23:10Z</datestamp><setSpec>com_20.500.12854_11</setSpec><setSpec>col_20.500.12854_12</setSpec></header><metadata><metadata xmlns="http://www.lyncode.com/xoai" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.lyncode.com/xoai http://www.lyncode.com/xsd/xoai.xsd">
+<element name="dc">
+<element name="contributor">
+<element name="author">
+<element name="none">
+<field name="value">Deutsch, Nancy L.</field>
+<field name="authority">d1686601-d416-4f3d-9de2-321de9d3bf74</field>
+<field name="confidence">500</field>
+</element>
+</element>
+</element>
+<element name="date">
+<element name="accessioned">
+<element name="none">
+<field name="value">2026-07-31T05:14:53Z</field>
+</element>
+</element>
+<element name="available">
+<element name="none">
+<field name="value">2026-07-31T05:14:53Z</field>
+</element>
+</element>
+<element name="issued">
+<element name="none">
+<field name="value">2008</field>
+</element>
+</element>
+<element name="submitted">
+<element name="none">
+<field name="value">2026-07-30T12:35:31Z</field>
+</element>
+</element>
+</element>
+<element name="identifier">
+<element name="none">
+<field name="value">ONIX_20260729T164934_9780814785218_26</field>
+<field name="value">https://library.oapen.org/handle/20.500.12657/116074</field>
+</element>
+<element name="uri">
+<element name="none">
+<field name="value">https://directory.doabooks.org/handle/20.500.12854/180381</field>
+</element>
+</element>
+</element>
+<element name="description">
+<element name="abstract">
+<element name="none">
+<field name="value">Teens in America’s inner cities grow up and construct identities amidst a landscape of relationships and violence, support and discrimination, games and gangs. In such contexts, local environments such as after-school programs may help youth to mediate between social stereotypes and daily experience, or provide space for them to consider themselves as contributing members of a community. Based on four years of field work with both the adolescent members and staff of an inner-city youth organization in a large Midwestern city, Pride in the Projects examines the construction of identity as it occurs within this local context, emphasizing the relationships within which identities are formed. Drawing on research in psychology, sociology, education, and race and gender studies, the volume highlights the inadequacies in current identity development theories, expanding our understanding of the lives of urban teens and the ways in which interpersonal connections serve as powerful contexts for self-construction. The adolescents’ stories illuminate how they find ways to discover who they are, and who they would like to be — in positive and healthy ways — in the face of very real obstacles. The book closes with implications for practice, alerting scholars, educators, practitioners, and concerned citizens of the positive developmental possibilities inherent in youth settings when we pay attention to the voices of youth.</field>
+</element>
+</element>
+</element>
+<element name="language">
+<element name="none">
+<field name="value">eng</field>
+</element>
+</element>
+<element name="relation">
+<element name="ispartofseries">
+<element name="none">
+<field name="value">Qualitative Studies in Psychology</field>
+</element>
+</element>
+</element>
+<element name="rights">
+<element name="none">
+<field name="value">open access</field>
+</element>
+</element>
+<element name="subject">
+<element name="classification">
+<element name="none">
+<field name="value">thema EDItEUR::J Society and Social Sciences::JM Psychology::JMC Child, developmental and lifespan psychology</field>
+<field name="value">thema EDItEUR::J Society and Social Sciences::JM Psychology::JMH Social, group or collective psychology</field>
+</element>
+</element>
+<element name="other">
+<element name="none">
+<field name="value">Based</field>
+<field name="value">Four</field>
+<field name="value">Years</field>
+<field name="value">Field</field>
+<field name="value">Work</field>
+<field name="value">With</field>
+<field name="value">Both</field>
+<field name="value">Adolescent</field>
+<field name="value">Members</field>
+<field name="value">Staff</field>
+<field name="value">Inner-city</field>
+<field name="value">Youth</field>
+<field name="value">Organization</field>
+<field name="value">Large</field>
+<field name="value">Mid-western</field>
+<field name="value">City</field>
+<field name="value">Pride</field>
+<field name="value">Projects</field>
+<field name="value">Examines</field>
+<field name="value">Construction</field>
+<field name="value">Identity</field>
+<field name="value">Occurs</field>
+<field name="value">Within</field>
+<field name="value">This</field>
+<field name="value">Local</field>
+<field name="value">Context</field>
+<field name="value">Emphasizing</field>
+<field name="value">Relationships</field>
+<field name="value">Which</field>
+<field name="value">Identities</field>
+<field name="value">Formed</field>
+</element>
+</element>
+</element>
+<element name="title">
+<element name="none">
+<field name="value">Pride in the Projects</field>
+</element>
+<element name="alternative">
+<element name="none">
+<field name="value">Teens Building Identities in Urban Contexts</field>
+</element>
+</element>
+</element>
+<element name="type">
+<element name="none">
+<field name="value">book</field>
+<field name="value">book</field>
+</element>
+</element>
+<element name="seriesnumber">
+<element name="none">
+<field name="value">5</field>
+</element>
+</element>
+</element>
+<element name="oapen">
+<element name="identifier">
+<element name="doi">
+<element name="none">
+<field name="value">10.18574/nyu/9780814785218.001.0001</field>
+</element>
+</element>
+</element>
+<element name="relation">
+<element name="isPublishedBy">
+<element name="none">
+<field name="value">4f0083e6-57b8-4955-9258-8a34506205d2</field>
+<field name="authority">4f0083e6-57b8-4955-9258-8a34506205d2</field>
+<field name="confidence">600</field>
+</element>
+</element>
+<element name="isbn">
+<element name="none">
+<field name="value">9780814785218</field>
+</element>
+</element>
+</element>
+<element name="imprint">
+<element name="none">
+<field name="value">NYU Press</field>
+</element>
+</element>
+</element>
+<element name="bundles">
+<element name="bundle">
+<field name="name">THUMBNAIL</field>
+<element name="bitstreams">
+<element name="bitstream">
+<field name="name">9780814785218.pdf.jpg</field>
+<field name="format">image/jpeg</field>
+<field name="size">4387</field>
+<field name="url">https://directory.doabooks.org/bitstream/20.500.12854/180381/1/9780814785218.pdf.jpg</field>
+<field name="checksum">926c13a8f435b1213fffa51133dda955</field>
+<field name="checksumAlgorithm">MD5</field>
+<field name="sid">1</field>
+<field name="oapenidentifierdownloadUrl">https://library.oapen.org/bitstream/20.500.12657/116074/1/9780814785218.pdf</field>
+<field name="rightsuri">https://creativecommons.org/licenses/by-nc/4.0/</field>
+<field name="rights">CC-BY-NC</field>
+</element>
+</element>
+</element>
+</element>
+<element name="others">
+<field name="uuid">33ce9376-c945-4881-92b5-3b5dd98f7227</field>
+<field name="handle">20.500.12854/180381</field>
+<field name="identifier">oai:directory.doabooks.org:20.500.12854/180381</field>
+<field name="lastModifyDate">2026-08-01 05:23:10.768</field>
+</element>
+<element name="repository">
+<field name="name">DOAB PROD Instance</field>
+<field name="mail">info@oapen.org</field>
+</element>
+<element name="linkedItemsMetadata">
+<element name="oapen.relation.isPublishedBy">
+<field name="uuid">4f0083e6-57b8-4955-9258-8a34506205d2</field>
+<field name="handle">20.500.12854/25744</field>
+<element name="publisher.name">
+<field name="value">NYU Press</field>
+</element>
+</element>
+</element>
+</metadata></metadata></record></GetRecord></OAI-PMH>

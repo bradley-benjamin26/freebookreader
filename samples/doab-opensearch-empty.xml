@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:opensearch="http://a9.com/-/spec/opensearch/1.1/" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<title>DOAB PROD Instance</title>
+<link href="https://directory.doabooks.org" rel="alternate"/>
+<subtitle>The DOAB digital repository system captures, stores, indexes,
+    preserves, and distributes digital research material.
+  </subtitle>
+<id xmlns="http://apache.org/cocoon/i18n/2.1">https://directory.doabooks.org</id>
+<updated>2026-10-10T23:41:17Z</updated>
+<dc:date>2026-10-10T23:41:17Z</dc:date>
+<opensearch:itemsPerPage>10</opensearch:itemsPerPage>
+<opensearch:totalResults>0</opensearch:totalResults>
+<opensearch:startIndex>1</opensearch:startIndex>
+<opensearch:Query role="request" searchTerms="zzzzqqqxx" startPage="1"/>
+</feed>

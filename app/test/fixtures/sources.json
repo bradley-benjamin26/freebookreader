@@ -1,0 +1,54 @@
+[
+  {
+    "id": "gutenberg",
+    "name": "Project Gutenberg",
+    "description": "A volunteer library of over 70,000 free ebooks, mostly older works whose copyright has expired.",
+    "how_it_works": "The app searches a copy of the Project Gutenberg catalog and opens each book from gutenberg.org.",
+    "how_to_access": "Visit gutenberg.org to browse by title, author or subject and download books in many formats.",
+    "website_url": "https://www.gutenberg.org",
+    "donation_url": "https://www.gutenberg.org/donate/",
+    "formats": [
+      "text"
+    ],
+    "in_app": true
+  },
+  {
+    "id": "librivox",
+    "name": "LibriVox",
+    "description": "Free public domain audiobooks read by volunteers from around the world.",
+    "how_it_works": "The app searches the LibriVox catalog and plays chapters directly from the Internet Archive.",
+    "how_to_access": "Visit librivox.org to browse recordings, subscribe to podcasts or volunteer as a reader.",
+    "website_url": "https://librivox.org",
+    "donation_url": "https://librivox.org/pages/donate/",
+    "formats": [
+      "audio"
+    ],
+    "in_app": true
+  },
+  {
+    "id": "doab",
+    "name": "DOAB",
+    "description": "DOAB, the Directory of Open Access Books, lists peer-reviewed open access academic books, free to read and share.",
+    "how_it_works": "The app searches DOAB and opens a book's PDF where one is available, usually from the OAPEN Library.",
+    "how_to_access": "Visit directory.doabooks.org to search academic books by subject, publisher or language.",
+    "website_url": "https://directory.doabooks.org",
+    "donation_url": "https://www.paypal.com/donate/?hosted_button_id=VPW4DRBLBM9J8",
+    "formats": [
+      "text"
+    ],
+    "in_app": true
+  },
+  {
+    "id": "openlibrary",
+    "name": "Open Library",
+    "description": "An open catalog of every book, with millions of titles you can borrow digitally.",
+    "how_it_works": "The app searches Open Library and links to its page, where you can read or borrow a book.",
+    "how_to_access": "Visit openlibrary.org, sign in for free, and borrow digital copies for a limited time.",
+    "website_url": "https://openlibrary.org",
+    "donation_url": "https://archive.org/donate",
+    "formats": [
+      "text"
+    ],
+    "in_app": false
+  }
+]
