@@ -51,6 +51,9 @@ flutter pub get
 flutter test
 ```
 
-## Third-party code
+## License
 
-`gutendex/` is vendored from [garethbjohnson/gutendex](https://github.com/garethbjohnson/gutendex) at commit `268b181` (MIT License, see `gutendex/license`). Local changes: added tests in `books/tests.py` and `gutendex/test_settings.py`.
+MIT, see [LICENSE](LICENSE). This covers the code and documentation in this repository, except:
+
+- `gutendex/` is vendored from [garethbjohnson/gutendex](https://github.com/garethbjohnson/gutendex) at commit `268b181` under its own MIT License (`gutendex/license`). Local changes: added tests in `books/tests.py` and `gutendex/test_settings.py`.
+- `samples/` holds responses captured from Project Gutenberg (via Gutendex), LibriVox, Open Library and DOAB. That data belongs to those sources and is under their terms.
