@@ -52,13 +52,14 @@ String languageName(String? code) {
   return languageNames[code] ?? code.toUpperCase();
 }
 
-const sourceIds = ['gutenberg', 'librivox', 'doab', 'openlibrary'];
+const sourceIds = ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust'];
 
 const _sourceNames = {
   'gutenberg': 'Project Gutenberg',
   'librivox': 'LibriVox',
   'doab': 'DOAB',
   'openlibrary': 'Open Library',
+  'hathitrust': 'HathiTrust',
 };
 
 String sourceName(String id) => _sourceNames[id] ?? id;

@@ -142,6 +142,78 @@ void main() {
       expect(inBook('Original publication: London: Chatto & Windus, 1894.'), findsOneWidget);
     });
 
+    group('HathiTrust volumes', () {
+      Future<Finder> openHathiTrust(WidgetTester tester, Map<String, dynamic> extra) async {
+        final json = loadJson('search_response.json') as Map<String, dynamic>;
+        final books = json['works'][0]['books'] as List;
+        books.add({
+          'source': 'hathitrust',
+          'source_id': 'hvd.hx66p3',
+          'title': 'Pride and prejudice',
+          'authors': ['Jane Austen'],
+          'language': 'en',
+          'format': 'text',
+          'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.hx66p3',
+          'access': 'open',
+          'reading': {'mode': 'external', 'kind': null, 'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.hx66p3'},
+          ...extra,
+        });
+        await pumpApp(tester, await TestEnv.create(response: SearchResponse.fromJson(json)));
+        await openDetails(tester, 'w-pride');
+        final book = find.byKey(const Key('book-hathitrust:hvd.hx66p3'));
+        await tester.ensureVisible(book);
+        return book;
+      }
+
+      testWidgets('show the volume label and the library that holds it', (tester) async {
+        final book = await openHathiTrust(tester, {'volume': 'v.1', 'library': 'Harvard University'});
+        expect(find.descendant(of: book, matching: find.textContaining('Volume v.1 · Harvard University')),
+            findsOneWidget);
+      });
+
+      testWidgets('show just the library for a one-volume book', (tester) async {
+        final book = await openHathiTrust(tester, {'library': 'Harvard University'});
+        expect(find.descendant(of: book, matching: find.textContaining('Harvard University')), findsOneWidget);
+        expect(find.descendant(of: book, matching: find.textContaining('Volume')), findsNothing);
+      });
+
+      testWidgets('say that the book opens in the HathiTrust reader in the browser', (tester) async {
+        final book = await openHathiTrust(tester, {'library': 'Harvard University'});
+        expect(find.descendant(of: book, matching: find.textContaining('HathiTrust reader')), findsOneWidget);
+        expect(find.descendant(of: book, matching: find.textContaining('web browser')), findsOneWidget);
+      });
+
+      testWidgets('mark a United States only volume', (tester) async {
+        final book = await openHathiTrust(tester, {'us_only': true});
+        expect(find.descendant(of: book, matching: find.textContaining('only in the United States')),
+            findsOneWidget);
+      });
+
+      testWidgets('say nothing about the United States for other volumes', (tester) async {
+        final book = await openHathiTrust(tester, {});
+        expect(find.descendant(of: book, matching: find.textContaining('United States')), findsNothing);
+      });
+
+      testWidgets('open the reader through the book button', (tester) async {
+        final env = await TestEnv.create();
+        final json = loadJson('search_response.json') as Map<String, dynamic>;
+        (json['works'][0]['books'] as List).add({
+          'source': 'hathitrust', 'source_id': 'hvd.hx66p3', 'title': 'Pride and prejudice',
+          'authors': ['Jane Austen'], 'language': 'en', 'format': 'text',
+          'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.hx66p3', 'access': 'open',
+          'reading': {'mode': 'external', 'kind': null, 'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.hx66p3'},
+        });
+        env.api.response = SearchResponse.fromJson(json);
+        await pumpApp(tester, env);
+        await openDetails(tester, 'w-pride');
+        final button = find.byKey(const Key('open-hathitrust:hvd.hx66p3'));
+        await tester.ensureVisible(button);
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+        expect(env.urls.opened.last.toString(), 'https://babel.hathitrust.org/cgi/pt?id=hvd.hx66p3');
+      });
+    });
+
     testWidgets('explains how each book can be accessed', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await openDetails(tester, 'w-quijote');

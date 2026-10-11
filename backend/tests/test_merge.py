@@ -87,6 +87,30 @@ class TestPass1Identifiers:
         ])
         assert len(works) == 1
 
+    def test_the_placeholder_isbn_does_not_merge_unrelated_books(self):
+        """HathiTrust puts 9780000000002 on thousands of unrelated books."""
+        works = merge_books([
+            book("hathitrust", "a.1", "Geology of Utah", ["A One"], identifiers={"isbn": ["9780000000002"]}),
+            book("hathitrust", "b.1", "Poems of Spring", ["B Two"], identifiers={"isbn": ["0000000000", "9780000000002"]}),
+        ])
+        assert len(works) == 2
+
+    def test_volumes_of_one_hathitrust_record_merge_into_one_work(self):
+        """Same catalog record = same work, even with no ISBN, OCLC or author."""
+        works = merge_books([
+            book("hathitrust", "a.1", "Annual report", [], identifiers={"hathitrust": ["000045573"]}),
+            book("hathitrust", "a.2", "Annual report", [], identifiers={"hathitrust": ["000045573"]}),
+            book("hathitrust", "b.1", "Annual report", [], identifiers={"hathitrust": ["000099999"]}),
+        ])
+        assert sorted(len(w.books) for w in works) == [1, 2]
+
+    def test_a_hathitrust_record_number_is_not_an_oclc_number(self):
+        works = merge_books([
+            book("hathitrust", "a.1", "One", ["A"], identifiers={"hathitrust": ["12345"]}),
+            book("openlibrary", "OL1W", "Two", ["B"], identifiers={"oclc": ["12345"]}),
+        ])
+        assert len(works) == 2
+
     def test_identifier_matches_chain(self):
         a = book("openlibrary", "A", "One", ["X"], identifiers={"isbn": ["9780140430721"]})
         b = book("doab", "B", "Two", ["Y"], identifiers={"isbn": ["9780140430721"], "oclc": ["1"]})

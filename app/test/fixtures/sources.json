@@ -50,5 +50,18 @@
       "text"
     ],
     "in_app": false
+  },
+  {
+    "id": "hathitrust",
+    "name": "HathiTrust",
+    "description": "A partnership of research libraries with millions of digitized books; the app lists those anyone can read.",
+    "how_it_works": "The app searches a copy of HathiTrust's catalog. Each book opens in HathiTrust's reader in your web browser.",
+    "how_to_access": "Visit hathitrust.org to search the full collection. Reading public-domain books needs no account.",
+    "website_url": "https://www.hathitrust.org/",
+    "donation_url": "https://www.hathitrust.org/",
+    "formats": [
+      "text"
+    ],
+    "in_app": false
   }
 ]

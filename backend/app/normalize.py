@@ -148,8 +148,13 @@ def _isbn13_check(first12: str) -> str:
     return str((10 - total % 10) % 10)
 
 
+# HathiTrust puts this valid-looking number (and 0000000000, its ISBN-10 form) on thousands of unrelated books.
+PLACEHOLDER_ISBN = "9780000000002"
+
+
 def normalize_isbn(raw: str | None) -> str | None:
-    """Any valid ISBN-10 or ISBN-13 -> ISBN-13. Invalid input (bad check digit too) -> None."""
+    """Any valid ISBN-10 or ISBN-13 -> ISBN-13. Invalid input (bad check digit too) and the
+    placeholder ISBN -> None."""
     if not raw:
         return None
     text = re.sub(r"^\s*isbn[-:\s]*", "", raw, flags=re.I)
@@ -158,10 +163,12 @@ def normalize_isbn(raw: str | None) -> str | None:
         if not _isbn10_ok(text):
             return None
         first12 = "978" + text[:9]
-        return first12 + _isbn13_check(first12)
-    if re.fullmatch(r"97[89]\d{10}", text):
-        return text if _isbn13_check(text[:12]) == text[12] else None
-    return None
+        isbn = first12 + _isbn13_check(first12)
+    elif re.fullmatch(r"97[89]\d{10}", text):
+        isbn = text if _isbn13_check(text[:12]) == text[12] else None
+    else:
+        return None
+    return None if isbn == PLACEHOLDER_ISBN else isbn
 
 
 def normalize_oclc(raw: str | None) -> str | None:

@@ -29,14 +29,24 @@ def test_book_format_is_text_or_audio(bad):
 
 
 @pytest.mark.parametrize("bad", ["", "mystery"])
-def test_book_source_must_be_one_of_the_four_sources(bad):
+def test_book_source_must_be_one_of_the_five_sources(bad):
     with pytest.raises(ValidationError):
         make_book(source=bad)
 
 
-@pytest.mark.parametrize("source", ["gutenberg", "librivox", "doab", "openlibrary"])
+@pytest.mark.parametrize("source", ["gutenberg", "librivox", "doab", "openlibrary", "hathitrust"])
 def test_known_sources_are_accepted(source):
     assert make_book(source=source).source == source
+
+
+def test_hathitrust_volume_details_default_to_nothing():
+    book = make_book()
+    assert (book.volume, book.library, book.us_only) == (None, None, False)
+
+
+def test_hathitrust_volume_details_are_in_the_response():
+    data = make_book(source="hathitrust", volume="v.2", library="Harvard University", us_only=True).model_dump(mode="json")
+    assert (data["volume"], data["library"], data["us_only"]) == ("v.2", "Harvard University", True)
 
 
 def test_book_access_values():
@@ -138,7 +148,7 @@ def test_search_query_rejects_unknown_format_and_source():
     with pytest.raises(ValidationError):
         SearchQuery(q="x", format="video")
     with pytest.raises(ValidationError):
-        SearchQuery(q="x", sources=["hathitrust"])
+        SearchQuery(q="x", sources=["worldcat"])
 
 
 def test_search_query_rejects_an_empty_source_selection():

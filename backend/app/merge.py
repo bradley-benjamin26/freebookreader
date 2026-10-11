@@ -1,6 +1,6 @@
 """Data Merging rules (spec.md): unite books from different sources into works.
 
-Pass 1: a shared ISBN or OCLC number.  Pass 2: exact title and author.  Pass 3: fuzzy title and author.
+Pass 1: a shared ISBN, OCLC number or HathiTrust catalog record.  Pass 2: exact title and author.  Pass 3: fuzzy title and author.
 - Different languages never merge. A book with an unknown language merges only through pass 1.
 - Only authors count; narrators, translators and editors are ignored.
 - A book with no author never merges on title alone.
@@ -73,6 +73,8 @@ def merge_books(books: list[Book]) -> list[Work]:
 def _entry(book: Book, order: int) -> _Entry:
     ids = {("isbn", v) for v in map(normalize_isbn, book.identifiers.get("isbn", [])) if v}
     ids |= {("oclc", v) for v in map(normalize_oclc, book.identifiers.get("oclc", [])) if v}
+    # Volumes and copies of one HathiTrust catalog record are one work, whatever their authors and titles say.
+    ids |= {("hathitrust", v) for v in book.identifiers.get("hathitrust", []) if v}
     title = title_key(book.title)
     return _Entry(
         book=book, order=order, title=title,

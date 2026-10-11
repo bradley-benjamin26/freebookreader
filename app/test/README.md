@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-All 366 pass against `app/lib/` (2026-10-11).
+All 378 pass against `app/lib/` (2026-10-11).
 
 ```bash
 cd app
@@ -30,6 +30,11 @@ Change a test and this README together.
 - **Audio (#12, #18):** `AudioEngine.play` throws `AudioException`; `positionStream` carries the file (`AudioPosition`) and `statusStream` says playing/completed (`AudioStatus`). The controller ignores positions of other files, moves to the next chapter when one ends, and shows `audio-error` (live region) with `audio-retry` when playback fails. `FakeAudioEngine` has `failNext`, `emitStatus`, `emitPosition`, and replays its last position to new listeners, as just_audio does.
 - **Links (#22):** `LauncherUrlOpener` opens only `http`/`https` links with a host; others return false (`url_opener_test`). The pages do not yet tell the user.
 - **Headings and labels (#23):** the two Home section titles are headings; the language filter is named "Language" (`accessibility_test`).
+
+### HathiTrust (2026-10-11)
+
+- `hathitrust` is the fifth source: `sourceIds`, `sourceName`, the Home sentence, the filter chips and its About page (fixture `sources.json`). Tests that listed the four sources, or tapped three chips to leave one selected, include it.
+- `Book` has `volume`, `library` and `usOnly` (`models_test`). The details page (`details_page_test`, group "HathiTrust volumes") shows "Volume v.1 · Harvard University" on the edition line (no "eBook #": only Gutenberg numbers its books), says the book "opens in the HathiTrust reader in your web browser", marks a `usOnly` volume ("Public domain only in the United States: it may not open elsewhere."), and the book button opens the reader link through the URL opener. HathiTrust books are external, so the label is "View ... at HathiTrust" (`format_test`).
 
 ### ReaderEngine (2026-10-10)
 

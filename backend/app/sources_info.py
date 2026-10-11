@@ -96,6 +96,31 @@ SOURCES = [
         formats=["text"],
         in_app=False,
     ),
+    SourceInfo(
+        id="hathitrust",
+        name="HathiTrust",
+        description=(
+            "HathiTrust is a partnership of university and research libraries that keeps millions of "
+            "digitized books. This app lists only the volumes that anyone can read: books in the public "
+            "domain and books under an open license."),
+        how_it_works=(
+            "This app searches a copy of HathiTrust's catalog that is refreshed regularly, so searches are "
+            "fast and do not depend on HathiTrust being online. A book can have several volumes, for example "
+            "the parts of a set or copies from different libraries. Each is listed with its volume label and "
+            "the library that holds it. HathiTrust's reader is not part of this app: a book opens in the "
+            "HathiTrust reader in your web browser. Some volumes are in the public domain only in the "
+            "United States and may not open elsewhere; they are marked."),
+        how_to_access=(
+            "Visit hathitrust.org to search the full collection, including books you can only search inside. "
+            "Reading public-domain books needs no account. Downloading may need you to sign in with a "
+            "partner library."),
+        website_url="https://www.hathitrust.org/",
+        # HathiTrust is funded by its member libraries and has no donation page for the public (checked
+        # 2026-10-11), so this is its home page.
+        donation_url="https://www.hathitrust.org/",
+        formats=["text"],
+        in_app=False,
+    ),
 ]
 
 _BY_ID = {source.id: source for source in SOURCES}

@@ -16,7 +16,7 @@ uvicorn app.main:create_app --factory --port 8000
 ```
 
 Settings come from `FBR_*` environment variables: `FBR_GUTENDEX_URL`, `FBR_LIBRIVOX_URL`, `FBR_OPENLIBRARY_URL`,
-`FBR_DOAB_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
+`FBR_DOAB_URL`, `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`), `FBR_HATHITRUST_FILE_LIST_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
 default `*`) and `FBR_CONTACT`. The EPUB cache for the web reader uses `FBR_GUTENBERG_URL` (default
 `https://www.gutenberg.org`), `FBR_EPUB_CACHE_DIR` (default `backend/cache/epub`, ignored by git),
 `FBR_MAX_DOWNLOAD_MB` (200) and `FBR_EPUB_CACHE_MB` (2000). The `User-Agent` is built from the project's top-level `.env` (JSON:
@@ -36,6 +36,10 @@ Gutendex has its own regression tests (it is already built):
 | LibriVox search | `test_source_librivox.py` |
 | DOAB search (replaces OAPEN, 2026-10-10) | `test_source_doab.py` |
 | Open Library search | `test_source_openlibrary.py` |
+| HathiTrust: Hathifile rows -> volumes | `test_hathifile.py` |
+| HathiTrust: the local index and its search | `test_hathitrust_index.py` |
+| HathiTrust: nightly update from the Hathifiles | `test_hathitrust_update.py` |
+| HathiTrust search (source adapter) | `test_source_hathitrust.py` (+ `test_merge.py`, `test_reader.py`, `test_sources_info.py`, `test_config.py`) |
 | System that provides Project Gutenberg access is built and tested | `gutendex/books/tests.py`, `test_source_gutendex.py` |
 | Records merged into works by the Data Merging rules | `test_merge.py`, `test_normalize.py` |
 | Search across / select targets, filters, known-item search | `test_search_service.py` |
@@ -59,6 +63,10 @@ backend/app/
     librivox.py    LibriVoxSource(client, base_url)                        name "librivox"
     openlibrary.py OpenLibrarySource(client, base_url); .availability(isbn) -> Availability|None   name "openlibrary"
     doab.py        DoabSource(client, base_url); .parse_opensearch(xml), .parse_xoai(xml) (static)  name "doab"
+    hathitrust.py  HathiTrustSource(index: HathiIndex)   name "hathitrust"; HathiIndexMissing (not a SourceError)
+  hathifile.py     Volume, parse_line(line) -> (htid, Volume|None)|None, iter_changes(lines), clean_title, clean_author, reader_url
+  hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state); IndexState
+  hathitrust_update.py  plan_update(file_list, state) -> Plan; update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
   outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=4): search(SearchQuery) -> SearchResponse
@@ -88,6 +96,26 @@ queried in parallel threads, on one executor shared by all searches.
   "John Smith"/"Joan Smith", "Thomas Hardy"/"Thomas Harding" and "Mary Shelley"/"Mary W. Shelley" do not.
   A one-letter surname difference between two real people ("John Adams"/"John Addams") still merges.
 - **Different languages never merge, even with the same ISBN.**
+- **HathiTrust is searched in a local index, never live** (decision_hathitrust.md). `HathiIndex` is a SQLite file with
+  an FTS5 table over title and author (accents and case ignored, every word must match, words are quoted so search
+  syntax is plain text, a title word weighs 4 times an author word, stopwords like "the" and "of" are left out of a field that has other words: `TestStopwords`). It holds only rows with `access = allow` and
+  `bib_fmt = BK` (not serials, maps or music), so a daily file's 485,566 rows give 36,833 volumes. Search returns one
+  copy per catalog record and volume label (Harvard and the New York Public Library each holding the same book show
+  once; `v.1` and `v.2` both show), 20 a page, language by MARC code (`fre`). A missing index raises `HathiIndexMissing`
+  (not a `SourceError`, so no 24-hour outage; the response lists the source as skipped with reason `error`).
+- **The index is updated by `python -m app.hathitrust_update`** (`plan_update`). The first run builds from the newest
+  monthly file (1.2 GB, streamed and decompressed on the fly, built beside the old file and swapped in, so searches
+  keep working); later runs apply only the daily files after the last one, each in one transaction, so a failed
+  download leaves the index at the last good day. A volume whose row is now `deny` (or not a book) is removed. A new
+  monthly file or a gap in the daily files (the list keeps about 70 days) means a rebuild, which is also how volumes
+  HathiTrust removed leave: the daily files do not say.
+- **HathiTrust books link out.** Each book is one volume with `url` `https://babel.hathitrust.org/cgi/pt?id=<htid>`,
+  `volume` ("v.2"), `library` (name for the 40 most common library codes, else the code) and `us_only` (rights `pdus`).
+  Copies and volumes of one catalog record merge into one work through `identifiers.hathitrust` (= `ht_bib_key`), a new
+  pass-1 identifier next to ISBN and OCLC. Titles lose the part after ` / `; authors lose dates.
+- **The placeholder ISBN is not an ISBN**: `normalize_isbn` returns None for `9780000000002` (and `0000000000`, its
+  ISBN-10 form), which HathiTrust puts on unrelated books, so it never merges books and an ISBN search for it finds
+  nothing.
 - **Chapters are not books** (DOAB also lists chapters); deleted OAI records are skipped.
 - **DOAB search is OpenSearch, then one OAI `GetRecord` (xoai) per hit**, because DOAB's REST API rejects our IP.
   Stale search entries (`Untitled`, or `idDoesNotExist`) are skipped. If a lookup fails, the hit is kept with what

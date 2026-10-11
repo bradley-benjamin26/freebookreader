@@ -95,8 +95,15 @@ def test_unreadable_mime_types_are_ignored():
 
 
 def test_external_options_always_have_a_url():
-    for source in ("gutenberg", "librivox", "doab", "openlibrary"):
+    for source in ("gutenberg", "librivox", "doab", "openlibrary", "hathitrust"):
         assert reading_options(make_book(source=source)).url
+
+
+def test_hathitrust_always_links_to_its_reader():
+    """HathiTrust's reader is on babel.hathitrust.org; our IP is blocked there, so users open it themselves."""
+    url = "https://babel.hathitrust.org/cgi/pt?id=mdp.39015063531084"
+    options = reading_options(make_book(source="hathitrust", source_id="mdp.39015063531084", url=url))
+    assert options.mode == "external" and options.kind is None and options.url == url and options.publication is None
 
 
 class TestPublication:
@@ -117,7 +124,7 @@ class TestPublication:
         book = make_book(source="gutenberg", source_id="11", content={"text/html": GUTEN["html"]})
         assert reading_options(book).publication is None
 
-    @pytest.mark.parametrize("source", ["librivox", "doab", "openlibrary"])
+    @pytest.mark.parametrize("source", ["librivox", "doab", "openlibrary", "hathitrust"])
     def test_other_sources_have_none(self, source):
         book = make_book(source=source, source_id="11", content={"application/epub+zip": "https://x/b.epub"})
         assert reading_options(book).publication is None

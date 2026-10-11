@@ -223,7 +223,7 @@ void main() {
     testWidgets('offer every source, both formats and a language', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
-      for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary']) {
+      for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
         expect(find.byKey(Key('filter-source-$id')), findsOneWidget, reason: id);
       }
       expect(find.byKey(const Key('filter-format-all')), findsOneWidget);
@@ -244,7 +244,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
-      for (final id in ['gutenberg', 'doab', 'openlibrary']) {
+      for (final id in ['gutenberg', 'doab', 'openlibrary', 'hathitrust']) {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
       }
@@ -259,14 +259,14 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('filter-source-doab')));
       await tester.pumpAndSettle();
-      expect(env.api.queries.last.sources, unorderedEquals(['gutenberg', 'openlibrary']));
+      expect(env.api.queries.last.sources, unorderedEquals(['gutenberg', 'openlibrary', 'hathitrust']));
     });
 
     testWidgets('at least one source always stays selected', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
-      for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary']) {
+      for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
       }

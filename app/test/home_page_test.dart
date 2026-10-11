@@ -69,13 +69,18 @@ void main() {
     expect(find.byKey(const Key('results-page')), findsOneWidget);
   });
 
-  testWidgets('links to an About page for each of the four sources', (tester) async {
+  testWidgets('links to an About page for each of the five sources', (tester) async {
     await pumpApp(tester, await TestEnv.create());
-    for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary']) {
+    for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
       final link = find.byKey(Key('about-link-$id'));
       await tester.ensureVisible(link);
       expect(link, findsOneWidget, reason: id);
     }
+  });
+
+  testWidgets('names all five sources in its introduction', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    expect(find.textContaining('HathiTrust'), findsWidgets);
   });
 
   testWidgets('has no account, sign-in or personal-data UI yet', (tester) async {

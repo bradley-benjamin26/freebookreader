@@ -122,7 +122,7 @@ void main() {
       final sources = await api.sources();
       expect(seen.path, '/sources');
       expect(sources.map((s) => s.name),
-          ['Project Gutenberg', 'LibriVox', 'DOAB', 'Open Library']);
+          ['Project Gutenberg', 'LibriVox', 'DOAB', 'Open Library', 'HathiTrust']);
     });
 
     test('a failure becomes a SearchException', () async {

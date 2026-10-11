@@ -1,0 +1,911 @@
+{
+  "works": [
+    {
+      "id": "hathitrust:chi.097229556",
+      "title": "Les Misérables",
+      "authors": [
+        "Victor Hugo"
+      ],
+      "language": "fr",
+      "sources": [
+        "hathitrust"
+      ],
+      "source_ids": {
+        "hathitrust": [
+          "chi.097229556",
+          "chi.097229611",
+          "chi.097229679",
+          "cub.p104132701010",
+          "cub.p104132706001",
+          "cub.p104132706003",
+          "cub.p104132706004",
+          "cub.p104132706005",
+          "cub.p104132706006",
+          "mdp.39015011907063",
+          "mdp.39015011907071",
+          "uc1.a0000133017",
+          "uc1.a0000662411",
+          "uc1.a0000662429",
+          "uc1.a0000662437",
+          "uc1.a0000662445",
+          "uc1.a0000662452",
+          "uc1.a0000662460",
+          "uc1.a0000662478",
+          "uc1.a0000662486"
+        ]
+      },
+      "identifiers": {
+        "oclc": [
+          "16149860",
+          "215203662",
+          "7700142",
+          "926251936"
+        ],
+        "hathitrust": [
+          "001081485",
+          "001208312"
+        ]
+      },
+      "urls": [
+        "https://babel.hathitrust.org/cgi/pt?id=chi.097229556",
+        "https://babel.hathitrust.org/cgi/pt?id=chi.097229611",
+        "https://babel.hathitrust.org/cgi/pt?id=chi.097229679",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132701010",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706001",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706003",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706004",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706005",
+        "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706006",
+        "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907063",
+        "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907071",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000133017",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662411",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662429",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662437",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662445",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662452",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662460",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662478",
+        "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662486"
+      ],
+      "cover_url": null,
+      "formats": [
+        "text"
+      ],
+      "books": [
+        {
+          "source": "hathitrust",
+          "source_id": "chi.097229556",
+          "title": "Les Misérables",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "16149860"
+            ],
+            "hathitrust": [
+              "001081485"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229556",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.3",
+          "library": "University of Chicago",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229556",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "chi.097229611",
+          "title": "Les Misérables",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "16149860"
+            ],
+            "hathitrust": [
+              "001081485"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229611",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.4",
+          "library": "University of Chicago",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229611",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "chi.097229679",
+          "title": "Les Misérables",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "16149860"
+            ],
+            "hathitrust": [
+              "001081485"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229679",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.5",
+          "library": "University of Chicago",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229679",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132701010",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132701010",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.10",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132701010",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132706001",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706001",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.5",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706001",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132706003",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706003",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.4",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706003",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132706004",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706004",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.3",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706004",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132706005",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706005",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.2",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706005",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "cub.p104132706006",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706006",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.1",
+          "library": "University of Colorado Boulder",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=cub.p104132706006",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "mdp.39015011907063",
+          "title": "Les Misérables",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "16149860"
+            ],
+            "hathitrust": [
+              "001081485"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907063",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.1",
+          "library": "University of Michigan",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907063",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "mdp.39015011907071",
+          "title": "Les Misérables",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "16149860"
+            ],
+            "hathitrust": [
+              "001081485"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907071",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.2",
+          "library": "University of Michigan",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=mdp.39015011907071",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000133017",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000133017",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.01",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000133017",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662411",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662411",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.02",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662411",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662429",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662429",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.03",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662429",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662437",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662437",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.04",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662437",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662445",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662445",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.05",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662445",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662452",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662452",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.06",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662452",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662460",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662460",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.07",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662460",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662478",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662478",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.08",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662478",
+            "publication": null
+          }
+        },
+        {
+          "source": "hathitrust",
+          "source_id": "uc1.a0000662486",
+          "title": "Les misérables ...",
+          "authors": [
+            "Victor Hugo"
+          ],
+          "narrators": [],
+          "contributors": [],
+          "language": "fr",
+          "format": "text",
+          "pages": null,
+          "audio_seconds": null,
+          "identifiers": {
+            "oclc": [
+              "215203662",
+              "7700142",
+              "926251936"
+            ],
+            "hathitrust": [
+              "001208312"
+            ]
+          },
+          "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662486",
+          "cover_url": null,
+          "content": {},
+          "chapters": [],
+          "access": "open",
+          "release_date": null,
+          "last_updated": null,
+          "credits": null,
+          "original_publication": null,
+          "volume": "v.09",
+          "library": "University of California",
+          "us_only": false,
+          "reading": {
+            "mode": "external",
+            "kind": null,
+            "url": "https://babel.hathitrust.org/cgi/pt?id=uc1.a0000662486",
+            "publication": null
+          }
+        }
+      ]
+    }
+  ],
+  "unavailable_sources": [],
+  "skipped": []
+}

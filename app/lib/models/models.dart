@@ -93,6 +93,9 @@ class Book {
     this.lastUpdated,
     this.credits,
     this.originalPublication,
+    this.volume,
+    this.library,
+    this.usOnly = false,
   });
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
@@ -119,6 +122,9 @@ class Book {
         lastUpdated: _date(json['last_updated']),
         credits: json['credits'] as String?,
         originalPublication: json['original_publication'] as String?,
+        volume: json['volume'] as String?,
+        library: json['library'] as String?,
+        usOnly: (json['us_only'] as bool?) ?? false,
       );
 
   final String source;
@@ -148,6 +154,13 @@ class Book {
   final DateTime? lastUpdated;
   final String? credits;
   final String? originalPublication;
+
+  // HathiTrust: a catalog record has many volumes (copies, volumes of a set).
+  // [volume] is the label ("v.2"), [library] who holds it, and [usOnly] is true
+  // when the volume is public domain only in the United States.
+  final String? volume;
+  final String? library;
+  final bool usOnly;
 
   /// Unique across sources, e.g. `gutenberg:1342`. Bookmarks are stored under it.
   String get key => '$source:$sourceId';

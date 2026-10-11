@@ -18,6 +18,7 @@ void main() {
     'librivox': 'LibriVox',
     'doab': 'DOAB',
     'openlibrary': 'Open Library',
+    'hathitrust': 'HathiTrust',
   }.entries) {
     testWidgets('${entry.value}: shows what it is, how it works and how to access it',
         (tester) async {

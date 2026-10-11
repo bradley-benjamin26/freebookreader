@@ -37,7 +37,7 @@ class HomePage extends StatelessWidget {
                 BookSearchBar(onSearch: (field, text) => _search(context, field, text)),
                 const SizedBox(height: 8),
                 Text(
-                  'Find free books from Project Gutenberg, LibriVox, DOAB and Open Library.',
+                  'Find free books from Project Gutenberg, LibriVox, DOAB, Open Library and HathiTrust.',
                   style: text.bodyLarge,
                 ),
                 const SizedBox(height: 24),

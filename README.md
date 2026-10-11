@@ -6,7 +6,7 @@ Find and read free books from Project Gutenberg, LibriVox, DOAB (Directory of Op
 
 | Path | What |
 |---|---|
-| `backend/` | FastAPI service that searches all four sources and merges the results |
+| `backend/` | FastAPI service that searches all five sources and merges the results |
 | `app/` | Flutter app (Android, iOS, web) |
 | `gutendex/` | Local Gutendex (Django) for searching Project Gutenberg; vendored, see below |
 | `samples/` | Captured API responses |

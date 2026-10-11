@@ -8,7 +8,7 @@ import pytest
 
 from app.sources_info import SOURCES, get_source_info
 
-IDS = ["doab", "gutenberg", "librivox", "openlibrary"]
+IDS = ["doab", "gutenberg", "hathitrust", "librivox", "openlibrary"]
 
 
 def test_there_is_one_entry_per_source():
@@ -17,7 +17,7 @@ def test_there_is_one_entry_per_source():
 
 @pytest.mark.parametrize("source_id, name", [
     ("gutenberg", "Project Gutenberg"), ("librivox", "LibriVox"),
-    ("doab", "DOAB"), ("openlibrary", "Open Library"),
+    ("doab", "DOAB"), ("openlibrary", "Open Library"), ("hathitrust", "HathiTrust"),
 ])
 def test_display_names(source_id, name):
     assert get_source_info(source_id).name == name
@@ -45,6 +45,7 @@ def test_formats_offered_by_each_source():
     assert get_source_info("gutenberg").formats == ["text"]
     assert get_source_info("doab").formats == ["text"]
     assert get_source_info("openlibrary").formats == ["text"]
+    assert get_source_info("hathitrust").formats == ["text"]
 
 
 def test_in_app_reading_flags_match_the_reader_rules():
@@ -52,8 +53,16 @@ def test_in_app_reading_flags_match_the_reader_rules():
     assert get_source_info("doab").in_app is True        # its PDFs
     assert get_source_info("librivox").in_app is True
     assert get_source_info("openlibrary").in_app is False
+    assert get_source_info("hathitrust").in_app is False     # a link to HathiTrust's reader
 
 
 def test_unknown_source_raises_key_error():
     with pytest.raises(KeyError):
-        get_source_info("hathitrust")
+        get_source_info("nonexistent")
+
+
+def test_hathitrust_page_says_it_links_out_and_which_books_it_lists():
+    info = get_source_info("hathitrust")
+    assert "reader" in info.how_it_works.lower()
+    assert "public domain" in (info.description + info.how_it_works).lower()
+    assert "united states" in info.how_it_works.lower()      # volumes that may open only there

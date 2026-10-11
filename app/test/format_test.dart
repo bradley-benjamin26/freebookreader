@@ -40,11 +40,12 @@ void main() {
   });
 
   group('source names', () {
-    test('display names for the four sources', () {
+    test('display names for the five sources', () {
       expect(sourceName('gutenberg'), 'Project Gutenberg');
       expect(sourceName('librivox'), 'LibriVox');
       expect(sourceName('doab'), 'DOAB');
       expect(sourceName('openlibrary'), 'Open Library');
+      expect(sourceName('hathitrust'), 'HathiTrust');
     });
   });
 
@@ -66,12 +67,16 @@ void main() {
       expect(actionLabel(book('openlibrary', mode: ReadingMode.external)),
           'View Emma by Jane Austen at Open Library');
     });
+    test('a HathiTrust volume opens in HathiTrust\'s reader', () {
+      expect(actionLabel(book('hathitrust', mode: ReadingMode.external)),
+          'View Emma by Jane Austen at HathiTrust');
+    });
     test('borrowable at the source', () {
       expect(actionLabel(book('openlibrary', access: Access.borrow, mode: ReadingMode.external)),
           'Borrow Emma by Jane Austen at Open Library');
     });
     test('labels always include the title so each one is unique to a screen reader', () {
-      for (final source in ['gutenberg', 'doab', 'openlibrary']) {
+      for (final source in ['gutenberg', 'doab', 'openlibrary', 'hathitrust']) {
         expect(actionLabel(book(source)), contains('Emma'));
       }
     });

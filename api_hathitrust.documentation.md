@@ -156,6 +156,58 @@ Sample: [samples/hathitrust-oai-identify.xml](samples/hathitrust-oai-identify.xm
 
 The reader for volume `<htid>` is `https://babel.hathitrust.org/cgi/pt?id=<htid>` (add `&seq=<page>` for a page). It is the only place HathiTrust offers reading, search inside the book, and downloads. According to the project owner, some books can be downloaded only by a signed-in user. We have not verified this; the host is blocked from our IP.
 
+## How this app uses it (built 2026-10-11)
+
+The backend does not call HathiTrust when you search. `python -m app.hathitrust_update` (run nightly) reads the file list, builds a SQLite full-text index from the newest monthly file the first time, and afterwards applies the daily update files; a new monthly file or a gap in the daily files means a rebuild. Only `access = allow` rows with `bib_fmt = BK` are kept. See [decision_hathitrust.md](decision_hathitrust.md) for the numbers measured on the real files (5,353,556 volumes, 1.65 GB, 4 min 10 s to build).
+
+```bash
+cd backend && source venv/bin/activate
+python -m app.hathitrust_update          # first run: downloads 1.2 GB; later runs: a few MB
+# HathiTrust is then searched like the other sources:
+uvicorn app.main:create_app --factory --port 8000
+curl -s "http://localhost:8000/search?q=Les+Mis%C3%A9rables&language=fr&sources=hathitrust" | python3 -m json.tool
+```
+
+Real response (2026-10-11, trimmed to the first of 20 books; whole response: [samples/hathitrust-backend-search.json](samples/hathitrust-backend-search.json)):
+
+```json
+{
+  "works": [{
+    "id": "hathitrust:chi.097229556",
+    "title": "Les Misérables",
+    "authors": ["Victor Hugo"],
+    "language": "fr",
+    "sources": ["hathitrust"],
+    "identifiers": {"oclc": ["16149860", "215203662", "7700142", "926251936"], "hathitrust": ["001081485", "001208312"]},
+    "formats": ["text"],
+    "books": [{
+      "source": "hathitrust",
+      "source_id": "chi.097229556",
+      "title": "Les Misérables",
+      "authors": ["Victor Hugo"],
+      "language": "fr",
+      "format": "text",
+      "identifiers": {"oclc": ["16149860"], "hathitrust": ["001081485"]},
+      "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229556",
+      "cover_url": null,
+      "access": "open",
+      "volume": "v.3",
+      "library": "University of Chicago",
+      "us_only": false,
+      "reading": {"mode": "external", "kind": null, "url": "https://babel.hathitrust.org/cgi/pt?id=chi.097229556", "publication": null}
+    }]
+  }],
+  "unavailable_sources": [],
+  "skipped": []
+}
+```
+
+* **Fields we add to a book:** `volume` (the Hathifile `description`), `library` (the holding library; the 40 most common codes are named, other codes are shown as they are) and `us_only` (rights `pdus`).
+* **If the index is missing,** the source is skipped for that search with reason `error` and is not put in a 24-hour outage; build it and the next search works.
+* **A search made only of the most common words** ("the of and") takes 5–6 s; ordinary searches take under 150 ms. Our index search leaves out stopwords ("the", "of", "and", "de", "der", ...) when a field has other words, so only a search made entirely of them is slow.
+* **FTS5:** Python's `sqlite3` must have it.
+* **Fields not used:** `issn`, `lccn`, `imprint`, the dates, the place and the provenance columns.
+
 ## Limitations and notes
 
 * **A book is a volume.** One catalog record (`ht_bib_key`) can have many volumes: copies from different libraries, and volumes of a set (`description` / `enumcron`). A work in our app will have several HathiTrust books; show the volume label and holding library so they can be told apart.

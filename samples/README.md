@@ -23,6 +23,8 @@ Captured 2026-10-10 with curl. Real responses, unedited.
 | hathitrust-bib-brief.json | HathiTrust Bibliographic API `https://catalog.hathitrust.org/api/volumes/brief/oclc/2686466.json` (2026-10-11; a public-domain volume) |
 | hathitrust-bib-brief-not-viewable.json | `.../brief/oclc/424023.json` (2026-10-11; two search-only volumes) |
 | hathitrust-hathifile-rows.tsv | Line 1: the column names from `hathi_field_list.txt`. Then 2 `pd`/`allow` rows from `hathi_upd_20261010.txt.gz` (the real files have no header row) |
+| hathitrust-hathifile-sample.tsv | 16 real lines (no header) from `hathi_upd_20261011.txt.gz` (2026-10-11), chosen for tests: Dickens, Austen and Goethe volumes, two copies of one record, a `pdus` row, a `cc-by-4.0` row with ISBNs, a blank language, a `deny` row and a serial (`SE`) |
+| hathitrust-backend-search.json | Our backend: `GET /search?q=Les Misérables&language=fr&sources=hathitrust` against an index built from the real Hathifiles (2026-10-11); the response of this app, not of HathiTrust |
 | hathitrust-oai-identify.xml | `https://oai.hathitrust.org/?verb=Identify` (2026-10-11) |
 
 ## Not captured

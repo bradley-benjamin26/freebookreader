@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, computed_field, field_serializer, field_v
 
 from app.normalize import to_language_code
 
-SourceName = Literal["gutenberg", "librivox", "doab", "openlibrary"]
+SourceName = Literal["gutenberg", "librivox", "doab", "openlibrary", "hathitrust"]
 Format = Literal["text", "audio"]
 # How a book can be had: freely, by borrowing, for print-disabled readers only, or not at all.
 Access = Literal["open", "borrow", "print_disabled", "none"]
@@ -61,6 +61,10 @@ class Book(BaseModel):
     last_updated: Optional[date] = None                     # None when not changed since release
     credits: Optional[str] = None                           # who produced it; one credit per line
     original_publication: Optional[str] = None              # e.g. "Budapest: Athenaeum, 1926."
+    # HathiTrust: a record has many volumes (copies, volumes of a set); these tell them apart.
+    volume: Optional[str] = None                            # e.g. "v.2"
+    library: Optional[str] = None                           # who holds the volume, e.g. "Harvard University"
+    us_only: bool = False                                   # public domain only in the United States
 
     @field_serializer("identifiers")
     def _serialize_identifiers(self, identifiers):

@@ -1,4 +1,4 @@
-"""Settings from the environment (FBR_* variables) and wiring of the four-source search service."""
+"""Settings from the environment (FBR_* variables) and wiring of the five-source search service."""
 import json
 import os
 from dataclasses import dataclass
@@ -8,11 +8,13 @@ from typing import Mapping
 
 import httpx
 
+from app.hathitrust_index import HathiIndex
 from app.outage import OutageTracker
 from app.publications import GutendexCatalog, PublicationStore
 from app.search import SearchService
 from app.sources.doab import DoabSource
 from app.sources.gutendex import GutendexSource
+from app.sources.hathitrust import HathiTrustSource
 from app.sources.librivox import LibriVoxSource
 from app.sources.openlibrary import OpenLibrarySource
 
@@ -37,6 +39,9 @@ class Settings:
     librivox_url: str = "https://librivox.org"
     openlibrary_url: str = "https://openlibrary.org"
     doab_url: str = "https://directory.doabooks.org"
+    # HathiTrust is searched in a local index built from its Hathifiles (app/hathitrust_update.py).
+    hathitrust_index: Path = Path(__file__).resolve().parents[1] / "cache" / "hathitrust.sqlite"
+    hathitrust_file_list_url: str = "https://www.hathitrust.org/files/hathifiles/hathi_file_list.json"
     # EPUBs for the web reader (app/publications.py).
     gutenberg_url: str = "https://www.gutenberg.org"
     epub_cache_dir: Path = Path(__file__).resolve().parents[1] / "cache" / "epub"
@@ -71,6 +76,8 @@ class Settings:
             librivox_url=get("LIBRIVOX_URL", cls.librivox_url),
             openlibrary_url=get("OPENLIBRARY_URL", cls.openlibrary_url),
             doab_url=get("DOAB_URL", cls.doab_url),
+            hathitrust_index=Path(get("HATHITRUST_INDEX", cls.hathitrust_index)),
+            hathitrust_file_list_url=get("HATHITRUST_FILE_LIST_URL", cls.hathitrust_file_list_url),
             gutenberg_url=get("GUTENBERG_URL", cls.gutenberg_url),
             epub_cache_dir=Path(get("EPUB_CACHE_DIR", cls.epub_cache_dir)),
             max_download_mb=_number(get("MAX_DOWNLOAD_MB", cls.max_download_mb)),
@@ -110,6 +117,7 @@ def build_search_service(settings: Settings, client: httpx.Client) -> SearchServ
         LibriVoxSource(client=client, base_url=settings.librivox_url),
         OpenLibrarySource(client=client, base_url=settings.openlibrary_url),
         DoabSource(client=client, base_url=settings.doab_url),
+        HathiTrustSource(HathiIndex(settings.hathitrust_index)),
     ]
     outage = OutageTracker(cooldown=timedelta(hours=settings.outage_cooldown_hours))
     return SearchService(sources=sources, outage=outage, timeout_seconds=settings.search_timeout_seconds)

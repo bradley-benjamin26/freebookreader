@@ -42,6 +42,36 @@ void main() {
     });
   });
 
+  group('Book (HathiTrust volume details)', () {
+    Map<String, dynamic> hathi([Map<String, dynamic> extra = const {}]) => {
+          'source': 'hathitrust',
+          'source_id': 'mdp.39015010564923',
+          'title': 'Goethes sämtliche werke',
+          'authors': ['Johann Wolfgang von Goethe'],
+          'language': 'de',
+          'format': 'text',
+          'url': 'https://babel.hathitrust.org/cgi/pt?id=mdp.39015010564923',
+          'access': 'open',
+          'reading': {'mode': 'external', 'kind': null, 'url': 'https://babel.hathitrust.org/cgi/pt?id=mdp.39015010564923'},
+          ...extra,
+        };
+
+    test('reads the volume label, the library and the United States note', () {
+      final book = Book.fromJson(hathi({'volume': 'v.2', 'library': 'University of Michigan', 'us_only': true}));
+      expect(book.volume, 'v.2');
+      expect(book.library, 'University of Michigan');
+      expect(book.usOnly, isTrue);
+    });
+
+    test('other books have none', () {
+      final book = Book.fromJson(hathi());
+      expect(book.volume, isNull);
+      expect(book.library, isNull);
+      expect(book.usOnly, isFalse);
+      expect(response.works.first.books.first.usOnly, isFalse);
+    });
+  });
+
   group('Work', () {
     test('has the fields from spec.md', () {
       final work = response.works.first;
@@ -209,7 +239,7 @@ void main() {
       final sources = (loadJson('sources.json') as List)
           .map((j) => SourceInfo.fromJson(j as Map<String, dynamic>))
           .toList();
-      expect(sources.map((s) => s.id), ['gutenberg', 'librivox', 'doab', 'openlibrary']);
+      expect(sources.map((s) => s.id), ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']);
       final librivox = sources[1];
       expect(librivox.name, 'LibriVox');
       expect(librivox.formats, ['audio']);

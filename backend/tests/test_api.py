@@ -136,7 +136,7 @@ class TestSearchEndpoint:
         {},                                   # nothing to search for
         {"q": "   "},
         {"q": "x", "format": "video"},
-        {"q": "x", "sources": "hathitrust"},
+        {"q": "x", "sources": "worldcat"},
         {"q": "x", "sources": ","},           # names no source at all
         {"q": "x", "sources": " , "},
         {"q": "x", "page": 0},
@@ -164,9 +164,9 @@ class TestSearchEndpoint:
 
 
 class TestSourcesEndpoint:
-    def test_lists_the_four_sources_for_the_about_pages(self, client):
+    def test_lists_the_five_sources_for_the_about_pages(self, client):
         body = client.get("/sources").json()
-        assert sorted(s["id"] for s in body) == ["doab", "gutenberg", "librivox", "openlibrary"]
+        assert sorted(s["id"] for s in body) == ["doab", "gutenberg", "hathitrust", "librivox", "openlibrary"]
         for source in body:
             assert {"id", "name", "description", "how_it_works", "how_to_access",
                     "website_url", "donation_url", "formats", "in_app"} <= set(source)

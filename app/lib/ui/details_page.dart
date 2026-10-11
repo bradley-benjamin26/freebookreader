@@ -114,6 +114,8 @@ String _accessNote(Book book) {
     Access.borrow => 'Borrow it from $source. You need a free account there.',
     Access.printDisabled => 'Available at $source to people with a print disability.',
     Access.none => 'Listed at $source, which has no free copy to read.',
+    Access.open when book.source == 'hathitrust' =>
+      'Opens in the HathiTrust reader in your web browser.',
     Access.open => 'Read it free at $source.',
   };
 }
@@ -141,6 +143,8 @@ class _BookCard extends StatelessWidget {
       if (book.source == 'gutenberg') 'eBook #${book.sourceId}',
       if (released != null) 'Released $released',
       if (updated != null) 'Last updated $updated',
+      if (book.volume != null) 'Volume ${book.volume}',
+      ?book.library,
     ].join(' · ');
     return Card(
       margin: const EdgeInsets.only(top: 12),
@@ -158,6 +162,11 @@ class _BookCard extends StatelessWidget {
             if (book.credits != null) Text('Credits: ${book.credits}', style: text.bodySmall),
             const SizedBox(height: 4),
             Text(_accessNote(book), style: text.bodyMedium),
+            if (book.usOnly)
+              Text(
+                'Public domain only in the United States: it may not open elsewhere.',
+                style: text.bodyMedium,
+              ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

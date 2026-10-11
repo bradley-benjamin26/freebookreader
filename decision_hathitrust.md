@@ -1,6 +1,6 @@
 # Decision: HathiTrust
 
-Status: **decided 2026-10-11** for search and for the first version of reading. **Not built.** There are no tests yet; per the test-first rule they come before the code. Facts come from curl tests on 2026-10-11 (see [api_hathitrust.documentation.md](api_hathitrust.documentation.md)).
+Status: **decided 2026-10-11** and **built 2026-10-11** for search and for the first version of reading (link out). The in-app reader (step 6) is not built. Tests came first (`test_hathifile.py`, `test_hathitrust_index.py`, `test_hathitrust_update.py`, `test_source_hathitrust.py`, plus additions to the merge, reader, config, info and app tests). Facts come from curl tests on 2026-10-11 (see [api_hathitrust.documentation.md](api_hathitrust.documentation.md)).
 
 ## Background
 
@@ -31,15 +31,45 @@ HathiTrust was left out of the first version because it has no search API ([spec
 3. In a WebView on a phone, check that the reader works, that a user can sign in, and that screen readers (VoiceOver, TalkBack) can use it. This matters most because the spec requires WCAG 2.2 AA, and we cannot change their reader. If it fails, keep linking out and say so on the About page.
 4. From the final server, retest whether the `babel` host is still blocked; if so, ask support@hathitrust.org to allow the IP. (Our app does not need this if the user's device loads the reader.)
 
+## Built (2026-10-11)
+
+* `backend/app/hathifile.py` reads a line; `hathitrust_index.py` is the SQLite file with full-text search; `hathitrust_update.py` is the nightly job (`python -m app.hathitrust_update`); `sources/hathitrust.py` is the source in `/search`. Settings: `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`, ignored by git) and `FBR_HATHITRUST_FILE_LIST_URL`.
+* The index keeps `access = allow` **and** `bib_fmt = BK` (books). A daily file has 485,566 rows: 328,389 are `allow`, but 291,489 of those are serials (`SE`, journals and government series), so only 36,833 are books.
+* The Flutter app lists HathiTrust as a fifth source: filter chip, About page, and on the details page the volume label, library and the United States note. The book button opens the reader in the browser.
+
+## Measured (2026-10-11, the real files)
+
+Run of `python -m app.hathitrust_update` from nothing: the full file of 2026-10-01 (1.2 GB) and the 11 daily files since, **4 min 10 s** on a laptop, mostly the full file (about 3.5 min). A second run found nothing to do.
+
+| | |
+|---|---|
+| Volumes in the index | **5,353,556** (3,336,110 catalog records; 4,419,561 distinct record and volume-label pairs) |
+| Index file | **1.65 GB** |
+| Rights | `pd` 3,850,934 (72%), `pdus` 1,445,815 (27%), the rest (`cc-*`, `und-world`, ...) about 1% |
+| Languages | English 60%, German 11%, French 9%, Spanish 3.5%, Italian 2.5%, Latin 2.3%, no language 1.8%, Japanese 1.5%, Chinese 1.5%, Russian 1.3% |
+| No author | 770,594 (14%) |
+| Rows with an ISBN | 163,320 (3%): searching HathiTrust by ISBN finds few books |
+| Search time | 18–150 ms for a title and author; "history of the united states" 1 s; **a search made only of the most common words ("the of and") 5–6 s** |
+
+## Resolved questions
+
+* **US-only volumes:** shown, with the note "Public domain only in the United States: it may not open elsewhere." (`us_only`, from rights `pdus`). 27% of the volumes are `pdus`, so leaving them out would have dropped a quarter of the collection.
+* **Which volume is "the book":** one book per volume, but a catalog record with several copies that have the same volume label (for example Harvard and the New York Public Library both holding one book) is shown once, the copy with the first htid. Volumes with different labels all show. 5.35 M volumes become 4.42 M listed books.
+* **Merging:** volumes of one catalog record merge into one work through the new identifier `hathitrust` (= `ht_bib_key`), then through shared OCLC numbers and ISBNs like the other sources. `normalize_isbn` returns None for the fake ISBN `9780000000002` (and its ISBN-10 form `0000000000`), so it neither merges nor can be searched for. Titles lose the part after ` / `, `, by ...` or `; by ...`; authors lose dates ("Austen, Jane, 1775-1817." becomes "Jane Austen").
+* **Language filter:** MARC code in the index (`fre`), mapped to ISO 639-1 in the book. A language outside `normalize.py`'s table of 38 has no ISO code, so the book's language shows as unknown and the language filter cannot select it (the filter only accepts languages in the table). This is the real language filter that DOAB lacks.
+* **Index size and engine:** SQLite with FTS5, 1.65 GB; no server needed. Postgres was not needed.
+* **Removed volumes:** the daily files do not say. A new monthly file triggers a full rebuild (built beside the old file and swapped in), so removed volumes leave within a month. A volume whose row turns `deny` is removed the same day.
+
 ## Open questions
 
-* **US-only volumes.** `pdus` rows (public domain in the US only; 12,222 of 42,085 `allow` rows in the 2026-10-10 update file) may be search-only outside the US, and the `access` column does not say so. Options: show them with a note ("may be available only in the United States"), or leave them out. We cannot tell where a user is without collecting data. Recommendation: show them with the note.
-* **Which volume is "the book".** A catalog record has many volumes (copies and volumes of a set). Proposal: one `book` per volume, grouped under the work, showing the volume label and holding library like the Gutenberg eBook cards. A work with 40 copies of one edition would be noisy; consider showing one copy per record and the rest on request.
-* **Merging.** Hathifile rows carry ISBN and OCLC numbers, so they can merge by ID. Many ISBNs are fake (`9780000000002` appears on unrelated books). The ID pass must ignore it, as it already ignores bad check digits. Author strings are MARC style ("Austen, Jane, 1775-1817."); titles include "/ by …". Both need normalizing first.
-* **Language filter.** The file gives MARC 3-letter codes; map them to ISO 639-1. This is the real language filter that DOAB lacks.
-* **Index size and engine.** Not measured: we did not download the full file. Plan to count the `allow` rows first. Postgres (already used by Gutendex) or SQLite FTS5 are candidates. Decide after the count.
-* **Removed volumes.** The file list has no deletion file; how removals appear in the update files is unknown. A monthly rebuild from the full file would clean them up.
+* **One work, many books.** A search for "Great Expectations" by Dickens returns one work with 20 HathiTrust books on page 1 (different libraries' editions of the novel); HathiTrust holds far more. It is correct but long. Options: show the first few and "show more", or one book per library, or rank volumes with a label last. Not decided.
+* **Common-word searches.** A query made only of very common words takes 5–6 s (under the 12 s limit, but it uses a thread for that long). Done 2026-10-11: `HathiIndex.search` drops stopwords (`_STOPWORDS` in `hathitrust_index.py`: English articles and prepositions, plus the French, German, Spanish and Italian articles) from a field when it has any other word, so "the time machine" searches "time machine". A field made only of stopwords ("the of and") keeps them and is still slow, since there is nothing else to search. Tested on the sample index only; the 1.65 GB index is not built on this machine, so the new timing is unmeasured.
+* **Titles of multi-volume sets.** Volume labels are shown ("v.2"), but the title of a set's volume is the set's title ("The writings of Charles Dickens"); the individual novel in a volume is not searchable.
+* **Donation link.** HathiTrust is funded by its member libraries and has no public donation page that we could find (2026-10-11); the About page's donation link is its home page. Ask the project owner.
+* **Mojibake.** A few titles in the file are already mis-encoded (Japanese text shown as `ã\x82\x84...`). We show them as given.
+* **Jobs.** Nothing runs `hathitrust_update` yet. It needs a nightly schedule on the server (cron or similar) and about 2 GB of disk.
+* **Python needs FTS5.** The `sqlite3` module of the Python used must be built with FTS5 (macOS and Debian builds are; if a server's is not, the index cannot be built).
 
-## Effect on the tests and milestones
+## Tests
 
-New tests are needed before any code (and in their READMEs): a Hathifile parser, the `allow` filter, the update/rebuild job, the language-code mapping, the source adapter in `/search`, the merge rules for fake ISBNs, and the app's link-out. These are listed as milestones in [spec.md](spec.md).
+The tests that came first are listed in [backend/tests/README.md](backend/tests/README.md) (HathiTrust rows in the milestone table) and [app/test/README.md](app/test/README.md). Real rows for them are in [samples/hathitrust-hathifile-sample.tsv](samples/hathitrust-hathifile-sample.tsv). The in-app reader (step 6) has no tests yet.

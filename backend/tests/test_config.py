@@ -1,4 +1,4 @@
-"""Wiring: settings from the environment and the four-source search service."""
+"""Wiring: settings from the environment and the five-source search service."""
 import json
 
 import httpx
@@ -13,6 +13,9 @@ def test_defaults():
     assert settings.librivox_url == "https://librivox.org"
     assert settings.openlibrary_url == "https://openlibrary.org"
     assert settings.doab_url == "https://directory.doabooks.org"
+    assert settings.hathitrust_index.name == "hathitrust.sqlite"
+    assert settings.hathitrust_index.parent.name == "cache"
+    assert settings.hathitrust_file_list_url == "https://www.hathitrust.org/files/hathifiles/hathi_file_list.json"
     assert settings.search_timeout_seconds == 12
     assert settings.max_concurrent_searches == 20
     assert settings.outage_cooldown_hours == 24
@@ -64,10 +67,24 @@ class TestEnvFile:
         assert client.headers["User-Agent"] == "FreeBookReader/0.1 (someone@example.org)"
 
 
-def test_service_has_all_four_sources():
+def test_service_has_all_five_sources():
     service = build_search_service(Settings.from_env({}), client=httpx.Client())
-    assert sorted(s.name for s in service.sources) == ["doab", "gutenberg", "librivox", "openlibrary"]
+    assert sorted(s.name for s in service.sources) == ["doab", "gutenberg", "hathitrust", "librivox", "openlibrary"]
     assert service.timeout_seconds == 12
+
+
+def test_hathitrust_settings_come_from_the_environment():
+    settings = Settings.from_env({"FBR_HATHITRUST_INDEX": "/data/hathi.sqlite",
+                                  "FBR_HATHITRUST_FILE_LIST_URL": "https://files.test/list.json"})
+    assert str(settings.hathitrust_index) == "/data/hathi.sqlite"
+    assert settings.hathitrust_file_list_url == "https://files.test/list.json"
+
+
+def test_the_hathitrust_source_reads_the_configured_index(tmp_path):
+    settings = Settings.from_env({"FBR_HATHITRUST_INDEX": str(tmp_path / "h.sqlite")})
+    service = build_search_service(settings, client=httpx.Client())
+    source = next(s for s in service.sources if s.name == "hathitrust")
+    assert source.index.path == tmp_path / "h.sqlite"
 
 
 def test_service_uses_the_configured_gutendex_url(recorder):

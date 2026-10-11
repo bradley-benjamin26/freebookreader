@@ -152,6 +152,15 @@ class TestIsbn:
     def test_invalid_isbns_are_none(self, raw):
         assert normalize_isbn(raw) is None
 
+    @pytest.mark.parametrize("raw", [
+        "9780000000002",        # on unrelated HathiTrust books; its check digit is valid
+        "0000000000",           # the same number as an ISBN-10
+        "000000000061rub",
+        "0-00-000000-0",
+    ])
+    def test_the_placeholder_isbn_is_not_an_isbn(self, raw):
+        assert normalize_isbn(raw) is None
+
 
 class TestOclc:
     @pytest.mark.parametrize("raw, expected", [
