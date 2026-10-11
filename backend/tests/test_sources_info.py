@@ -30,7 +30,16 @@ def test_every_page_has_the_required_content(source_id):
     assert len(info.how_it_works) > 40          # how it works in this app
     assert len(info.how_to_access) > 40         # how to use it directly
     assert info.website_url.startswith("https://")
-    assert info.donation_url.startswith("https://")
+    if info.donation_url is not None:           # HathiTrust has none
+        assert info.donation_url.startswith("https://")
+
+
+def test_only_hathitrust_has_no_donation_link():
+    """HathiTrust is funded by its member libraries and takes no public donations: the About page shows
+    only its website (user decision 2026-10-11)."""
+    assert get_source_info("hathitrust").donation_url is None
+    assert get_source_info("hathitrust").website_url == "https://www.hathitrust.org/"
+    assert [s for s in IDS if get_source_info(s).donation_url is None] == ["hathitrust"]
 
 
 @pytest.mark.parametrize("source_id", IDS)

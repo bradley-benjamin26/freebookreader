@@ -58,7 +58,7 @@
     "how_it_works": "The app searches a copy of HathiTrust's catalog. Each book opens in HathiTrust's reader in your web browser.",
     "how_to_access": "Visit hathitrust.org to search the full collection. Reading public-domain books needs no account.",
     "website_url": "https://www.hathitrust.org/",
-    "donation_url": "https://www.hathitrust.org/",
+    "donation_url": null,
     "formats": [
       "text"
     ],

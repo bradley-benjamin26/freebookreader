@@ -1,5 +1,5 @@
 // Each source has a page saying what it is and how it works, how to use it
-// normally, and a donation button. (Usability testing of these pages is manual.)
+// normally, and a donation button (except HathiTrust, which takes no donations). (Usability testing of these pages is manual.)
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,6 +32,8 @@ void main() {
       expect(find.byKey(const Key('about-how-to-access')), findsOneWidget);
     });
 
+    if (entry.key == 'hathitrust') continue;      // no donation link: see the test below
+
     testWidgets('${entry.value}: has a donate button', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
@@ -47,6 +49,19 @@ void main() {
           env.api.sourceInfos.firstWhere((s) => s.id == entry.key).donationUrl);
     });
   }
+
+  testWidgets('HathiTrust has no donate button, only a link to its home page', (tester) async {
+    final env = await TestEnv.create();
+    await pumpApp(tester, env);
+    await openAbout(tester, 'hathitrust');
+    expect(find.byKey(const Key('donate')), findsNothing);
+    expect(find.textContaining('Donate'), findsNothing);
+    final visit = find.byKey(const Key('visit-website'));
+    await tester.ensureVisible(visit);
+    await tester.tap(visit);
+    await tester.pumpAndSettle();
+    expect(env.urls.opened.single.toString(), 'https://www.hathitrust.org/');
+  });
 
   testWidgets('has a link to the source website', (tester) async {
     final env = await TestEnv.create();

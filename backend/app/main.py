@@ -10,6 +10,7 @@ from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from pydantic import ValidationError
 
 from app.config import Settings, build_http_client, build_publication_store, build_search_service
@@ -22,6 +23,8 @@ from app.sources_info import SOURCES, SourceInfo
 
 # Book files come from third parties: opened directly, they must not run scripts on the API's origin.
 # Readium builds its own documents from the fetched text, so this does not affect the reader.
+GZIP_MINIMUM_BYTES = 1000
+GZIP_LEVEL = 6   # 9 costs twice the CPU for a few percent
 BOOK_FILE_HEADERS = {"Content-Security-Policy": "sandbox", "X-Content-Type-Options": "nosniff",
                      "Cache-Control": "public, max-age=86400"}
 
@@ -39,6 +42,9 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
     app = FastAPI(title="Free Book Reader API", version="0.1.0")
     app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins),
                        allow_methods=["GET"], allow_headers=["*"])
+    # A search with a few audiobooks is 100 KB of repetitive JSON; gzip makes it about a tenth. Only for
+    # clients that ask (browsers and Dart's http always do). Images and other compressed files are skipped.
+    app.add_middleware(GZipMiddleware, minimum_size=GZIP_MINIMUM_BYTES, compresslevel=GZIP_LEVEL)
 
     @app.get("/health")
     def health() -> dict:

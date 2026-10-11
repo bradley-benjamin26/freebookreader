@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-All 378 pass against `app/lib/` (2026-10-11).
+All 423 pass against `app/lib/` (2026-10-11).
 
 ```bash
 cd app
@@ -9,7 +9,7 @@ flutter test                       # everything
 flutter test test/reader_test.dart
 ```
 
-The reader page talks to a `ReaderEngine` (see [decision_reader.md](../../decision_reader.md)). `reader_test.dart` tests the page's controls against `FakeReaderEngine` (`helpers/fakes.dart`). How the book is drawn is the engine's job: `text_engine_test.dart` covers our own renderer (`TextReaderEngine`, used everywhere but web), and `readium_engine_test.dart` covers which engine is chosen and how settings become Readium preferences. flutter_readium itself only runs in a browser or on a phone, so it is checked by hand with the spike checklist in decision_reader.md. TTS and offline-saving tests do not exist yet.
+The reader page talks to a `ReaderEngine` (see [decision_reader.md](../../decision_reader.md)). `reader_test.dart` tests the page's controls against `FakeReaderEngine` (`helpers/fakes.dart`). How the book is drawn is the engine's job: `text_engine_test.dart` covers our own renderer (`TextReaderEngine`, used everywhere but web), and `readium_engine_test.dart` covers which engine is chosen and how settings become Readium preferences. flutter_readium itself only runs in a browser or on a phone, so it is checked by hand with the spike checklist in decision_reader.md. `read_aloud_test.dart` covers read aloud; offline-saving tests do not exist yet.
 
 Change a test and this README together.
 
@@ -24,7 +24,7 @@ Change a test and this README together.
 
 - **Search by field (#9, #14):** the search box has a "Search in" choice (`search-in` group; `search-in-anything|title|author|subject|isbn` ChoiceChips). `SearchQuery.withTerm(field, text)` sets one text field and keeps the filters; "anything" that is a valid ISBN (`util/isbn.dart`, `isbn_test`) is sent as `isbn`. The example books on Home are title searches. A search over 300 characters is not sent: `search-too-long` (live region). A 4xx from the server (`SearchException.statusCode`, `isRejected`) says "This search can't be run", not "Check your connection". The chips push the first results down on a phone, so tests that tap a result below the fold call `ensureVisible` first.
 - **Why a source is missing (#13):** `SearchResponse.skipped` (`SkippedSource(source, reason)`, `SkipReason` outage|timeout|busy|rejected|error); without it, every source in `unavailable_sources` is taken as an outage. `unavailable-notice` mentions 24 hours only for outages.
-- **Identifiers (#15):** the details page shows 5 identifiers of a kind, then `show-all-<kind>` ("Show all 1000 ISBNs").
+- **Identifiers (#15):** the details page keeps all identifiers behind one button, `identifiers-toggle` ("Show identifiers" / "Hide identifiers", closed by default, no button when a work has none; user decision 2026-10-11). Once open it shows 5 identifiers of a kind, then `show-all-<kind>` ("Show all 1000 ISBNs").
 - **Verse (#10):** `htmlParagraphs` keeps `<br>` as a line break (`\n` inside the paragraph) and takes text from every block element (`content_test`). `BookText` makes the word after a line break start with `\n`.
 - **Pagination (#11):** `paginate` lays the book out once, a paragraph at a time (`Paginator`, `pagination_test`). `TextReaderEngine` runs it one slice (8 ms) per frame. Until the pages are counted it shows `reader-page-pending` (the text from the reader's place, clipped) and `page-indicator` says "N% read"; turning pages does nothing yet. The final page is `reader-page-text`. Tests that need to see the slices pump single frames: under `pumpAndSettle` it is over at once.
 - **Audio (#12, #18):** `AudioEngine.play` throws `AudioException`; `positionStream` carries the file (`AudioPosition`) and `statusStream` says playing/completed (`AudioStatus`). The controller ignores positions of other files, moves to the next chapter when one ends, and shows `audio-error` (live region) with `audio-retry` when playback fails. `FakeAudioEngine` has `failNext`, `emitStatus`, `emitPosition`, and replays its last position to new listeners, as just_audio does.
@@ -34,7 +34,7 @@ Change a test and this README together.
 ### HathiTrust (2026-10-11)
 
 - `hathitrust` is the fifth source: `sourceIds`, `sourceName`, the Home sentence, the filter chips and its About page (fixture `sources.json`). Tests that listed the four sources, or tapped three chips to leave one selected, include it.
-- `Book` has `volume`, `library` and `usOnly` (`models_test`). The details page (`details_page_test`, group "HathiTrust volumes") shows "Volume v.1 · Harvard University" on the edition line (no "eBook #": only Gutenberg numbers its books), says the book "opens in the HathiTrust reader in your web browser", marks a `usOnly` volume ("Public domain only in the United States: it may not open elsewhere."), and the book button opens the reader link through the URL opener. HathiTrust books are external, so the label is "View ... at HathiTrust" (`format_test`).
+- `Book` has `volume`, `library` and `usOnly` (`models_test`). The details page (`details_page_test`, group "HathiTrust volumes") shows "Volume v.1 · Harvard University" on the edition line (no "eBook #": only Gutenberg numbers its books), says the book "opens in the HathiTrust reader in your web browser", marks a `usOnly` volume ("Public domain only in the United States: it may not open elsewhere."), and the book button opens the reader link through the URL opener. A work with more than 3 HathiTrust volumes shows the first 3 and a "Show all N HathiTrust volumes" button (`show-all-hathitrust`), which shows the rest (group "many volumes"); other sources are never cut. HathiTrust books are external, so the label is "View ... at HathiTrust" (`format_test`).
 
 ### ReaderEngine (2026-10-10)
 
@@ -44,6 +44,12 @@ Change a test and this README together.
 - `audio_player_test` and `details_page_test` look for the engine's view (`fake-reader-view`, `reader-surface`) and the engine's open call instead of `reader-page-text` and the content loader.
 - `bookmark_store_test`: a bookmark keeps the engine's locator; one saved without a locator still loads.
 - `reader_test`: the book view is covered (`reader-click-shield`, a `PointerInterceptor`) while the settings sheet is open. On web Readium's iframe otherwise took every click on the sheet (found by hand in Chrome, 2026-10-10).
+
+### Read aloud (2026-10-11)
+
+- `read_aloud_test.dart`: `BookText.wordRange`, `matchVoiceLanguage` and `ttsRate`; the controls on the reader page against `FakeReaderEngine.readAloud` (`FakeReadAloud`): the bar (`read-aloud-bar`, `-toggle`, `-stop`, `-slower`, `-faster`, `-speed`, `-error`) exists only when the engine can read aloud and the book is open, its button is named "Read aloud", "Pause reading aloud" or "Resume reading aloud", the speeds go 0.5 to 2 and stop at the ends, errors are a live region, a recording and read aloud pause each other, and the tap target and label guidelines hold at 320 px and text scale 2. Then `TextReaderEngine` with `FakeSpeechEngine` (`TestEnv.create(textEngine: true)` has `env.speech`; `speech: false` leaves it out): speaks from the first word on screen in the book's language (English if unknown), says when there is no voice, highlights the word spoken (page colours swapped), goes on chunk by chunk without gaps or repeats, turns the page, restarts on the new page when the reader turns it, stops at the end of the book, pauses and resumes from the word, stops, changes speed from the word being spoken, reports a speech failure and can retry, stops when the book closes, keeps its place through a font size change, and in scroll view highlights in the paragraph and scrolls to it.
+- `FakeReaderEngine` has `readAloud` (null unless a test sets it; `FakeReaderEngines.readAloud = true` sets it on every engine). `ReaderEngine.readAloud` is a new member of the interface.
+- Not tested: Readium's TTS and the device's real voices (decision_reader.md checks 5 and 9, by hand), and the Android `TTS_SERVICE` entry in `AndroidManifest.xml` that Android 11+ needs.
 
 ## Milestones to tests
 
@@ -56,6 +62,7 @@ Change a test and this README together.
 | Viewer shows in-app sources, others link to the source | `details_page_test.dart`, `reader_test.dart` |
 | Reading screen passes accessibility testing | `reader_test.dart`, `accessibility_test.dart` |
 | Bookmarks saved on the device and restored | `bookmark_store_test.dart`, `reader_test.dart` (bookmarks) |
+| Read aloud (TTS) | `read_aloud_test.dart` |
 | Listen while reading | `audio_player_test.dart` (**no text/audio syncing yet**; see that file) |
 | Book displays in under a minute | `reader_test.dart` (one minute to display) |
 | Search results within 15 s | `search_api_test.dart` (client gives up at 20 s; backend limit is 15 s) |
@@ -101,8 +108,8 @@ injected so tests can fake it.
 
 - **Home:** `home-heading`, `search-field` (semantic label "Search books"), `search-submit` ("Search"), `search-in` (group "Search in"), `search-in-anything|title|author|subject|isbn`, `search-too-long` (live region), `example-books` (ActionChips), `about-link-<sourceId>`
 - **Results:** `results-page`, `results-heading`, `result-count` (live region), `filters`, `filter-source-<id>`, `filter-format-all|text|audio`, `filter-language`, `result-<workId>`, `cover`, `open-<workId>`, `searching`, `no-results`, `search-error`, `retry`, `unavailable-notice` (live region)
-- **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `show-all-<identifierKind>`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
-- **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"), `visit-website`, `about-error`
+- **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `identifiers-toggle`, `show-all-<identifierKind>`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
+- **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"; not shown for HathiTrust, whose `donation_url` is null), `visit-website`, `about-error`
 - **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
 - **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
 - **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `view-page-turner|scroll`

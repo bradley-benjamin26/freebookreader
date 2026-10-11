@@ -246,6 +246,7 @@ void main() {
       expect(librivox.inApp, isTrue);
       expect(librivox.donationUrl, startsWith('https://'));
       expect(sources[3].inApp, isFalse);
+      expect(sources[4].donationUrl, isNull);       // HathiTrust takes no donations
     });
   });
 

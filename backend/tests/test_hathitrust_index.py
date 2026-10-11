@@ -167,14 +167,21 @@ class TestStopwords:
     def test_stopwords_are_dropped_whatever_their_case(self, words):
         assert set(htids(words.search(title="THE Time Machine"))) == {"a.1", "a.2"}
 
-    def test_a_search_of_only_stopwords_still_matches_them(self, words):
-        assert htids(words.search(title="the of and")) == ["a.3"]
-        assert htids(words.search(text="The Of")) == ["a.3"]
+    def test_a_search_of_only_stopwords_finds_nothing(self, words):
+        """Such a search takes 5-10 s on the real index and could not mean anything, so it is not run."""
+        assert words.search(title="the of and") == []
+        assert words.search(text="The Of") == []
+        assert words.search(author="the") == []
 
-    def test_each_field_keeps_its_own_words(self, words):
-        """The title is all stopwords, so it keeps them; the author's stopword is dropped."""
-        assert htids(words.search(title="the of and", author="the steinbeck")) == []
-        assert htids(words.search(title="of and", author="the steinbeck")) == ["a.4"]
+    def test_a_field_of_only_stopwords_is_ignored_when_another_field_has_words(self, words):
+        assert htids(words.search(title="the of and", author="the steinbeck")) == ["a.4"]
+        assert set(htids(words.search(text="the", title="time machine", author="of"))) == {"a.1", "a.2"}
+
+    def test_a_field_of_only_stopwords_is_ignored_next_to_an_isbn(self, tmp_path):
+        index = HathiIndex(tmp_path / "isbn.sqlite")
+        index.replace_all([volume("i.1", bib_key="1", title="Anything", isbns=["9780813730219"])], STATE)
+        assert htids(index.search(title="the", isbn="9780813730219")) == ["i.1"]
+        assert index.search(title="the") == []
 
     def test_a_search_with_a_stopword_does_not_find_books_without_the_other_words(self, words):
         assert words.search(title="the zeppelin") == []

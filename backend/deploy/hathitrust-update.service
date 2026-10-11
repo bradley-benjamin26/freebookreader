@@ -1,0 +1,25 @@
+# Example only (nothing installs this). Pair with hathitrust-update.timer.
+#
+#   sudo cp hathitrust-update.service hathitrust-update.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now hathitrust-update.timer
+#   systemctl list-timers hathitrust-update.timer      # next run
+#   journalctl -u hathitrust-update.service            # output of past runs
+#   sudo systemctl start hathitrust-update.service     # run it now (the first run downloads 1.2 GB)
+#
+# Change User and the paths. systemd does not start a second copy of a oneshot service that is still running.
+[Unit]
+Description=Refresh the HathiTrust search index (Hathifiles)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=freebookreader
+WorkingDirectory=/srv/freebookreader/backend
+# Settings: FBR_* variables, e.g. FBR_HATHITRUST_INDEX=/var/lib/freebookreader/hathitrust.sqlite (the same value
+# must reach the backend). The project's top-level .env supplies the User-Agent.
+# Environment=FBR_HATHITRUST_INDEX=/var/lib/freebookreader/hathitrust.sqlite
+ExecStart=/srv/freebookreader/backend/venv/bin/python -m app.hathitrust_update
+# A monthly rebuild is about 4 minutes; leave room for a slow link.
+TimeoutStartSec=2h
+Nice=10

@@ -160,6 +160,8 @@ The reader for volume `<htid>` is `https://babel.hathitrust.org/cgi/pt?id=<htid>
 
 The backend does not call HathiTrust when you search. `python -m app.hathitrust_update` (run nightly) reads the file list, builds a SQLite full-text index from the newest monthly file the first time, and afterwards applies the daily update files; a new monthly file or a gap in the daily files means a rebuild. Only `access = allow` rows with `bib_fmt = BK` are kept. See [decision_hathitrust.md](decision_hathitrust.md) for the numbers measured on the real files (5,353,556 volumes, 1.65 GB, 4 min 10 s to build).
 
+To run the update nightly, see the examples in [backend/deploy/](backend/deploy/) (cron, systemd timer).
+
 ```bash
 cd backend && source venv/bin/activate
 python -m app.hathitrust_update          # first run: downloads 1.2 GB; later runs: a few MB
@@ -204,7 +206,7 @@ Real response (2026-10-11, trimmed to the first of 20 books; whole response: [sa
 
 * **Fields we add to a book:** `volume` (the Hathifile `description`), `library` (the holding library; the 40 most common codes are named, other codes are shown as they are) and `us_only` (rights `pdus`).
 * **If the index is missing,** the source is skipped for that search with reason `error` and is not put in a 24-hour outage; build it and the next search works.
-* **A search made only of the most common words** ("the of and") takes 5–6 s; ordinary searches take under 150 ms. Our index search leaves out stopwords ("the", "of", "and", "de", "der", ...) when a field has other words, so only a search made entirely of them is slow.
+* **A search made only of the most common words** ("the of and") took 5–6 s, and "the" alone 10 s; a very common word that is not a stopword takes about 2 s ("history"); other searches take under 1 s (measured 2026-10-11 on the real index). Our index search leaves out stopwords ("the", "of", "and", "de", "der", ...); a field made only of them is ignored, and a search with nothing else to look for finds nothing and is not run (user decision 2026-10-11).
 * **FTS5:** Python's `sqlite3` must have it.
 * **Fields not used:** `issn`, `lccn`, `imprint`, the dates, the place and the provenance columns.
 

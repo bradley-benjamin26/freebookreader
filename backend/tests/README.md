@@ -96,9 +96,19 @@ queried in parallel threads, on one executor shared by all searches.
   "John Smith"/"Joan Smith", "Thomas Hardy"/"Thomas Harding" and "Mary Shelley"/"Mary W. Shelley" do not.
   A one-letter surname difference between two real people ("John Adams"/"John Addams") still merges.
 - **Different languages never merge, even with the same ISBN.**
+- **An ISBN/OCLC number held by two records of one source merges nothing** (`TestOmnibusAndSharedIdentifiers`,
+  2026-10-11). Open Library lists the ISBNs of every edition of a work, so an omnibus shares them with the novel and
+  the old rule merged them. The rule is about records, not volumes: copies of one HathiTrust record (same
+  `identifiers.hathitrust`) count as one. When two records of one source hold the identifier, a third source's record
+  does not merge on it either (it is unknown which one it belongs to); its other identifiers and the title passes
+  still can.
+- **Gutenberg cross-references merge** (`TestGutenbergReferences`, 2026-10-11). A LibriVox or Open Library record
+  with `identifiers.gutenberg` joins the Gutenberg eBook of that number if it is in the results, still never across
+  languages. A record naming one eBook is trusted; a record naming several (Open Library) is joined only to eBooks
+  whose title is similar (ratio ≥ 90), so an omnibus that names the eBooks of several novels does not join them.
 - **HathiTrust is searched in a local index, never live** (decision_hathitrust.md). `HathiIndex` is a SQLite file with
   an FTS5 table over title and author (accents and case ignored, every word must match, words are quoted so search
-  syntax is plain text, a title word weighs 4 times an author word, stopwords like "the" and "of" are left out of a field that has other words: `TestStopwords`). It holds only rows with `access = allow` and
+  syntax is plain text, a title word weighs 4 times an author word, stopwords like "the" and "of" are left out, and a field made only of them is ignored, so a search with nothing else finds nothing: `TestStopwords`). It holds only rows with `access = allow` and
   `bib_fmt = BK` (not serials, maps or music), so a daily file's 485,566 rows give 36,833 volumes. Search returns one
   copy per catalog record and volume label (Harvard and the New York Public Library each holding the same book show
   once; `v.1` and `v.2` both show), 20 a page, language by MARC code (`fre`). A missing index raises `HathiIndexMissing`
@@ -158,6 +168,10 @@ queried in parallel threads, on one executor shared by all searches.
   source missing from the response; `skipped` is the same list as `{source, reason}`, reason one of `outage`
   (down, not asked for up to 24 hours), `timeout` (too slow, asked again next time), `busy` (4 searches already
   running), `rejected` (it answered 4xx) or `error` (our adapter crashed). The app words each case.
+- **Responses are gzipped** (2026-10-11, `TestCompression` in `test_api.py`): `GZipMiddleware`, only for clients sending
+  `Accept-Encoding: gzip`, only above 1,000 bytes; images and other compressed files are skipped. A search for
+  "pride and prejudice" went from 111 KB to 12 KB (about half of the 111 KB is LibriVox chapter lists; chapters are
+  still in the response because the player uses them).
 - **Long identifier lists are cut in the response** (review 2026-10-11, #15). A `Book` or `Work` serializes at most
   20 identifiers of each kind (`MAX_SERIALIZED_IDENTIFIERS`); merging and the known-item ISBN check see them all.
 - **LibriVox keeps "Il" and "De"** (review 2026-10-11, #16): "Il Principe" and "De Profundis" are searched as
@@ -225,7 +239,7 @@ queried in parallel threads, on one executor shared by all searches.
   `BACKEND_URL`, so the backend need not know its public address). Every other book has `null`. `kind` and `url`
   are unchanged, so the current in-app reader keeps working.
 - The Gutenberg ID found in a LibriVox `url_text_source` is stored as `identifiers["gutenberg"]` and Open Library
-  cross references are stored the same way. Nothing uses them yet.
+  cross references are stored the same way. Merging uses them (see "Gutenberg cross-references merge" above).
 
 ## Not covered by these tests (and why)
 

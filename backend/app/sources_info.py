@@ -11,7 +11,7 @@ class SourceInfo(BaseModel):
     how_it_works: str       # how it works in this app
     how_to_access: str      # how to use it directly
     website_url: str
-    donation_url: str
+    donation_url: str | None     # None: the source takes no donations (HathiTrust)
     formats: list[Format]
     in_app: bool            # whether its books open inside the app
 
@@ -116,8 +116,8 @@ SOURCES = [
             "partner library."),
         website_url="https://www.hathitrust.org/",
         # HathiTrust is funded by its member libraries and has no donation page for the public (checked
-        # 2026-10-11), so this is its home page.
-        donation_url="https://www.hathitrust.org/",
+        # 2026-10-11). The project owner decided it has no donation link, only the website link above.
+        donation_url=None,
         formats=["text"],
         in_app=False,
     ),

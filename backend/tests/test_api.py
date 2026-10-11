@@ -170,11 +170,51 @@ class TestSourcesEndpoint:
         for source in body:
             assert {"id", "name", "description", "how_it_works", "how_to_access",
                     "website_url", "donation_url", "formats", "in_app"} <= set(source)
+        assert {s["id"]: s["donation_url"] for s in body}["hathitrust"] is None
 
 
 def test_cors_allows_the_flutter_web_app(client):
     response = client.get("/health", headers={"Origin": "http://localhost:5000"})
     assert response.headers.get("access-control-allow-origin") in ("*", "http://localhost:5000")
+
+
+class TestCompression:
+    @pytest.fixture
+    def big_client(self):
+        """A search whose answer is large: one audiobook with 300 chapters."""
+        from app.models import Chapter
+        chapters = [Chapter(title=f"Chapter {i}", url=f"https://archive.org/download/book/chapter_{i}.mp3")
+                    for i in range(300)]
+        service = StubService(works=merge_books([
+            make_book(source="librivox", source_id="253", title="Pride and Prejudice", authors=["Jane Austen"],
+                      format="audio", chapters=chapters)]))
+        return TestClient(create_app(search_service=service, settings=Settings(), publication_store=object()))
+
+    def test_a_large_search_answer_is_gzipped_when_the_client_accepts_it(self, big_client):
+        response = big_client.get("/search?q=pride", headers={"Accept-Encoding": "gzip"})
+        assert response.headers["content-encoding"] == "gzip"
+        assert "Accept-Encoding" in response.headers["vary"]
+        assert len(response.json()["works"][0]["books"][0]["chapters"]) == 300   # the client undoes it
+
+    def test_the_compressed_answer_is_much_smaller(self, big_client):
+        plain = big_client.get("/search?q=pride", headers={"Accept-Encoding": "identity"})
+        with big_client.stream("GET", "/search?q=pride", headers={"Accept-Encoding": "gzip"}) as response:
+            compressed = len(b"".join(response.iter_raw()))
+        assert "content-encoding" not in plain.headers
+        assert compressed < len(plain.content) / 5
+
+    def test_nothing_is_compressed_for_a_client_that_does_not_ask(self, big_client):
+        response = big_client.get("/search?q=pride", headers={"Accept-Encoding": "identity"})
+        assert "content-encoding" not in response.headers
+
+    def test_small_answers_are_not_compressed(self, client):
+        response = client.get("/health", headers={"Accept-Encoding": "gzip"})
+        assert "content-encoding" not in response.headers
+
+    def test_cors_headers_survive_compression(self, big_client):
+        response = big_client.get("/search?q=pride", headers={"Accept-Encoding": "gzip", "Origin": "http://localhost:5000"})
+        assert response.headers["content-encoding"] == "gzip"
+        assert response.headers.get("access-control-allow-origin") in ("*", "http://localhost:5000")
 
 
 def test_no_accounts_or_personal_data_endpoints_exist(client):

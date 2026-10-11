@@ -308,7 +308,7 @@ class SourceInfo {
         howItWorks: json['how_it_works'] as String,
         howToAccess: json['how_to_access'] as String,
         websiteUrl: json['website_url'] as String,
-        donationUrl: json['donation_url'] as String,
+        donationUrl: json['donation_url'] as String?,
         formats: _strings(json['formats']),
         inApp: json['in_app'] as bool,
       );
@@ -319,7 +319,7 @@ class SourceInfo {
   final String howItWorks;
   final String howToAccess;
   final String websiteUrl;
-  final String donationUrl;
+  final String? donationUrl;      // null: the source takes no donations (HathiTrust)
   final List<String> formats;
   final bool inApp;
 }

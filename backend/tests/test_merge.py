@@ -150,6 +150,132 @@ class TestPass1Identifiers:
         assert len(works) == 1
 
 
+class TestOmnibusAndSharedIdentifiers:
+    """Open Library lists the ISBNs of every edition of a work, so related works share them."""
+
+    def test_open_library_works_sharing_an_isbn_stay_apart(self):
+        works = merge_books([
+            book("openlibrary", "OL1W", "Pride and Prejudice", ["Jane Austen"], language=None,
+                 identifiers={"isbn": ["9780140430721", "9781134215645"]}),
+            book("openlibrary", "OL2W", "Novels (Pride and Prejudice / Sense and Sensibility)", ["Jane Austen"],
+                 language=None, identifiers={"isbn": ["9780140430721"]}),
+        ])
+        assert len(works) == 2
+
+    def test_open_library_works_sharing_an_oclc_number_stay_apart(self):
+        works = merge_books([
+            book("openlibrary", "A", "Alpha", ["Ann One"], language=None, identifiers={"oclc": ["18103615"]}),
+            book("openlibrary", "B", "Omega", ["Bob Two"], language=None, identifiers={"oclc": ["18103615"]}),
+        ])
+        assert len(works) == 2
+
+    def test_an_identifier_held_by_two_records_of_one_source_merges_nothing(self):
+        """Not even with a third source: it is unknown which of the two records it belongs to."""
+        works = merge_books([
+            book("openlibrary", "A", "Alpha", ["Ann One"], language=None, identifiers={"isbn": ["9780140430721"]}),
+            book("openlibrary", "B", "Omega", ["Bob Two"], language=None, identifiers={"isbn": ["9780140430721"]}),
+            book("doab", "C", "Other", ["Cy Three"], language=None, identifiers={"isbn": ["9780140430721"]}),
+        ])
+        assert len(works) == 3
+
+    def test_the_other_identifiers_of_those_records_still_merge(self):
+        works = merge_books([
+            book("openlibrary", "A", "Alpha", ["Ann One"], language=None,
+                 identifiers={"isbn": ["9780140430721", "9781134215645"]}),
+            book("openlibrary", "B", "Omega", ["Bob Two"], language=None, identifiers={"isbn": ["9780140430721"]}),
+            book("doab", "C", "Other", ["Cy Three"], language=None, identifiers={"isbn": ["9781134215645"]}),
+        ])
+        assert groups(works) == {merged(("openlibrary", "A"), ("doab", "C")), merged(("openlibrary", "B"))}
+
+    def test_volumes_of_one_hathitrust_record_sharing_an_isbn_still_merge_with_other_sources(self):
+        works = merge_books([
+            book("hathitrust", "a.1", "Annual report", ["A One"], identifiers={"hathitrust": ["1"], "isbn": ["9780140430721"]}),
+            book("hathitrust", "a.2", "Annual report", ["A One"], identifiers={"hathitrust": ["1"], "isbn": ["9780140430721"]}),
+            book("openlibrary", "OL1W", "Report", ["Z"], language=None, identifiers={"isbn": ["9780140430721"]}),
+        ])
+        assert len(works) == 1
+
+    def test_two_hathitrust_records_sharing_an_isbn_stay_apart(self):
+        works = merge_books([
+            book("hathitrust", "a.1", "Geology of Utah", ["A One"], identifiers={"hathitrust": ["1"], "isbn": ["9780140430721"]}),
+            book("hathitrust", "b.1", "Poems of Spring", ["B Two"], identifiers={"hathitrust": ["2"], "isbn": ["9780140430721"]}),
+        ])
+        assert len(works) == 2
+
+
+class TestGutenbergReferences:
+    def test_a_librivox_recording_joins_the_gutenberg_ebook_it_names(self):
+        works = merge_books([
+            book("gutenberg", "17489", "Les misérables, Tome I", ["Victor Hugo"], language="fr"),
+            book("librivox", "5", "Misérables - tome 1", ["Victor Hugo"], language="fr", format="audio",
+                 identifiers={"gutenberg": ["17489"]}),
+        ])
+        assert len(works) == 1
+
+    def test_the_reference_names_one_ebook_only(self):
+        works = merge_books([
+            book("gutenberg", "17489", "Les misérables, Tome I", ["Victor Hugo"], language="fr"),
+            book("gutenberg", "17490", "Les misérables, Tome II", ["Victor Hugo"], language="fr"),
+            book("librivox", "5", "Misérables - tome 1", ["Victor Hugo"], language="fr", format="audio",
+                 identifiers={"gutenberg": ["17489"]}),
+        ])
+        assert groups(works) == {merged(("gutenberg", "17489"), ("librivox", "5")), merged(("gutenberg", "17490"))}
+
+    def test_a_reference_to_an_ebook_not_in_the_results_does_nothing(self):
+        works = merge_books([
+            book("gutenberg", "1", "Emma", ["Jane Austen"]),
+            book("librivox", "5", "Persuasion", ["Jane Austen"], format="audio", identifiers={"gutenberg": ["105"]}),
+        ])
+        assert len(works) == 2
+
+    def test_a_gutenberg_number_is_not_an_isbn_or_oclc_number(self):
+        works = merge_books([
+            book("gutenberg", "123456789", "Emma", ["Jane Austen"], language="en"),
+            book("openlibrary", "A", "Hamlet", ["William Shakespeare"], language="en", identifiers={"oclc": ["123456789"]}),
+        ])
+        assert len(works) == 2
+
+    def test_a_reference_never_joins_different_languages(self):
+        works = merge_books([
+            book("gutenberg", "17489", "Les misérables", ["Victor Hugo"], language="fr"),
+            book("librivox", "5", "Les Miserables", ["Victor Hugo"], language="en", format="audio",
+                 identifiers={"gutenberg": ["17489"]}),
+        ])
+        assert len(works) == 2
+
+    def test_an_open_library_work_names_every_edition_and_joins_them_all(self):
+        works = merge_books([
+            book("gutenberg", "1342", "Pride and Prejudice", ["Jane Austen"], language="en"),
+            book("gutenberg", "42671", "Pride and Prejudice", ["Jane Austen"], language="en"),
+            book("openlibrary", "OL1W", "Pride and Prejudice", ["Jane Austen"], language=None,
+                 identifiers={"gutenberg": ["1342", "42671"]}),
+        ])
+        assert len(works) == 1
+
+    def test_an_omnibus_naming_several_ebooks_does_not_join_them_into_one_work(self):
+        works = merge_books([
+            book("gutenberg", "1342", "Pride and Prejudice", ["Jane Austen"], language="en"),
+            book("gutenberg", "161", "Sense and Sensibility", ["Jane Austen"], language="en"),
+            book("openlibrary", "OL2W", "Novels (Pride and Prejudice / Sense and Sensibility)", ["Jane Austen"],
+                 language=None, identifiers={"gutenberg": ["1342", "161"]}),
+        ])
+        assert len(works) == 3
+
+    def test_the_result_does_not_depend_on_input_order(self):
+        books = [
+            book("gutenberg", "17489", "Les misérables, Tome I", ["Victor Hugo"], language="fr"),
+            book("librivox", "5", "Misérables - tome 1", ["Victor Hugo"], language="fr", format="audio",
+                 identifiers={"gutenberg": ["17489"]}),
+            book("openlibrary", "OL1W", "Les Misérables", ["Victor Hugo"], language=None,
+                 identifiers={"gutenberg": ["17489", "17490"]}),
+        ]
+        expected = groups(merge_books(books))
+        for seed in range(5):
+            shuffled = books[:]
+            random.Random(seed).shuffle(shuffled)
+            assert groups(merge_books(shuffled)) == expected
+
+
 class TestPass2ExactTitleAndAuthor:
     def test_text_and_audio_of_the_same_book_merge(self):
         works = merge_books([

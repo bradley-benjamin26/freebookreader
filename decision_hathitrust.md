@@ -49,7 +49,7 @@ Run of `python -m app.hathitrust_update` from nothing: the full file of 2026-10-
 | Languages | English 60%, German 11%, French 9%, Spanish 3.5%, Italian 2.5%, Latin 2.3%, no language 1.8%, Japanese 1.5%, Chinese 1.5%, Russian 1.3% |
 | No author | 770,594 (14%) |
 | Rows with an ISBN | 163,320 (3%): searching HathiTrust by ISBN finds few books |
-| Search time | 18–150 ms for a title and author; "history of the united states" 1 s; **a search made only of the most common words ("the of and") 5–6 s** |
+| Search time | 18–150 ms for a title and author; "history of the united states" 0.1–0.6 s (1 s before stopwords were dropped); **a search made only of the most common words ("the of and") 5–10 s; one very common word 2 s ("history") to 10 s ("the")** (real index, measured 2026-10-11) |
 
 ## Resolved questions
 
@@ -62,12 +62,12 @@ Run of `python -m app.hathitrust_update` from nothing: the full file of 2026-10-
 
 ## Open questions
 
-* **One work, many books.** A search for "Great Expectations" by Dickens returns one work with 20 HathiTrust books on page 1 (different libraries' editions of the novel); HathiTrust holds far more. It is correct but long. Options: show the first few and "show more", or one book per library, or rank volumes with a label last. Not decided.
-* **Common-word searches.** A query made only of very common words takes 5–6 s (under the 12 s limit, but it uses a thread for that long). Done 2026-10-11: `HathiIndex.search` drops stopwords (`_STOPWORDS` in `hathitrust_index.py`: English articles and prepositions, plus the French, German, Spanish and Italian articles) from a field when it has any other word, so "the time machine" searches "time machine". A field made only of stopwords ("the of and") keeps them and is still slow, since there is nothing else to search. Tested on the sample index only; the 1.65 GB index is not built on this machine, so the new timing is unmeasured.
+* **One work, many books.** A search for "Great Expectations" by Dickens returns one work with 20 HathiTrust books on page 1 (different libraries' editions of the novel); HathiTrust holds far more. It is correct but long. Done 2026-10-11: the details page shows the first 3 HathiTrust volumes and a "Show all N HathiTrust volumes" button (a range such as "v.1–v.20" was rejected: volume labels are free text, e.g. "v.1 1897" or "c.2"). The search response still has all of them. Not done: one book per library, ranking volumes with a label last.
+* **Common-word searches.** A query made only of very common words takes 5–6 s (under the 12 s limit, but it uses a thread for that long). Done 2026-10-11: `HathiIndex.search` drops stopwords (`_STOPWORDS` in `hathitrust_index.py`: English articles and prepositions, plus the French, German, Spanish and Italian articles) from a field when it has any other word, so "the time machine" searches "time machine". A field made only of stopwords ("the of and") is ignored, and a search with nothing else to look for finds nothing and is not run (user decision 2026-10-11; before that it kept them and took 5–10 s). Measured 2026-10-11 on the real index (5.35 M volumes, 1.63 GB, built in about 4 min): "history of the united states" 0.1–0.6 s, "pride and prejudice" under 0.05 s, title+author under 0.1 s, "the of and" 5–6.5 s, "the" alone 8–10 s, "history" alone 2 s (bm25 ranks every match). All under the 12 s limit; not worked on further.
 * **Titles of multi-volume sets.** Volume labels are shown ("v.2"), but the title of a set's volume is the set's title ("The writings of Charles Dickens"); the individual novel in a volume is not searchable.
-* **Donation link.** HathiTrust is funded by its member libraries and has no public donation page that we could find (2026-10-11); the About page's donation link is its home page. Ask the project owner.
+* **Donation link.** HathiTrust is funded by its member libraries and has no public donation page that we could find (2026-10-11); decided 2026-10-11 by the project owner: no donation link. `/sources` gives `donation_url: null` for HathiTrust, and the About page shows only the link to the home page.
 * **Mojibake.** A few titles in the file are already mis-encoded (Japanese text shown as `ã\x82\x84...`). We show them as given.
-* **Jobs.** Nothing runs `hathitrust_update` yet. It needs a nightly schedule on the server (cron or similar) and about 2 GB of disk.
+* **Jobs.** Nothing runs `hathitrust_update` yet; the server is not chosen. Examples exist (2026-10-11, untested on a server, nothing installs them): `backend/deploy/hathitrust-update.crontab` and `hathitrust-update.service` + `.timer` (systemd). Both prevent overlapping runs. It needs about 3.5 GB of disk during a monthly rebuild (old and new index side by side). Running backend processes need no restart: the index is replaced atomically and each search opens it fresh. A night with nothing new takes about 4 s and prints "the index is up to date".
 * **Python needs FTS5.** The `sqlite3` module of the Python used must be built with FTS5 (macOS and Debian builds are; if a server's is not, the index cannot be built).
 
 ## Tests

@@ -17,16 +17,60 @@ void main() {
           containsSemantics(isHeader: true, label: 'Pride and Prejudice'));
     });
 
-    testWidgets('lists author, language, sources and identifiers', (tester) async {
+    testWidgets('lists author, language and sources', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await openDetails(tester, 'w-pride');
       final meta = find.byKey(const Key('details-metadata'));
-      for (final text in ['Jane Austen', 'English', 'Project Gutenberg', 'LibriVox', 'Open Library',
-        '9780140430721']) {
+      for (final text in ['Jane Austen', 'English', 'Project Gutenberg', 'LibriVox', 'Open Library']) {
         expect(find.descendant(of: meta, matching: find.textContaining(text)), findsWidgets,
             reason: text);
       }
-      expect(find.descendant(of: meta, matching: find.textContaining('ISBN')), findsWidgets);
+    });
+
+    group('identifiers', () {
+      // The identifiers (ISBNs, OCLC numbers, ...) are many and mostly internal codes: they stay behind one
+      // button, closed by default, so the page stays short (user decision 2026-10-11).
+      Finder inMeta(String text) => find.descendant(
+          of: find.byKey(const Key('details-metadata')), matching: find.textContaining(text));
+
+      testWidgets('are hidden until asked for', (tester) async {
+        await pumpApp(tester, await TestEnv.create());
+        await openDetails(tester, 'w-pride');
+        expect(find.descendant(of: find.byKey(const Key('identifiers-toggle')), matching: find.text('Show identifiers')),
+            findsOneWidget);
+        expect(inMeta('ISBN'), findsNothing);
+        expect(inMeta('9780140430721'), findsNothing);
+      });
+
+      testWidgets('the button shows them, and hides them again', (tester) async {
+        await pumpApp(tester, await TestEnv.create());
+        await openDetails(tester, 'w-pride');
+        final toggle = find.byKey(const Key('identifiers-toggle'));
+        await tester.ensureVisible(toggle);
+        expect(tester.getSemantics(toggle), containsSemantics(isButton: true, hasExpandedState: true, isExpanded: false));
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(inMeta('ISBN'), findsWidgets);
+        expect(inMeta('9780140430721'), findsWidgets);
+        expect(find.descendant(of: toggle, matching: find.text('Hide identifiers')), findsOneWidget);
+        expect(tester.getSemantics(toggle), containsSemantics(isButton: true, hasExpandedState: true, isExpanded: true));
+        await tester.tap(toggle);
+        await tester.pumpAndSettle();
+        expect(inMeta('ISBN'), findsNothing);
+        expect(find.descendant(of: toggle, matching: find.text('Show identifiers')), findsOneWidget);
+      });
+
+      testWidgets('a work with none has no button', (tester) async {
+        final env = await TestEnv.create();
+        final pride = env.api.response.works.first;
+        env.api.response = SearchResponse(works: [
+          Work(id: pride.id, title: pride.title, authors: pride.authors, language: pride.language,
+              sources: pride.sources, identifiers: const {'isbn': []}, books: pride.books),
+        ], unavailableSources: const []);
+        await pumpApp(tester, env);
+        await openDetails(tester, 'w-pride');
+        expect(find.byKey(const Key('identifiers-toggle')), findsNothing);
+      });
     });
 
     testWidgets('shows a few identifiers, and all of them on request', (tester) async {
@@ -40,6 +84,10 @@ void main() {
       ], unavailableSources: const []);
       await pumpApp(tester, env);
       await openDetails(tester, 'w-pride');
+      final toggle = find.byKey(const Key('identifiers-toggle'));
+      await tester.ensureVisible(toggle);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
       final meta = find.byKey(const Key('details-metadata'));
       expect(find.descendant(of: meta, matching: find.textContaining(isbns[4])), findsOneWidget);
       expect(find.descendant(of: meta, matching: find.textContaining(isbns[5])), findsNothing);
@@ -192,6 +240,75 @@ void main() {
       testWidgets('say nothing about the United States for other volumes', (tester) async {
         final book = await openHathiTrust(tester, {});
         expect(find.descendant(of: book, matching: find.textContaining('United States')), findsNothing);
+      });
+
+      group('many volumes', () {
+        // One HathiTrust record can have dozens of volumes (the parts of a set, copies from several libraries).
+        Future<void> openWithVolumes(WidgetTester tester, int count) async {
+          final json = loadJson('search_response.json') as Map<String, dynamic>;
+          final books = json['works'][0]['books'] as List;
+          for (var i = 1; i <= count; i++) {
+            books.add({
+              'source': 'hathitrust',
+              'source_id': 'hvd.v$i',
+              'title': 'Pride and prejudice',
+              'authors': ['Jane Austen'],
+              'language': 'en',
+              'format': 'text',
+              'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.v$i',
+              'access': 'open',
+              'volume': 'v.$i',
+              'library': 'Harvard University',
+              'reading': {'mode': 'external', 'kind': null, 'url': 'https://babel.hathitrust.org/cgi/pt?id=hvd.v$i'},
+            });
+          }
+          await pumpApp(tester, await TestEnv.create(response: SearchResponse.fromJson(json)));
+          await openDetails(tester, 'w-pride');
+        }
+
+        final volumeCards = find.byWidgetPredicate(
+            (w) => w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('book-hathitrust:'));
+
+        testWidgets('show the first 3 and a button for the rest', (tester) async {
+          await openWithVolumes(tester, 20);
+          expect(volumeCards, findsNWidgets(3));
+          expect(find.byKey(const Key('book-hathitrust:hvd.v1')), findsOneWidget);
+          expect(find.byKey(const Key('book-hathitrust:hvd.v3')), findsOneWidget);
+          expect(find.byKey(const Key('book-hathitrust:hvd.v4')), findsNothing);
+          final button = find.byKey(const Key('show-all-hathitrust'));
+          expect(button, findsOneWidget);
+          expect(find.descendant(of: button, matching: find.text('Show all 20 HathiTrust volumes')),
+              findsOneWidget);
+        });
+
+        testWidgets('the button shows every volume and goes away', (tester) async {
+          await openWithVolumes(tester, 20);
+          final button = find.byKey(const Key('show-all-hathitrust'));
+          await tester.ensureVisible(button);
+          await tester.tap(button);
+          await tester.pumpAndSettle();
+          expect(volumeCards, findsNWidgets(20));
+          expect(find.byKey(const Key('show-all-hathitrust')), findsNothing);
+        });
+
+        testWidgets('the button comes right after the last volume shown', (tester) async {
+          await openWithVolumes(tester, 20);
+          final third = tester.getTopLeft(find.byKey(const Key('book-hathitrust:hvd.v3'))).dy;
+          final button = tester.getTopLeft(find.byKey(const Key('show-all-hathitrust'))).dy;
+          expect(button, greaterThan(third));
+        });
+
+        testWidgets('3 volumes or fewer need no button', (tester) async {
+          await openWithVolumes(tester, 3);
+          expect(volumeCards, findsNWidgets(3));
+          expect(find.byKey(const Key('show-all-hathitrust')), findsNothing);
+        });
+
+        testWidgets('other sources are never cut', (tester) async {
+          await openWithVolumes(tester, 20);
+          expect(find.byKey(const Key('book-librivox:253')), findsOneWidget);
+          expect(find.byKey(const Key('book-gutenberg:1342')), findsOneWidget);
+        });
       });
 
       testWidgets('open the reader through the book button', (tester) async {

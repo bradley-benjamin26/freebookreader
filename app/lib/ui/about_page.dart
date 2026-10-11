@@ -117,11 +117,12 @@ class _AboutBody extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [
-                FilledButton(
-                  key: const Key('donate'),
-                  onPressed: () => urls.open(Uri.parse(info.donationUrl)),
-                  child: Text('Donate to ${info.name}'),
-                ),
+                if (info.donationUrl != null)
+                  FilledButton(
+                    key: const Key('donate'),
+                    onPressed: () => urls.open(Uri.parse(info.donationUrl!)),
+                    child: Text('Donate to ${info.name}'),
+                  ),
                 OutlinedButton(
                   key: const Key('visit-website'),
                   onPressed: () => urls.open(Uri.parse(info.websiteUrl)),

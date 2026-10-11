@@ -13,14 +13,53 @@ const _identifierNames = {
   'gutenberg': 'Project Gutenberg number',
 };
 
+/// HathiTrust volumes shown before "Show all". One record can have dozens (the parts of a set, copies from
+/// several libraries), and each gets a card.
+const _hathitrustVolumesShown = 3;
+
 /// Everything known about a work, and every way to get at it.
-class DetailsPage extends StatelessWidget {
+class DetailsPage extends StatefulWidget {
   const DetailsPage({super.key, required this.work});
 
   final Work work;
 
   @override
+  State<DetailsPage> createState() => _DetailsPageState();
+}
+
+class _DetailsPageState extends State<DetailsPage> {
+  bool _allVolumes = false;
+
+  /// The book cards, with the HathiTrust volumes cut to the first few and a button for the rest.
+  List<Widget> _bookCards() {
+    final work = widget.work;
+    final volumes = work.books.where((b) => b.source == 'hathitrust').length;
+    final cut = !_allVolumes && volumes > _hathitrustVolumesShown;
+    final cards = <Widget>[];
+    var seen = 0;
+    for (final book in work.books) {
+      if (book.source == 'hathitrust' && cut) {
+        seen++;
+        if (seen > _hathitrustVolumesShown) continue;
+      }
+      cards.add(_BookCard(key: Key('book-${book.key}'), work: work, book: book));
+      if (cut && seen == _hathitrustVolumesShown && book.source == 'hathitrust') {
+        cards.add(Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: TextButton(
+            key: const Key('show-all-hathitrust'),
+            onPressed: () => setState(() => _allVolumes = true),
+            child: Text('Show all $volumes HathiTrust volumes'),
+          ),
+        ));
+      }
+    }
+    return cards;
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final work = widget.work;
     final text = Theme.of(context).textTheme;
     return Scaffold(
       key: const Key('details-page'),
@@ -41,7 +80,7 @@ class DetailsPage extends StatelessWidget {
               _Metadata(key: const Key('details-metadata'), work: work),
               const SizedBox(height: 24),
               Heading('Ways to read or listen', style: text.titleLarge),
-              for (final book in work.books) _BookCard(key: Key('book-${book.key}'), work: work, book: book),
+              ..._bookCards(),
             ],
           ),
         ),
@@ -64,11 +103,13 @@ class _Metadata extends StatefulWidget {
 
 class _MetadataState extends State<_Metadata> {
   final Set<String> _expanded = {};
+  bool _showIdentifiers = false;
 
   @override
   Widget build(BuildContext context) {
     final work = widget.work;
     final text = Theme.of(context).textTheme;
+    final hasIdentifiers = work.identifiers.values.any((v) => v.isNotEmpty);
     Widget line(String label, String value) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
           child: Text('$label: $value', style: text.bodyLarge),
@@ -79,25 +120,41 @@ class _MetadataState extends State<_Metadata> {
         line(work.authors.length > 1 ? 'Authors' : 'Author', formatAuthors(work.authors)),
         line('Language', languageName(work.language)),
         line('Available from', work.sources.map(sourceName).join(', ')),
-        for (final entry in work.identifiers.entries)
-          if (entry.value.isNotEmpty) ...[
-            () {
-              final name = _identifierNames[entry.key] ?? entry.key.toUpperCase();
-              final all = _expanded.contains(entry.key) || entry.value.length <= _identifiersShown;
-              final shown = all ? entry.value : entry.value.take(_identifiersShown).toList();
-              return line(name, shown.join(', '));
-            }(),
-            if (!_expanded.contains(entry.key) && entry.value.length > _identifiersShown)
-              Align(
-                alignment: AlignmentDirectional.centerStart,
+        // The identifiers are many and mostly internal codes: one button, closed by default.
+        if (hasIdentifiers)
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: MergeSemantics(
+              child: Semantics(
+                expanded: _showIdentifiers,
                 child: TextButton(
-                  key: Key('show-all-${entry.key}'),
-                  onPressed: () => setState(() => _expanded.add(entry.key)),
-                  child: Text('Show all ${entry.value.length} '
-                      '${_identifierNames[entry.key] ?? entry.key.toUpperCase()}s'),
+                  key: const Key('identifiers-toggle'),
+                  onPressed: () => setState(() => _showIdentifiers = !_showIdentifiers),
+                  child: Text(_showIdentifiers ? 'Hide identifiers' : 'Show identifiers'),
                 ),
               ),
-          ],
+            ),
+          ),
+        if (_showIdentifiers)
+          for (final entry in work.identifiers.entries)
+            if (entry.value.isNotEmpty) ...[
+              () {
+                final name = _identifierNames[entry.key] ?? entry.key.toUpperCase();
+                final all = _expanded.contains(entry.key) || entry.value.length <= _identifiersShown;
+                final shown = all ? entry.value : entry.value.take(_identifiersShown).toList();
+                return line(name, shown.join(', '));
+              }(),
+              if (!_expanded.contains(entry.key) && entry.value.length > _identifiersShown)
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: TextButton(
+                    key: Key('show-all-${entry.key}'),
+                    onPressed: () => setState(() => _expanded.add(entry.key)),
+                    child: Text('Show all ${entry.value.length} '
+                        '${_identifierNames[entry.key] ?? entry.key.toUpperCase()}s'),
+                  ),
+                ),
+            ],
       ],
     );
   }

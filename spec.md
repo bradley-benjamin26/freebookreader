@@ -90,6 +90,8 @@ Rules:
 - A record with an unknown language only merges through a shared ISBN or OCLC number, never on title and author alone.
 - A record with no author is never merged on title alone.
 - ISBN-10s are converted to ISBN-13. Identifiers with a bad check digit are ignored.
+- An ISBN or OCLC number held by two different records of one source merges nothing (not even with a third source). Open Library lists the ISBNs of every edition of a work, so an omnibus ("Novels (Pride and Prejudice / Sense and Sensibility)") shares them with the novel. Volumes of one HathiTrust catalog record are one record.
+- A Gutenberg number named by a LibriVox or Open Library record (`identifiers.gutenberg`) joins that record to the Gutenberg eBook. A record naming several numbers (Open Library names every edition) is joined only to those eBooks whose title is similar, so an omnibus does not join the novels it contains.
 - Chapters (DOAB lists them) are not books.
 - HathiTrust data contains placeholder ISBNs (`9780000000002` and strings like `000000000061rub` appear on unrelated books). The ID pass ignores any ISBN that is not valid, and `9780000000002` explicitly.
 - HathiTrust titles and authors are MARC strings ("Pride and prejudice / by Jane Austen", "Austen, Jane, 1775-1817.") and its languages are 3-letter MARC codes. They are normalized before matching (planned).
@@ -106,7 +108,7 @@ Mobile first and then web based, Dart/Flutter . I don't know what to use as a ba
 Will need a backend that calls the various APIs and manages the data to serve to the user. Will also need a system to provide Project Gutenberg access because it does not have a normal API but there is a client with a GitHub repo.
 
 ### Backend (decision)
-A Python backend built with FastAPI, in `backend/`. It calls the five sources (Gutenberg through the self-hosted Gutendex; HathiTrust through a local index), merges the records into works, applies the 24-hour source-outage rule, and serves JSON to the Flutter app in `app/`. Endpoints: `GET /search`, `GET /sources` (content for the About pages), `GET /health`, and `GET /publications/gutenberg/<id>/manifest.json` with `GET /publications/gutenberg/<id>/<file>` (a Gutenberg EPUB as a Readium Web Publication, for the web reader). In `/search`, a Gutenberg book's `reading.publication` gives that manifest's path. There are no accounts and no endpoints that take personal data. The backend, not the app, talks to the sources. The contract is defined by the tests in `backend/tests/` (see its README).
+A Python backend built with FastAPI, in `backend/`. It calls the five sources (Gutenberg through the self-hosted Gutendex; HathiTrust through a local index), merges the records into works, applies the 24-hour source-outage rule, and serves JSON to the Flutter app in `app/`. Responses are gzipped for clients that ask (a search answer is about a tenth of its size). Endpoints: `GET /search`, `GET /sources` (content for the About pages), `GET /health`, and `GET /publications/gutenberg/<id>/manifest.json` with `GET /publications/gutenberg/<id>/<file>` (a Gutenberg EPUB as a Readium Web Publication, for the web reader). In `/search`, a Gutenberg book's `reading.publication` gives that manifest's path. There are no accounts and no endpoints that take personal data. The backend, not the app, talks to the sources. The contract is defined by the tests in `backend/tests/` (see its README).
 
 ### Testing (decision)
 Tests are written before the code and fail until the feature exists. See `backend/tests/README.md`, `app/test/README.md` and `gutendex/books/tests.py` for the map from milestones to tests. Backend tests use `pytest` with mocked HTTP; app tests use `flutter test`, including Flutter's accessibility guidelines (contrast, tap target size, labels), 200% text size, 320px width and keyboard checks. These catch regressions but do not replace testing with a real screen reader. Usability testing of the About pages is manual.
@@ -141,12 +143,14 @@ When a source is left out of a search, a notice above the results says so. The n
 ### Details
 The details page includes a full list of the book's metadata. Maybe this could include other information such as other books by the author or the following book in a series or something.
 
+The work's identifiers (ISBNs, OCLC numbers, HathiTrust record numbers, ...) are many and mostly internal codes, so they are hidden behind one "Show identifiers" button, closed by default (user decision 2026-10-11). When open, each kind shows 5 values and a "Show all N" button. A work with no identifiers has no button. The backend sends at most 20 per kind.
+
 Project Gutenberg often has several eBooks of one work (Pride and Prejudice has two text editions and three audiobooks), and they merge into one work. So that the user can tell them apart, each book's card shows its eBook number, release date, last update, credits and original publication when they are known, as gutenberg.org does. See api_gutendex.documentation.md.
 
 ### Source About Pages
 Each source has a page detailing what it is and how it works. Information about how to access it normally.
 
-Includes a donation button for each source.
+Includes a donation button for each source, except HathiTrust, which takes no public donations (user decision 2026-10-11): its page has only the link to its home page.
 
 ## Privacy
 The goal is to limit data on the user. The first version has no accounts and collects no personal data. In a later update, a user can create an account with a username and password. This enables a user to access their account on their phone or on a computer/by browser. An email is optional.
@@ -172,7 +176,7 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Bookmarks are saved on the device and restored when a book is reopened
 - Listen while reading feature is constructed and passes accessibility testing
 - The reader spike is done and the reader package is chosen (decision_reader.md)
-- Read-aloud (TTS) is constructed and passes accessibility testing
+- Read-aloud (TTS) is constructed and passes accessibility testing (built 2026-10-11: `read_aloud_test.dart`, tap target and label guidelines; real voices and screen readers are checked by hand)
 
 ## Non-functional requirements
 - Source outage - do not return results and stop returning results for a 24 hour period. A timeout is not an outage: a source that is too slow is left out of that search only and is asked again on the next one. A source that is still working on several earlier searches (4 at most) is not asked again until one finishes; it is left out of that search only. Only the source's own failures start an outage (it cannot be reached, it answers with a server error, or its answer cannot be read). When the source turns down our request (a 4xx answer) or our own code fails, the source is left out of that search only. Search input is limited (300 characters per field, page 1000 at most) so that no request can make a source fail.
@@ -194,10 +198,10 @@ The goal is to limit data on the user. The first version has no accounts and col
 - HathiTrust: its book reader, page text and PDFs (`babel.hathitrust.org`) return a Cloudflare challenge or "Blocked from HathiTrust" to our IP, so the backend cannot read HathiTrust books; users open them in HathiTrust's reader. Whether that reader can be shown in an iframe or WebView, and whether HathiTrust's terms allow it, is unverified. Its accessibility with a screen reader is outside our control. Some books can be downloaded only by a signed-in user (per the project owner; not verified). See api_hathitrust.documentation.md and decision_hathitrust.md.
 - HathiTrust's local index is a copy of its data: the full file is 1.2 GB compressed; the index has 5.35 million volumes and is 1.65 GB (measured 2026-10-11). It is only as fresh as our last import, and the daily files do not say which volumes were removed, so a new monthly file rebuilds it.
 - HathiTrust `pdus` volumes (public domain in the US only) may open only for users in the US; we cannot tell where a user is.
-- HathiTrust: a title search can return one work with 20 books (different libraries' editions) on a page, and HathiTrust holds more; how to shorten that is not decided (decision_hathitrust.md).
-- HathiTrust: stopwords ("the", "of", "and", "de", "der", ...) are left out of a title, author or `q` that has other words; a search made only of them ("the of and") still takes 5–6 s. Ordinary searches take under 150 ms.
+- HathiTrust: a title search can return one work with 20 books (different libraries' editions) on a page, and HathiTrust holds more; the details page shows the first 3 HathiTrust volumes of a work and a "Show all N HathiTrust volumes" button for the rest (2026-10-11). The search response still carries all of them (up to 20).
+- HathiTrust: stopwords ("the", "of", "and", "de", "der", ...) are left out of a title, author or `q` that has other words; a field made only of them is ignored, and a search with nothing else to look for ("the of and") finds nothing instead of running (it took 5–10 s; user decision 2026-10-11). A single very common word that is not a stopword still takes about 2 s ("history"). Other searches take under 1 s (measured 2026-10-11 on the real index).
 - HathiTrust: the index is refreshed by `python -m app.hathitrust_update`, which nothing runs on a schedule yet; until it has run once, HathiTrust is skipped in every search.
-- HathiTrust has no public donation page that we could find, so its About page's donation button links to its home page.
+- HathiTrust has no public donation page that we could find, and the project owner decided it has no donation button: `donation_url` is `null` in `/sources` and its About page shows only "Visit the HathiTrust website".
 - HathiTrust's catalog has few ISBNs (3% of volumes) and no subjects, so ISBN searches rarely find a HathiTrust book and a keyword search only matches titles and authors.
 - Open Library's work records span many languages, so they often cannot be merged with other sources' records.
 - Most DOAB books' PDFs are in the OAPEN Library, whose book pages and PDF files are behind a bot check that browsers pass but HTTP clients do not. The planned workaround is for the user's device to fetch the PDF through an in-app WebView. This is unverified until the reader spike. On web, these books open in an iframe or a new tab. Some publisher links that end in `.pdf` return a web page, so the reader must fall back to the DOAB page. See api_doab.documentation.md and decision_reader.md.

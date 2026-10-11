@@ -1,10 +1,16 @@
 """Data Merging rules (spec.md): unite books from different sources into works.
 
-Pass 1: a shared ISBN, OCLC number or HathiTrust catalog record.  Pass 2: exact title and author.  Pass 3: fuzzy title and author.
+Pass 1: a shared ISBN, OCLC number, HathiTrust catalog record or Gutenberg number.  Pass 2: exact title and
+author.  Pass 3: fuzzy title and author.
 - Different languages never merge. A book with an unknown language merges only through pass 1.
 - Only authors count; narrators, translators and editors are ignored.
 - A book with no author never merges on title alone.
 - A fuzzy match merges only when it is unambiguous: a duplicate is better than a false merge.
+- An ISBN or OCLC number held by two different records of one source merges nothing: Open Library lists the
+  ISBNs of every edition of a work, so an omnibus ("Novels (Pride and Prejudice / Sense and Sensibility)")
+  shares them with the novel.
+- A Gutenberg number named by a LibriVox or Open Library record joins it to that Gutenberg eBook. A record
+  naming several numbers is trusted for those whose title is similar (an omnibus is not).
 """
 import re
 from dataclasses import dataclass, field
@@ -60,6 +66,7 @@ def merge_books(books: list[Book]) -> list[Work]:
     entries = [_entry(book, order) for order, book in ordered]
     groups = _Groups(entries)
     _merge_on_identifiers(entries, groups)
+    _merge_on_gutenberg_references(entries, groups)
     _merge_exact(entries, groups)
     _merge_fuzzy(entries, groups)
 
@@ -85,13 +92,47 @@ def _entry(book: Book, order: int) -> _Entry:
 
 
 def _merge_on_identifiers(entries: list[_Entry], groups: _Groups) -> None:
-    first_with: dict[tuple, int] = {}
+    members: dict[tuple, list[int]] = {}
     for i, entry in enumerate(entries):
         for identifier in sorted(entry.ids):
-            if identifier in first_with:
-                groups.union(first_with[identifier], i)
-            else:
-                first_with[identifier] = i
+            members.setdefault(identifier, []).append(i)
+    # Copies of one HathiTrust record are one work, so they are united first; that is how the
+    # check below tells "two volumes of one record" from "two different records".
+    for identifier, indexes in sorted(members.items()):
+        if identifier[0] == "hathitrust":
+            _union_all(groups, indexes)
+    unambiguous = [indexes for identifier, indexes in sorted(members.items())
+                   if identifier[0] != "hathitrust" and not _held_twice_by_a_source(entries, groups, indexes)]
+    for indexes in unambiguous:
+        _union_all(groups, indexes)
+
+
+def _union_all(groups: _Groups, indexes: list[int]) -> None:
+    for i in indexes[1:]:
+        groups.union(indexes[0], i)
+
+
+def _held_twice_by_a_source(entries: list[_Entry], groups: _Groups, indexes: list[int]) -> bool:
+    """Do two records (not two volumes of one record) of the same source hold this identifier?"""
+    records: dict[str, set[int]] = {}
+    for i in indexes:
+        records.setdefault(entries[i].book.source, set()).add(groups.find(i))
+    return any(len(found) > 1 for found in records.values())
+
+
+def _merge_on_gutenberg_references(entries: list[_Entry], groups: _Groups) -> None:
+    ebooks = {e.book.source_id: i for i, e in enumerate(entries) if e.book.source == "gutenberg"}
+    for i, entry in enumerate(entries):
+        if entry.book.source == "gutenberg":
+            continue
+        references = [r for r in dict.fromkeys(entry.book.identifiers.get("gutenberg", [])) if r in ebooks]
+        for reference in references:
+            target = ebooks[reference]
+            # LibriVox names one eBook; Open Library names every edition of the work, and an omnibus
+            # could name those of several works, so a long list needs the titles to agree as well.
+            if len(entry.book.identifiers.get("gutenberg", [])) == 1 \
+                    or fuzz.ratio(entry.title, entries[target].title) >= TITLE_SIMILARITY:
+                groups.union(i, target)
 
 
 def _title_author_eligible(entry: _Entry) -> bool:

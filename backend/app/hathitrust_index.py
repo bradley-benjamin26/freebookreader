@@ -115,8 +115,8 @@ class HathiIndex:
             if value is None:
                 continue
             words = _search_words(value)
-            if not words:
-                return []
+            if not words:               # only stopwords (or no letters): slow to match, says nothing
+                continue
             phrase = " ".join(f'"{w}"' for w in words)
             conditions.append(f"{field} : ({phrase})" if field else f"({phrase})")
         match = " AND ".join(conditions)
@@ -203,9 +203,8 @@ class HathiIndex:
 
 
 def _search_words(text: str) -> list[str]:
-    """The words to match. Stopwords are dropped unless the text has nothing else ("the of and")."""
-    words = _WORD.findall(text)
-    return ([w for w in words if w.lower() not in _STOPWORDS] or words)[:MAX_SEARCH_WORDS]
+    """The words to match, without stopwords. Empty when the text is only stopwords ("the of and")."""
+    return [w for w in _WORD.findall(text) if w.lower() not in _STOPWORDS][:MAX_SEARCH_WORDS]
 
 
 def _insert(db: sqlite3.Connection, volumes: list[Volume]) -> None:
