@@ -67,7 +67,7 @@ def test_chapter_for_audio_sections():
 
 def test_book_serializes_a_reading_option():
     data = make_book(content={"text/html": "https://x/b.html"}).model_dump(mode="json")
-    assert data["reading"] == {"mode": "in_app", "kind": "html", "url": "https://x/b.html"}
+    assert data["reading"] == {"mode": "in_app", "kind": "html", "url": "https://x/b.html", "publication": None}
 
 
 def test_work_is_a_container_of_books_only():

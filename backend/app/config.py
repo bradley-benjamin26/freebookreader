@@ -9,6 +9,7 @@ from typing import Mapping
 import httpx
 
 from app.outage import OutageTracker
+from app.publications import PublicationStore
 from app.search import SearchService
 from app.sources.doab import DoabSource
 from app.sources.gutendex import GutendexSource
@@ -36,6 +37,11 @@ class Settings:
     librivox_url: str = "https://librivox.org"
     openlibrary_url: str = "https://openlibrary.org"
     doab_url: str = "https://directory.doabooks.org"
+    # EPUBs for the web reader (app/publications.py).
+    gutenberg_url: str = "https://www.gutenberg.org"
+    epub_cache_dir: Path = Path(__file__).resolve().parents[1] / "cache" / "epub"
+    max_download_mb: float = 200
+    epub_cache_mb: float = 2000
     search_timeout_seconds: float = 15
     outage_cooldown_hours: float = 24
     cors_origins: tuple[str, ...] = ("*",)
@@ -60,6 +66,10 @@ class Settings:
             librivox_url=get("LIBRIVOX_URL", cls.librivox_url),
             openlibrary_url=get("OPENLIBRARY_URL", cls.openlibrary_url),
             doab_url=get("DOAB_URL", cls.doab_url),
+            gutenberg_url=get("GUTENBERG_URL", cls.gutenberg_url),
+            epub_cache_dir=Path(get("EPUB_CACHE_DIR", cls.epub_cache_dir)),
+            max_download_mb=_number(get("MAX_DOWNLOAD_MB", cls.max_download_mb)),
+            epub_cache_mb=_number(get("EPUB_CACHE_MB", cls.epub_cache_mb)),
             search_timeout_seconds=_number(get("SEARCH_TIMEOUT_SECONDS", cls.search_timeout_seconds)),
             outage_cooldown_hours=_number(get("OUTAGE_COOLDOWN_HOURS", cls.outage_cooldown_hours)),
             cors_origins=tuple(o.strip() for o in origins.split(",")) if origins else cls.cors_origins,
@@ -97,3 +107,10 @@ def build_search_service(settings: Settings, client: httpx.Client) -> SearchServ
     ]
     outage = OutageTracker(cooldown=timedelta(hours=settings.outage_cooldown_hours))
     return SearchService(sources=sources, outage=outage, timeout_seconds=settings.search_timeout_seconds)
+
+
+def build_publication_store(settings: Settings, client: httpx.Client) -> PublicationStore:
+    megabyte = 1024 * 1024
+    return PublicationStore(client=client, gutenberg_url=settings.gutenberg_url, cache_dir=settings.epub_cache_dir,
+                            max_download_bytes=int(settings.max_download_mb * megabyte),
+                            max_cache_bytes=int(settings.epub_cache_mb * megabyte))

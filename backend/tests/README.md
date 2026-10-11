@@ -17,7 +17,9 @@ uvicorn app.main:create_app --factory --port 8000
 
 Settings come from `FBR_*` environment variables: `FBR_GUTENDEX_URL`, `FBR_LIBRIVOX_URL`, `FBR_OPENLIBRARY_URL`,
 `FBR_DOAB_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
-default `*`) and `FBR_CONTACT`. The `User-Agent` is built from the project's top-level `.env` (JSON:
+default `*`) and `FBR_CONTACT`. The EPUB cache for the web reader uses `FBR_GUTENBERG_URL` (default
+`https://www.gutenberg.org`), `FBR_EPUB_CACHE_DIR` (default `backend/cache/epub`, ignored by git),
+`FBR_MAX_DOWNLOAD_MB` (200) and `FBR_EPUB_CACHE_MB` (2000). The `User-Agent` is built from the project's top-level `.env` (JSON:
 `projectName` and `email`; `name` is never sent), e.g. `FreeBookReader/0.1 (email)`. Open Library allows
 3 requests/second instead of 1 when it names a contact. `FBR_CONTACT` overrides the email and `FBR_ENV_FILE`
 points at another file.
@@ -40,6 +42,7 @@ Gutendex has its own regression tests (it is already built):
 | Source outage: stop returning results for 24 h | `test_outage.py`, `TestOutages` in `test_search_service.py` |
 | Search results within 15 s | `TestTimeout`, `test_default_timeout_is_15_seconds`, `test_sources_are_queried_in_parallel` |
 | Viewer displays in-app sources, others link out | `test_reader.py` |
+| Gutenberg EPUB served for the web reader (decision_reader.md, spike 9b/9c) | `test_publications.py`, `TestPublication` in `test_reader.py` |
 | About pages content | `test_sources_info.py` |
 | API the app talks to | `test_api.py`, `test_config.py` |
 | Data model (Work -> book) | `test_models.py` |
@@ -59,10 +62,14 @@ backend/app/
   merge.py         merge_books(list[Book]) -> list[Work]
   outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=15, max_in_flight=4): search(SearchQuery) -> SearchResponse
-  reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url)
+  reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
+  publications.py  build_manifest(ZipFile) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
+                   max_cache_bytes, max_entry_bytes): manifest(id), resource(id, href) -> (bytes, type);
+                   PublicationNotFound (404), PublicationUnavailable (502), PublicationTimeout (504)
   sources_info.py  SOURCES, get_source_info(id)
   config.py        Settings.from_env, build_search_service(settings, client)
-  main.py          create_app(search_service) -> FastAPI:  GET /health, /search, /sources
+  main.py          create_app(search_service, settings, publication_store) -> FastAPI:  GET /health, /search, /sources,
+                   /publications/gutenberg/{id}/manifest.json, /publications/gutenberg/{id}/{href}
 ```
 
 Sync `httpx.Client` is injected everywhere so tests can use `httpx.MockTransport`. Sources are
@@ -144,6 +151,25 @@ queried in parallel threads, on one executor shared by all searches.
 - **Open Library language filter:** `language=<MARC code>` (`fre`, not `fra`) filters works; `lang=<2-letter>`
   is sent too but only boosts editions. Because of the filter, results are labeled with the requested language.
 - **Reading order for text:** html, then epub, then plain text. PDF for DOAB.
+- **The web reader gets Gutenberg books from `/publications/gutenberg/<id>/`** (added 2026-10-10). The manifest
+  declares the EPUB profile (`https://readium.org/webpub-manifest/profiles/epub`): without it flutter_readium on web
+  uses its generic navigator, which ignores font size, colours and page view. Every `href` is relative to the zip
+  root, so the files are served under the same prefix. The table of contents comes from the EPUB 3 `nav` (nested
+  entries keep `children`), or from the NCX for EPUB 2; an EPUB 2 cover comes from `<meta name="cover">`.
+- **Only files listed in the package's manifest are served**, by exact decoded path (`container.xml`, the OPF,
+  `mimetype` and `..` paths are 404). Book files carry `Content-Security-Policy: sandbox` and `nosniff` so a book page
+  opened directly cannot run scripts on the API's origin; Readium builds its own documents, so the reader is unaffected
+  (checked in Chromium 2026-10-10).
+- **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.
+  404 there is 404; any other failure is 502, a timeout 504. Downloads over 200 MB, files that are not a usable EPUB
+  and zip entries over 100 MB (checked before and while reading, against zip bombs) are refused with 502. A book is
+  downloaded once even when several requests arrive together, and a failed download is not cached. The cache is a
+  directory of `<id>.epub` files; when it is over its limit, the least recently used books are deleted. Book ids are
+  1 to 99,999,999 (422 otherwise). This endpoint does not use the outage rule; it only serves books already found.
+- **`reading.publication` names that manifest** for a Gutenberg book with an `application/epub+zip` file and a
+  numeric id: `/publications/gutenberg/<id>/manifest.json`, a path on this backend (the app joins it to its
+  `BACKEND_URL`, so the backend need not know its public address). Every other book has `null`. `kind` and `url`
+  are unchanged, so the current in-app reader keeps working.
 - The Gutenberg ID found in a LibriVox `url_text_source` is stored as `identifiers["gutenberg"]` and Open Library
   cross references are stored the same way. Nothing uses them yet.
 

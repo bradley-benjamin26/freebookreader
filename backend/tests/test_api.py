@@ -65,7 +65,8 @@ class TestSearchEndpoint:
     def test_book_json_includes_how_to_read_it(self, client):
         books = client.get("/search", params={"q": "pride"}).json()["works"][0]["books"]
         text = next(b for b in books if b["format"] == "text")
-        assert text["reading"] == {"mode": "in_app", "kind": "html", "url": "https://g/1342.html"}
+        assert text["reading"] == {"mode": "in_app", "kind": "html", "url": "https://g/1342.html",
+                                   "publication": None}
         audio = next(b for b in books if b["format"] == "audio")
         assert audio["reading"]["mode"] == "external"       # no chapters in this stub
         assert audio["audio_seconds"] == 47204
@@ -142,3 +143,12 @@ def test_no_accounts_or_personal_data_endpoints_exist(client):
     """Privacy: the first version has no accounts and collects no personal data."""
     for path in ("/login", "/users", "/accounts", "/register", "/me"):
         assert client.get(path).status_code == 404
+
+
+def test_gutenberg_epub_books_name_their_publication():
+    works = merge_books([make_book(source="gutenberg", source_id="1342", title="Pride and Prejudice",
+                                   authors=["Jane Austen"],
+                                   content={"application/epub+zip": "https://g/1342.epub"})])
+    client = TestClient(create_app(search_service=StubService(works)))
+    book = client.get("/search", params={"q": "pride"}).json()["works"][0]["books"][0]
+    assert book["reading"]["publication"] == "/publications/gutenberg/1342/manifest.json"

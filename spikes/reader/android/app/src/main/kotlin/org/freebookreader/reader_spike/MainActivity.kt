@@ -1,0 +1,5 @@
+package org.freebookreader.reader_spike
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()

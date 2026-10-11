@@ -1,5 +1,6 @@
 """Which books are read or heard inside the app, and which link out to the source."""
 from app.models import Book, ReadingOptions
+from app.publications import MAX_GUTENBERG_ID, gutenberg_manifest_path
 
 __all__ = ["ReadingOptions", "reading_options"]
 
@@ -23,8 +24,18 @@ def reading_options(book: Book) -> ReadingOptions:
     for kind, matches in _TEXT_KINDS:
         for mime, url in book.content.items():
             if matches(mime):
-                return ReadingOptions(mode="in_app", kind=kind, url=url)
+                return ReadingOptions(mode="in_app", kind=kind, url=url, publication=_publication(book))
     return external
+
+
+def _publication(book: Book) -> str | None:
+    """The web reader's manifest on this backend: Gutenberg books that have an EPUB."""
+    if book.source != "gutenberg" or "application/epub+zip" not in book.content:
+        return None
+    if not book.source_id.isascii() or not book.source_id.isdigit():
+        return None
+    book_id = int(book.source_id)
+    return gutenberg_manifest_path(book_id) if 1 <= book_id <= MAX_GUTENBERG_ID else None
 
 
 def _audio_url(book: Book) -> str | None:

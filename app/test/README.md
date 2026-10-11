@@ -44,6 +44,8 @@ app/lib/
                                  urlOpener, audio, themeMode, pdfViewBuilder})   MaterialApp(title: 'Free Book Reader')
   models/models.dart           Book, Chapter, Work, ReadingOptions, SourceInfo, SearchResponse, SearchQuery,
                                  enums BookFormat, Access, ReadingMode. const constructors on SearchResponse.
+                                 ReadingOptions.publication: backend path of a Gutenberg book's Readium manifest
+                                 for the web reader, or null (also null when the field is missing).
   api/search_api.dart          abstract SearchApi {search, sources}; HttpSearchApi(client, baseUrl); SearchException(isTimeout)
   storage/bookmark_store.dart  Bookmark(progress 0..1, const); BookmarkStore(SharedPreferences)
   reader/reader_settings.dart  ReaderSettings (const, clamped), ReaderSettingsStore, ReaderTheme, ReaderFont, ViewMode

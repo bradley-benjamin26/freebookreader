@@ -23,6 +23,8 @@ class ReadingOptions(BaseModel):
     mode: Literal["in_app", "external"]
     kind: Optional[Literal["html", "epub", "text", "pdf", "audio"]] = None
     url: str
+    # Path on this backend of a Readium manifest for the book (web reader), or None.
+    publication: Optional[str] = None
 
 
 class Book(BaseModel):

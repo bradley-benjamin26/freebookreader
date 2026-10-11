@@ -21,7 +21,8 @@ def test_html_is_preferred_for_gutenberg_text():
         "text/plain; charset=utf-8": GUTEN["txt"],
         "application/epub+zip": GUTEN["epub"],
         "text/html": GUTEN["html"]})
-    assert reading_options(book) == ReadingOptions(mode="in_app", kind="html", url=GUTEN["html"])
+    assert reading_options(book) == ReadingOptions(mode="in_app", kind="html", url=GUTEN["html"],
+                                                   publication="/publications/gutenberg/1/manifest.json")
 
 
 def test_epub_is_next_best():
@@ -96,3 +97,33 @@ def test_unreadable_mime_types_are_ignored():
 def test_external_options_always_have_a_url():
     for source in ("gutenberg", "librivox", "doab", "openlibrary"):
         assert reading_options(make_book(source=source)).url
+
+
+class TestPublication:
+    """The web reader opens Gutenberg books through the backend's Readium manifest (test_publications.py).
+
+    `publication` is a path on this backend, so the backend does not need to know its own public URL;
+    the app joins it to BACKEND_URL. The other fields keep pointing at the source.
+    """
+
+    def test_gutenberg_book_with_an_epub_has_a_publication(self):
+        book = make_book(source="gutenberg", source_id="11", content={
+            "text/html": GUTEN["html"], "application/epub+zip": GUTEN["epub"]})
+        options = reading_options(book)
+        assert options.publication == "/publications/gutenberg/11/manifest.json"
+        assert (options.kind, options.url) == ("html", GUTEN["html"])
+
+    def test_gutenberg_book_without_an_epub_has_none(self):
+        book = make_book(source="gutenberg", source_id="11", content={"text/html": GUTEN["html"]})
+        assert reading_options(book).publication is None
+
+    @pytest.mark.parametrize("source", ["librivox", "doab", "openlibrary"])
+    def test_other_sources_have_none(self, source):
+        book = make_book(source=source, source_id="11", content={"application/epub+zip": "https://x/b.epub"})
+        assert reading_options(book).publication is None
+
+    @pytest.mark.parametrize("source_id", ["abc", "0", "11/../12", "", "100000000"])
+    def test_only_valid_gutenberg_numbers_get_one(self, source_id):
+        book = make_book(source="gutenberg", source_id=source_id,
+                         content={"application/epub+zip": GUTEN["epub"]})
+        assert reading_options(book).publication is None

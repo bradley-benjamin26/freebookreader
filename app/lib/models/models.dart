@@ -32,17 +32,22 @@ Map<String, List<String>> _stringLists(Object? raw) => {
 /// How a book is opened: in the app (with [kind] html, epub, text, pdf or
 /// audio) or at its source.
 class ReadingOptions {
-  const ReadingOptions({required this.mode, required this.kind, required this.url});
+  const ReadingOptions({required this.mode, required this.kind, required this.url, this.publication});
 
   factory ReadingOptions.fromJson(Map<String, dynamic> json) => ReadingOptions(
         mode: _parseEnum(_modes, json['mode'], 'reading mode'),
         kind: json['kind'] as String?,
         url: json['url'] as String,
+        publication: json['publication'] as String?,
       );
 
   final ReadingMode mode;
   final String? kind;
   final String url;
+
+  /// Path on the backend of a Readium manifest for the web reader
+  /// (`/publications/gutenberg/<id>/manifest.json`), or null.
+  final String? publication;
 }
 
 class Chapter {

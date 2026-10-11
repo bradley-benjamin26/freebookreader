@@ -67,7 +67,8 @@
           "reading": {
             "mode": "in_app",
             "kind": "html",
-            "url": "https://www.gutenberg.org/ebooks/1342.html.images"
+            "url": "https://www.gutenberg.org/ebooks/1342.html.images",
+            "publication": "/publications/gutenberg/1342/manifest.json"
           }
         },
         {

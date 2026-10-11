@@ -76,6 +76,18 @@ void main() {
       expect(book.content['text/html'], contains('gutenberg.org'));
     });
 
+    test('Gutenberg book names its web-reader publication on the backend', () {
+      // A path on the backend (a Readium manifest), joined to BACKEND_URL by the reader.
+      final book = response.works.first.books.first;
+      expect(book.reading.publication, '/publications/gutenberg/1342/manifest.json');
+    });
+
+    test('books without a publication, or older responses without the field', () {
+      expect(response.works.first.books[1].reading.publication, isNull);
+      final reading = ReadingOptions.fromJson({'mode': 'external', 'kind': null, 'url': 'https://x'});
+      expect(reading.publication, isNull);
+    });
+
     test('audio book from LibriVox', () {
       final book = response.works.first.books[1];
       expect(book.format, BookFormat.audio);

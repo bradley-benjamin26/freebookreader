@@ -100,7 +100,7 @@ Mobile first and then web based, Dart/Flutter . I don't know what to use as a ba
 Will need a backend that calls the various APIs and manages the data to serve to the user. Will also need a system to provide Project Gutenberg access because it does not have a normal API but there is a client with a GitHub repo.
 
 ### Backend (decision)
-A Python backend built with FastAPI, in `backend/`. It calls the four sources (Gutenberg through the self-hosted Gutendex), merges the records into works, applies the 24-hour source-outage rule, and serves JSON to the Flutter app in `app/`. Endpoints: `GET /search`, `GET /sources` (content for the About pages), `GET /health`. There are no accounts and no endpoints that take personal data. The backend, not the app, talks to the sources. The contract is defined by the tests in `backend/tests/` (see its README).
+A Python backend built with FastAPI, in `backend/`. It calls the four sources (Gutenberg through the self-hosted Gutendex), merges the records into works, applies the 24-hour source-outage rule, and serves JSON to the Flutter app in `app/`. Endpoints: `GET /search`, `GET /sources` (content for the About pages), `GET /health`, and `GET /publications/gutenberg/<id>/manifest.json` with `GET /publications/gutenberg/<id>/<file>` (a Gutenberg EPUB as a Readium Web Publication, for the web reader). In `/search`, a Gutenberg book's `reading.publication` gives that manifest's path. There are no accounts and no endpoints that take personal data. The backend, not the app, talks to the sources. The contract is defined by the tests in `backend/tests/` (see its README).
 
 ### Testing (decision)
 Tests are written before the code and fail until the feature exists. See `backend/tests/README.md`, `app/test/README.md` and `gutendex/books/tests.py` for the map from milestones to tests. Backend tests use `pytest` with mocked HTTP; app tests use `flutter test`, including Flutter's accessibility guidelines (contrast, tap target size, labels), 200% text size, 320px width and keyboard checks. These catch regressions but do not replace testing with a real screen reader. Usability testing of the About pages is manual.
@@ -109,7 +109,7 @@ Tests are written before the code and fail until the feature exists. See `backen
 The reader is chosen by a spike, not yet by a decision. Plan: try `flutter_readium` (EPUB, PDF on mobile, TTS, reader preferences, on the Readium toolkits) first. If it fails the accessibility checks, fall back to `flutter_epub_viewer` plus a separate TTS plugin, or our own renderer. Audiobooks use `just_audio` and `audio_service`. The app talks to the reader through a `ReaderEngine` interface so the package can change. Listen while reading shows the viewer and the player together; syncing text to a LibriVox recording needs alignment data we do not have. See decision_reader.md for the options, the spike checklist and the effect on the tests.
 
 ### Project Gutenberg access (decision)
-Project Gutenberg is served by a self-hosted copy of [Gutendex](https://github.com/garethbjohnson/gutendex) (in `gutendex/`), a Django + Postgres app. It downloads Project Gutenberg's nightly catalog (metadata only, about 3 GB on disk) and exposes it as a JSON search API. It does not store book text; books are read from gutenberg.org through the links in each record. The catalog must be refreshed on a schedule (nightly) with `manage.py updatecatalog`. Gutendex has no ISBN or other identifier search, so Gutenberg records can only be merged on title and author. See api_gutendex.documentation.md.
+Project Gutenberg is served by a self-hosted copy of [Gutendex](https://github.com/garethbjohnson/gutendex) (in `gutendex/`), a Django + Postgres app. It downloads Project Gutenberg's nightly catalog (metadata only, about 3 GB on disk) and exposes it as a JSON search API. Gutendex does not store book text; books are read from gutenberg.org through the links in each record. For the web reader, the backend downloads a book's EPUB from gutenberg.org the first time someone opens it, keeps it in a disk cache (2 GB by default; least recently used books are removed first) and serves it with a Readium manifest. Web needs this because gutenberg.org sends no CORS headers and the web reader cannot open an .epub file. The catalog must be refreshed on a schedule (nightly) with `manage.py updatecatalog`. Gutendex has no ISBN or other identifier search, so Gutenberg records can only be merged on title and author. See api_gutendex.documentation.md.
 
 ## UX
 
@@ -170,6 +170,7 @@ The goal is to limit data on the user. The first version has no accounts and col
 
 ## Risks
 - The reader package (flutter_readium) is pre-1.0 and its screen-reader behavior is unproven until the spike.
+- The backend's EPUB cache downloads books from gutenberg.org. Project Gutenberg asks automated tools to use a mirror; if traffic grows, point `FBR_GUTENBERG_URL` at a mirror.
 - A source changes or removes its API, or its terms of use change.
 - Project Gutenberg has no standard API, so its access system depends on a third-party client.
 - Fuzzy matching can wrongly merge or fail to merge records.

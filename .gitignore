@@ -22,6 +22,7 @@ __pycache__/
 htmlcov/
 *.egg-info/
 db.sqlite3
+backend/cache/
 
 # --- Flutter / Dart (app/) ---
 .dart_tool/

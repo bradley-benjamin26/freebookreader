@@ -75,3 +75,16 @@ def test_service_uses_the_configured_gutendex_url(recorder):
     from app.models import SearchQuery
     gutenberg.search(SearchQuery(q="x"))
     assert rec.last.url.host == "gutendex.test"
+
+
+def test_publication_settings():
+    settings = Settings.from_env({})
+    assert settings.gutenberg_url == "https://www.gutenberg.org"
+    assert settings.max_download_mb == 200
+    assert settings.epub_cache_mb == 2000
+    custom = Settings.from_env({"FBR_GUTENBERG_URL": "https://mirror.example", "FBR_EPUB_CACHE_DIR": "/tmp/x",
+                                "FBR_MAX_DOWNLOAD_MB": "50", "FBR_EPUB_CACHE_MB": "100"})
+    assert custom.gutenberg_url == "https://mirror.example"
+    assert str(custom.epub_cache_dir) == "/tmp/x"
+    assert custom.max_download_mb == 50
+    assert custom.epub_cache_mb == 100
