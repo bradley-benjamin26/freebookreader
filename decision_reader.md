@@ -32,20 +32,28 @@ From [spec.md](spec.md):
 5. **PDF (DOAB):** use Readium's PDF on mobile. For web, evaluate `pdfrx`, or link out. OAPEN PDFs may be untagged, so screen-reader quality is uncertain. Check a sample. Most of the files are in the OAPEN Library, behind a bot check (see "Getting OAPEN PDFs" below), so the PDF has to be fetched by the user's device through a WebView, not by the backend.
 6. **Listen while reading: show the viewer and the player together.** Real text/audio syncing needs alignment data inside the publication, which Gutenberg text and a LibriVox recording do not have. Syncing them would be a separate research project (forced alignment). Readium's media overlays do not solve this. **TTS gives a synced read-along for any book**, with no recording needed.
 
-## The `ReaderEngine` interface (sketch)
+## The `ReaderEngine` interface
 
-The app talks only to this. The real implementation wraps the chosen package; tests use a fake.
+Built 2026-10-10 in [app/lib/reader/reader_engine.dart](app/lib/reader/reader_engine.dart). The reader page talks only to this; tests use a fake.
 
 ```
-open(ReadingOptions)                      // EPUB or PDF source: URL now, local file later
-Stream<ReaderPosition> positions          // where the reader is now
-goTo(ReaderPosition)
+open(ReadingOptions, settings, at)        // completes when the first page can show; throws ReaderOpenException
+position, Stream<ReaderPosition> positions
+next(), previous(), goTo(ReaderPosition)
 apply(ReaderSettings)                     // theme, font, size, spacing, page-turner/scroll
-tts: start, pause, resume, stop, setRate, setVoice; Stream<TtsState>
+buildView(context)                        // the book itself
 dispose()
 ```
 
-`ReaderPosition` holds the engine's own locator (a Readium locator or an epub CFI) plus a progress fraction from 0 to 1. Bookmarks keep both. The fraction is what we store today (see [app/test/bookmark_store_test.dart](app/test/bookmark_store_test.dart)), and it keeps working across font and view changes. The locator restores the exact place.
+Not yet: TTS (`start, pause, resume, stop, setRate, setVoice; Stream<TtsState>`), and a local file path in `open` for offline use.
+
+`ReaderPosition` holds the engine's own locator (a Readium locator as JSON, or `word:<index>` in our renderer) plus a progress fraction from 0 to 1, and the page number and count when the engine knows them. Bookmarks keep both progress and locator. The fraction keeps working across font and view changes and across engines; the locator restores the exact place. The page indicator shows "Page 3 of 12", or "29% read" when the engine has no page numbers (Readium's positions are per chapter when the manifest has no position list).
+
+Engines ([app/lib/reader/engines.dart](app/lib/reader/engines.dart) picks one):
+
+* `ReadiumReaderEngine` (flutter_readium 0.6.1, pinned): on web, for books with `reading.publication` (Gutenberg, via the backend's manifest). Our settings map to `EPUBPreferences` with `publisherStyles: false`; font size is a ratio of 18 pt; spacing is passed in rem.
+* `TextReaderEngine` (our own renderer): everywhere else, for HTML and plain text. It stays until Readium's native setup is done on Android and iOS.
+* PDFs do not use an engine yet; they go to the PDF viewer (currently a link out).
 
 ## Spike plan
 
@@ -107,9 +115,9 @@ Spike checks 12 and 13 test this.
 
 ## Impact on the tests
 
-* [app/test/reader_test.dart](app/test/reader_test.dart): the page-turner, scroll and display-setting tests assume our own renderer (`reader-page-text`, `reader-paragraph-N`, page counts). If a package is adopted, these move to the engine: the screens test our controls and bookmark logic against a fake `ReaderEngine`, and rendering and screen-reader behavior are checked on real devices (the spike checklist above becomes the manual test script). About 40 tests need rewriting, not deleting, once the spike picks an engine.
+* Done 2026-10-10: [app/test/reader_test.dart](app/test/reader_test.dart) tests the reader page's controls and bookmark logic against a fake `ReaderEngine`. The tests that depend on our own renderer moved to [app/test/text_engine_test.dart](app/test/text_engine_test.dart). Rendering and screen-reader behavior of Readium are checked by hand (the spike checklist above is the manual test script). See [app/test/README.md](app/test/README.md).
 * [app/test/audio_player_test.dart](app/test/audio_player_test.dart): still valid, since the audio side uses `just_audio` either way.
-* [app/test/bookmark_store_test.dart](app/test/bookmark_store_test.dart): add the locator alongside `progress`.
+* [app/test/bookmark_store_test.dart](app/test/bookmark_store_test.dart): the locator is stored alongside `progress` (done 2026-10-10).
 * **New tests needed** for TTS controls (start, pause, rate, voice, announced state) and for offline saving, once those are scheduled.
 
 ## Risks
@@ -153,9 +161,11 @@ This machine can only run web. No Android SDK, Xcode is incomplete and CocoaPods
 | 9c | **Web with a real Gutenberg EPUB works** (2026-10-10, headless Chromium + screenshot). `spikes/epub_server/serve.py` (about 100 lines, standard library) reads the EPUB zip, builds a Readium manifest (EPUB profile, title, author, language, reading order, resources, table of contents from `nav.xhtml` or the EPUB 2 NCX) and serves the manifest and the files from one origin with CORS. Book 1342 gave 9 reading-order items, 170 resources and 63 TOC entries. The cover and images load, no CSP errors, and font size, dark mode and page/scroll view applied. This is the shape of the backend endpoint web needs. Still to decide for the real endpoint: fetch and cache the EPUB from gutenberg.org, limit the host to gutenberg.org and the size of the zip, and reject paths outside the zip. |
 | 9d | **Backend endpoint built** (2026-10-10): `GET /publications/gutenberg/<id>/manifest.json` and `/<file>` in `backend/app/publications.py`, tests in `backend/tests/test_publications.py`. Live: book 1342 (24.8 MB) answered in 1.6 s on first download, book 11 in 0.2 s. Opened in the spike in headless Chromium: pages turn (progress 0.117 after 4 pages), dark mode and images work, and the `Content-Security-Policy: sandbox` header on book files does not break Readium. |
 | 2b | **Dark mode hides black line art.** Gutenberg's illustrated editions (1342) have black-on-transparent drawings that nearly vanish on a dark background. Try Readium's image preferences (`imageFilter`, darken/invert) before calling check 2 passed. |
-| 6 | Not run. |
+| 7 (web) | **Fails without a fix, passes with one** (2026-10-10). In Chrome, Readium's iframe took every click on our settings sheet drawn over it: chips and the close button did nothing and the book turned pages instead (reported by the user; confirmed with real mouse clicks in headless Chromium, `elementFromPoint` = `iframe.readium-navigator-iframe`). Fix: the reader page covers the book with a `PointerInterceptor` (package `pointer_interceptor`) while the sheet is open; then the sheet, its close button and a click on the dimmed area all work. Any new Flutter overlay drawn over the book on web (dialogs, menus, a TTS panel) needs the same. Mobile not checked. |
+| 6 | Not measured on a normal connection. In the app (below), the first page showed within about 10 s on localhost, including the backend's first download of the EPUB. |
+| 9e | **The app's Readium engine works on web** (2026-10-10, `flutter build web`, headless Chromium driven with Playwright, backend on localhost). Search → open a Gutenberg book → Readium shows it inside our reader page. Our Next/Previous buttons turn pages (indicator 0% → 29% read), our settings sheet reaches Readium (`--USER__backgroundColor: #121212`, `--USER__fontSize: 111%` for 20 pt, our font stack), a bookmark stores progress plus Readium's locator, and reopening the book restores the place (29% read). The app's `web/index.html` loads `readiumReader.js` (copied with `dart run flutter_readium:copy_js_file web`; redo it after an upgrade). Text runs close to the screen edge (`--RS__pageGutter: 10px`); try `pageMargins`. |
 | — | To run the spike on web: `cd spikes/reader && flutter run -d web-server --web-port 8080`, then give it a manifest URL such as `http://localhost:8765/alice/manifest.json` (a local copy of the Alice sample with the EPUB profile set; resources still load from alice.dita.digital, so its CSS is blocked by the CSP above). |
 
 Web test source that works without a streamer: a sample Web Publication, `https://alice.dita.digital/manifest.json` (CORS open, checked). Tried 2026-10-10 in Chrome: it opens and shows the book (reported by the user; no timings or other checks recorded yet).
 
-Next: run the app in Chrome and note checks 2, 3, 4, 6; then repeat on an iPhone and an Android phone for 1, 5, 7, 8, 10, 12.
+Next: TTS in the `ReaderEngine` (web: pick a local voice for the book's language), then repeat on an iPhone and an Android phone for 1, 5, 7, 8, 10, 12. Before Readium can be used on mobile, do the native setup (Android desugaring and `FlutterFragmentActivity`, iOS Podfile). The app now depends on flutter_readium on every platform, and Android and iOS builds have not been tried since it was added.

@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-All 254 pass against `app/lib/` (2026-10-10).
+All 292 pass against `app/lib/` (2026-10-10).
 
 ```bash
 cd app
@@ -9,7 +9,7 @@ flutter test                       # everything
 flutter test test/reader_test.dart
 ```
 
-**Provisional:** `reader_test.dart` assumes the app draws the book text itself. The reader package has not been chosen (see [decision_reader.md](../../decision_reader.md)), and about 40 of those tests will move to a fake `ReaderEngine` once it is. TTS and offline-saving tests do not exist yet.
+The reader page talks to a `ReaderEngine` (see [decision_reader.md](../../decision_reader.md)). `reader_test.dart` tests the page's controls against `FakeReaderEngine` (`helpers/fakes.dart`). How the book is drawn is the engine's job: `text_engine_test.dart` covers our own renderer (`TextReaderEngine`, used everywhere but web), and `readium_engine_test.dart` covers which engine is chosen and how settings become Readium preferences. flutter_readium itself only runs in a browser or on a phone, so it is checked by hand with the spike checklist in decision_reader.md. TTS and offline-saving tests do not exist yet.
 
 Change a test and this README together.
 
@@ -19,6 +19,15 @@ Change a test and this README together.
 - `reader_test`: imports `helpers/fakes.dart` and `bookmark_store.dart` (it used `longText` and `Bookmark` without them). The PDF file name is `9783847408130.pdf`, as in the fixture (`9783847406334` is the print ISBN).
 - `helpers/test_app.dart` `openDetails`: scrolls a result into view before tapping it. On a phone the third result is below the fold.
 - `search_results_test` (progress indicator) and `reader_test` (`startLoading`): pump an extra frame after pushing a page. Flutter keeps a pushed route offstage for its first frame, and its semantics appear once the transition ends.
+
+### ReaderEngine (2026-10-10)
+
+- `reader_test` was rewritten against `FakeReaderEngine`: it checks what the page asks of the engine (open with the book's reading options, settings and bookmark position; next/previous; each settings change) instead of the drawn text. New: the engine is disposed on close, retry reuses the engine, a book no engine can show offers the source without retry, the indicator shows "N% read" when the engine has no page numbers, the left arrow does nothing on the first page, arrows are left to the engine in scroll view, and an old bookmark without a locator opens at its progress.
+- The renderer-specific tests moved to `text_engine_test` (pagination, page count vs font size, scroll view and keeping the place across views, text styles, paragraph spacing, word locators). New there: a font size change keeps the first words on screen, a PDF from the loader is an error, and a scroll-view bookmark restores in page view.
+- `TestEnv.create(textEngine: true)` opens books in the real `TextReaderEngine` fed by `FakeContentLoader`; otherwise books open in a `FakeReaderEngine` (`env.engines.last`). The reader contrast and text-scale tests in `accessibility_test` use the text engine so the book text is checked too.
+- `audio_player_test` and `details_page_test` look for the engine's view (`fake-reader-view`, `reader-surface`) and the engine's open call instead of `reader-page-text` and the content loader.
+- `bookmark_store_test`: a bookmark keeps the engine's locator; one saved without a locator still loads.
+- `reader_test`: the book view is covered (`reader-click-shield`, a `PointerInterceptor`) while the settings sheet is open. On web Readium's iframe otherwise took every click on the sheet (found by hand in Chrome, 2026-10-10).
 
 ## Milestones to tests
 
@@ -40,15 +49,22 @@ Change a test and this README together.
 
 ```
 app/lib/
-  app.dart                     FreeBookReaderApp({api, bookmarks, settingsStore, contentLoader,
+  app.dart                     FreeBookReaderApp({api, bookmarks, settingsStore, readerEngine,
                                  urlOpener, audio, themeMode, pdfViewBuilder})   MaterialApp(title: 'Free Book Reader')
+                               readerEngine: ReaderEngineFactory = ReaderEngine? Function(ReadingOptions)
   models/models.dart           Book, Chapter, Work, ReadingOptions, SourceInfo, SearchResponse, SearchQuery,
                                  enums BookFormat, Access, ReadingMode. const constructors on SearchResponse.
                                  ReadingOptions.publication: backend path of a Gutenberg book's Readium manifest
                                  for the web reader, or null (also null when the field is missing).
   api/search_api.dart          abstract SearchApi {search, sources}; HttpSearchApi(client, baseUrl); SearchException(isTimeout)
-  storage/bookmark_store.dart  Bookmark(progress 0..1, const); BookmarkStore(SharedPreferences)
+  storage/bookmark_store.dart  Bookmark(progress 0..1, locator?, const); BookmarkStore(SharedPreferences)
   reader/reader_settings.dart  ReaderSettings (const, clamped), ReaderSettingsStore, ReaderTheme, ReaderFont, ViewMode
+  reader/reader_engine.dart    ReaderEngine {open(book, settings, at), position, positions, next, previous, goTo,
+                                 apply, buildView, dispose}; ReaderPosition(progress, locator?, page?, pageCount?,
+                                 atStart, atEnd); ReaderOpenException; ReaderEngineFactory
+  reader/text_engine.dart      TextReaderEngine(ContentLoader): our own renderer; locator "word:<index>"
+  reader/engines.dart          chooseReaderEngine(book, web, backend, loader), backendUrl(backend, path)
+  reader/readium_engine.dart   ReadiumReaderEngine(manifest Uri), epubPreferences(settings), cssFontStack(font)
   reader/content.dart          BookContent (TextContent(paragraphs) | PdfContent(url)), ContentLoader, ContentLoadException
   services/url_opener.dart     UrlOpener.open(Uri)
   services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/dispose
@@ -57,7 +73,7 @@ app/lib/
 
 Also in `lib/` (not part of the test contract): `main.dart` (real services; backend address from
 `--dart-define=BACKEND_URL=...`, default `http://localhost:8000`), `ui/` (pages), `reader/pagination.dart`
-and `reader/settings_sheet.dart` (our own renderer), `ui/audio_player.dart` (player shared by the
+(our own renderer), `reader/settings_sheet.dart`, `ui/audio_player.dart` (player shared by the
 audiobook page and the reader).
 
 Everything outside the app (HTTP, shared preferences, audio, launching URLs, loading book text) is
@@ -69,13 +85,14 @@ injected so tests can fake it.
 - **Results:** `results-page`, `results-heading`, `result-count` (live region), `filters`, `filter-source-<id>`, `filter-format-all|text|audio`, `filter-language`, `result-<workId>`, `cover`, `open-<workId>`, `searching`, `no-results`, `search-error`, `retry`, `unavailable-notice` (live region)
 - **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
 - **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"), `visit-website`, `about-error`
-- **Reader:** `reader-page`, `reader-title`, `reader-surface`, `reader-page-text` (a `Text` with `data`), `reader-scroll`, `reader-paragraph-<i>`, `page-indicator` ("Page 3 of 12", live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `open-external`, `pdf-viewer`
+- **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
+- **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
 - **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `view-page-turner|scroll`
 - **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `chapter-<i>`
 
 ### Behavior notes
 
-- A bookmark is a fraction (`progress`) of the way through the book, so it survives a change of font size or view mode.
+- A bookmark is a fraction (`progress`) of the way through the book, so it survives a change of font size or view mode, plus the engine's `locator` for the exact place. The page opens the engine at the bookmark; an engine that cannot read the locator uses the progress.
 - The results-page button for a work goes to the best way in: read in app, else listen, else open at the source.
 - `Image` widgets in tests get no network; give them an `errorBuilder` and a `semanticLabel` (or `excludeFromSemantics` for decoration).
 - Bookmark and settings changes are shown with a SnackBar ("Bookmark saved", "Bookmark removed").

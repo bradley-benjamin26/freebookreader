@@ -90,7 +90,7 @@ void main() {
       await pumpApp(tester, env);
       await openBook(tester, env, 'w-pride', 'gutenberg:1342');
       expect(find.byKey(const Key('reader-page')), findsOneWidget);
-      expect(env.loader.requests.single.url, contains('gutenberg.org/ebooks/1342.html'));
+      expect(env.engines.last.opens.single.book.url, contains('gutenberg.org/ebooks/1342.html'));
     });
 
     testWidgets('an audiobook opens the player', (tester) async {

@@ -41,6 +41,10 @@
     For more details:
     * https://docs.flutter.dev/platform-integration/web/initialization
   -->
+  <!-- flutter_readium's web reader. readiumReader.js comes from
+       `dart run flutter_readium:copy_js_file web`; redo it when the package is upgraded. -->
+  <script src="flutter.js" defer></script>
+  <script src="readiumReader.js" defer></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -3,7 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/app.dart';
 import 'package:free_book_reader/models/models.dart';
-import 'package:free_book_reader/reader/content.dart';
+import 'package:free_book_reader/reader/text_engine.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/storage/bookmark_store.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,6 +19,8 @@ class TestEnv {
     required this.bookmarks,
     required this.settingsStore,
     required this.loader,
+    required this.engines,
+    required this.textEngine,
     required this.urls,
     required this.audio,
   });
@@ -28,12 +30,18 @@ class TestEnv {
   final BookmarkStore bookmarks;
   final ReaderSettingsStore settingsStore;
   final FakeContentLoader loader;
+  final FakeReaderEngines engines;
+
+  /// Whether books open in our own renderer ([TextReaderEngine], fed by
+  /// [loader]) instead of a [FakeReaderEngine].
+  final bool textEngine;
   final FakeUrlOpener urls;
   final FakeAudioEngine audio;
 
   static Future<TestEnv> create({
     SearchResponse? response,
     Map<String, Object> prefsValues = const {},
+    bool textEngine = false,
   }) async {
     SharedPreferences.setMockInitialValues(prefsValues);
     final prefs = await SharedPreferences.getInstance();
@@ -48,6 +56,8 @@ class TestEnv {
       bookmarks: BookmarkStore(prefs),
       settingsStore: ReaderSettingsStore(prefs),
       loader: FakeContentLoader(),
+      engines: FakeReaderEngines(),
+      textEngine: textEngine,
       urls: FakeUrlOpener(),
       audio: FakeAudioEngine(),
     );
@@ -80,7 +90,7 @@ Future<void> pumpApp(
     api: env.api,
     bookmarks: env.bookmarks,
     settingsStore: env.settingsStore,
-    contentLoader: env.loader,
+    readerEngine: env.textEngine ? (_) => TextReaderEngine(env.loader) : env.engines.call,
     urlOpener: env.urls,
     audio: env.audio,
     themeMode: themeMode,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api/search_api.dart';
-import 'reader/content.dart';
+import 'reader/reader_engine.dart';
 import 'reader/reader_settings.dart';
 import 'services/audio_engine.dart';
 import 'services/url_opener.dart';
@@ -17,7 +17,7 @@ class Services extends InheritedWidget {
     required this.api,
     required this.bookmarks,
     required this.settingsStore,
-    required this.contentLoader,
+    required this.readerEngine,
     required this.urlOpener,
     required this.audio,
     required this.pdfViewBuilder,
@@ -27,7 +27,7 @@ class Services extends InheritedWidget {
   final SearchApi api;
   final BookmarkStore bookmarks;
   final ReaderSettingsStore settingsStore;
-  final ContentLoader contentLoader;
+  final ReaderEngineFactory readerEngine;
   final UrlOpener urlOpener;
   final AudioEngine audio;
   final PdfViewBuilder pdfViewBuilder;
@@ -45,7 +45,7 @@ class FreeBookReaderApp extends StatelessWidget {
     required this.api,
     required this.bookmarks,
     required this.settingsStore,
-    required this.contentLoader,
+    required this.readerEngine,
     required this.urlOpener,
     required this.audio,
     required this.pdfViewBuilder,
@@ -55,7 +55,7 @@ class FreeBookReaderApp extends StatelessWidget {
   final SearchApi api;
   final BookmarkStore bookmarks;
   final ReaderSettingsStore settingsStore;
-  final ContentLoader contentLoader;
+  final ReaderEngineFactory readerEngine;
   final UrlOpener urlOpener;
   final AudioEngine audio;
   final PdfViewBuilder pdfViewBuilder;
@@ -74,7 +74,7 @@ class FreeBookReaderApp extends StatelessWidget {
       api: api,
       bookmarks: bookmarks,
       settingsStore: settingsStore,
-      contentLoader: contentLoader,
+      readerEngine: readerEngine,
       urlOpener: urlOpener,
       audio: audio,
       pdfViewBuilder: pdfViewBuilder,

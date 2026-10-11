@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -5,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'api/search_api.dart';
 import 'app.dart';
 import 'reader/content.dart';
+import 'reader/engines.dart';
 import 'reader/reader_settings.dart';
 import 'services/audio_engine.dart';
 import 'services/url_opener.dart';
@@ -18,11 +20,13 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
   final client = http.Client();
+  final backend = Uri.parse(backendUrl);
+  final loader = HttpContentLoader(client);
   runApp(FreeBookReaderApp(
-    api: HttpSearchApi(client: client, baseUrl: Uri.parse(backendUrl)),
+    api: HttpSearchApi(client: client, baseUrl: backend),
     bookmarks: BookmarkStore(prefs),
     settingsStore: ReaderSettingsStore(prefs),
-    contentLoader: HttpContentLoader(client),
+    readerEngine: (book) => chooseReaderEngine(book, web: kIsWeb, backend: backend, loader: loader),
     urlOpener: const LauncherUrlOpener(),
     audio: JustAudioEngine(),
     // No PDF package yet (decision_reader.md): PDFs open outside the app.

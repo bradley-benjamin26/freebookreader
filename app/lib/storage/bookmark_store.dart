@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// A place in a book, as a fraction of the way through it, so it survives a
-/// change of font size or view mode.
+/// change of font size or view mode, plus the reader engine's own [locator]
+/// for the exact place (null when the engine gave none).
 class Bookmark {
-  const Bookmark({required double progress}) : _progress = progress;
+  const Bookmark({required double progress, this.locator}) : _progress = progress;
 
   final double _progress;
+  final String? locator;
 
   double get progress => _progress.clamp(0.0, 1.0);
 }
@@ -23,15 +25,19 @@ class BookmarkStore {
     final raw = _prefs.getString('$_prefix$bookKey');
     if (raw == null) return null;
     try {
-      final progress = (jsonDecode(raw) as Map<String, dynamic>)['progress'] as num;
-      return Bookmark(progress: progress.toDouble());
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return Bookmark(
+          progress: (json['progress'] as num).toDouble(), locator: json['locator'] as String?);
     } on Object {
       return null;
     }
   }
 
   Future<void> save(String bookKey, Bookmark bookmark) =>
-      _prefs.setString('$_prefix$bookKey', jsonEncode({'progress': bookmark.progress}));
+      _prefs.setString('$_prefix$bookKey', jsonEncode({
+        'progress': bookmark.progress,
+        if (bookmark.locator != null) 'locator': bookmark.locator,
+      }));
 
   Future<void> remove(String bookKey) => _prefs.remove('$_prefix$bookKey');
 

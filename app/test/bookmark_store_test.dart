@@ -21,6 +21,19 @@ void main() {
     expect(store.load('gutenberg:1342')?.progress, closeTo(0.42, 1e-9));
   });
 
+  test("keeps the reader engine's locator alongside the progress", () async {
+    final store = await newStore();
+    await store.save('gutenberg:1342', const Bookmark(progress: 0.42, locator: '{"href":"c3.xhtml"}'));
+    expect(store.load('gutenberg:1342')?.locator, '{"href":"c3.xhtml"}');
+  });
+
+  test('a bookmark saved before locators existed loads without one', () async {
+    final store = await newStore({'bookmark:gutenberg:1342': '{"progress":0.42}'});
+    final bookmark = store.load('gutenberg:1342')!;
+    expect(bookmark.progress, closeTo(0.42, 1e-9));
+    expect(bookmark.locator, isNull);
+  });
+
   test('bookmarks survive a restart (a new store over the same preferences)', () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();

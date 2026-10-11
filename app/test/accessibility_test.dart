@@ -55,7 +55,9 @@ void main() {
     for (final theme in ['light', 'dark']) {
       testWidgets('reader in $theme: contrast, tap targets and labels', (tester) async {
         final handle = tester.ensureSemantics();
-        final env = await TestEnv.create(prefsValues: {'reader_settings': '{"theme":"$theme"}'});
+        // Our own renderer, so the book text itself is checked too.
+        final env = await TestEnv.create(
+            prefsValues: {'reader_settings': '{"theme":"$theme"}'}, textEngine: true);
         await pumpApp(tester, env);
         await openBook(tester, env, 'w-pride', 'gutenberg:1342');
         await expectLater(tester, meetsGuideline(textContrastGuideline));
@@ -121,7 +123,7 @@ void main() {
     });
 
     testWidgets('reader: text scale is honored on top of the font size setting', (tester) async {
-      final env = await TestEnv.create();
+      final env = await TestEnv.create(textEngine: true);
       await pumpApp(tester, env, textScale: 2.0);
       await openBook(tester, env, 'w-pride', 'gutenberg:1342');
       final text = tester.renderObject<RenderBox>(find.byKey(const Key('reader-page-text')));

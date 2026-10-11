@@ -1,12 +1,16 @@
-// Reading experience: viewer, page-turner (default) and scroll view, display
-// settings, bookmarks, and the one-minute load limit.
+// Reading screen: the controls around the book, against a fake ReaderEngine.
+// Opening and loading (with the one-minute limit), page-turner (default) and
+// scroll view, display settings, dark and light mode, and bookmarks.
+//
+// How the book itself is drawn belongs to the engine: our own renderer is
+// tested in text_engine_test.dart; flutter_readium (web) is checked by hand
+// with the spike checklist in decision_reader.md.
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/storage/bookmark_store.dart';
 
-import 'helpers/fakes.dart';
 import 'helpers/test_app.dart';
 
 const gutenberg = 'gutenberg:1342';
@@ -16,12 +20,14 @@ Future<void> openSettings(WidgetTester tester) async {
   await tester.pumpAndSettle();
 }
 
-TextStyle pageStyle(WidgetTester tester) =>
-    tester.widget<Text>(find.byKey(const Key('reader-page-text'))).style!;
+Future<void> closeSettings(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('settings-close')));
+  await tester.pumpAndSettle();
+}
 
-/// Taps through to a book whose content never finishes loading.
+/// Taps through to a book whose engine never finishes opening.
 Future<void> startLoading(WidgetTester tester, TestEnv env) async {
-  env.loader.never = true;
+  env.engines.never = true;
   await searchFor(tester, 'pride');
   await tester.tap(find.byKey(const Key('result-w-pride')));
   await tester.pumpAndSettle();
@@ -38,24 +44,28 @@ Future<TestEnv> readerEnv(WidgetTester tester, {Map<String, Object> prefs = cons
   return env;
 }
 
+/// Reopens the book from the details page the reader was opened from.
+Future<void> reopen(WidgetTester tester) async {
+  await tester.pageBack();
+  await tester.pumpAndSettle();
+  final open = find.byKey(const Key('open-$gutenberg'));
+  await tester.ensureVisible(open);
+  await tester.tap(open);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   group('viewer', () {
-    testWidgets('loads the book and shows its text', (tester) async {
+    testWidgets("opens the book's reading options in the engine and shows it", (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
       expect(find.byKey(const Key('reader-page')), findsOneWidget);
-      expect(find.textContaining('Paragraph 0.'), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
+      final open = env.engines.last.opens.single;
+      expect(open.book.url, 'https://www.gutenberg.org/ebooks/1342.html.images');
+      expect(open.book.publication, '/publications/gutenberg/1342/manifest.json');
       expect(tester.getSemantics(find.byKey(const Key('reader-title'))),
           containsSemantics(isHeader: true, label: 'Pride and Prejudice'));
-    });
-
-    testWidgets('the text is available to screen readers', (tester) async {
-      final env = await readerEnv(tester);
-      await openBook(tester, env, 'w-pride', gutenberg);
-      final handle = tester.ensureSemantics();
-      expect(tester.getSemantics(find.byKey(const Key('reader-page-text'))).label,
-          contains('Paragraph 0.'));
-      handle.dispose();
     });
 
     testWidgets('shows a named progress indicator while loading', (tester) async {
@@ -63,7 +73,27 @@ void main() {
       await startLoading(tester, env);
       expect(tester.getSemantics(find.byKey(const Key('loading-book'))),
           containsSemantics(label: 'Loading book', isLiveRegion: true));
+      expect(find.byKey(const Key('bookmark-button')), findsNothing);
       await tester.pump(const Duration(seconds: 61));
+    });
+
+    testWidgets('the engine is disposed when the reader closes', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(env.engines.last.disposed, isTrue);
+    });
+
+    testWidgets('a book no engine can show offers the source, without retry', (tester) async {
+      final env = await readerEnv(tester);
+      env.engines.none = true;
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(find.byKey(const Key('load-error')), findsOneWidget);
+      expect(find.byKey(const Key('retry')), findsNothing);
+      await tester.tap(find.byKey(const Key('open-external')));
+      await tester.pump();
+      expect(env.urls.opened.single.toString(), 'https://www.gutenberg.org/ebooks/1342');
     });
   });
 
@@ -91,7 +121,7 @@ void main() {
 
     testWidgets('a loading error offers retry and the source', (tester) async {
       final env = await readerEnv(tester);
-      env.loader.failNext = true;
+      env.engines.failNext = true;
       await openBook(tester, env, 'w-pride', gutenberg);
       expect(find.byKey(const Key('load-error')), findsOneWidget);
       expect(tester.getSemantics(find.byKey(const Key('load-error'))),
@@ -99,17 +129,29 @@ void main() {
       expect(find.byKey(const Key('open-external')), findsOneWidget);
       await tester.tap(find.byKey(const Key('retry')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('reader-page-text')), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
+      expect(env.engines.created, hasLength(1), reason: 'retry reuses the engine');
+      expect(env.engines.last.opens, hasLength(2));
     });
   });
 
   group('page-turner view (default)', () {
-    testWidgets('shows one page at a time with "Page 1 of N"', (tester) async {
+    testWidgets('shows "Page 1 of N" from the engine', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(find.byKey(const Key('reader-scroll')), findsNothing);
       expect(pageNumber(tester), 1);
-      expect(pageCount(tester), greaterThan(3));
+      expect(pageCount(tester), env.engines.pageCount);
+    });
+
+    testWidgets('shows how far through the book when the engine has no page numbers',
+        (tester) async {
+      // Readium on web, for example: its positions are per chapter, not pages.
+      final env = await readerEnv(tester);
+      env.engines.pageNumbers = false;
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(tester.widget<Text>(find.byKey(const Key('page-indicator'))).data, '0% read');
+      await nextPage(tester, 2);
+      expect(tester.widget<Text>(find.byKey(const Key('page-indicator'))).data, '22% read');
     });
 
     testWidgets('the page number is announced when it changes', (tester) async {
@@ -119,16 +161,16 @@ void main() {
           containsSemantics(isLiveRegion: true));
     });
 
-    testWidgets('next and previous buttons turn the page', (tester) async {
+    testWidgets('next and previous buttons turn the page in the engine', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      String pageText() => tester.widget<Text>(find.byKey(const Key('reader-page-text'))).data!;
-      final first = pageText();
       await nextPage(tester);
+      expect(env.engines.last.calls, ['next']);
       expect(pageNumber(tester), 2);
-      expect(pageText(), isNot(first));
+      expect(find.text('Text of page 2'), findsOneWidget);
       await tester.tap(find.byKey(const Key('previous-page')));
       await tester.pumpAndSettle();
+      expect(env.engines.last.calls, ['next', 'previous']);
       expect(pageNumber(tester), 1);
     });
 
@@ -140,10 +182,10 @@ void main() {
 
     testWidgets('next is disabled on the last page', (tester) async {
       final env = await readerEnv(tester);
-      env.loader.content = longText(paragraphs: 6);
+      env.engines.pageCount = 3;
       await openBook(tester, env, 'w-pride', gutenberg);
-      await nextPage(tester, pageCount(tester) - 1);
-      expect(pageNumber(tester), pageCount(tester));
+      await nextPage(tester, 2);
+      expect(pageNumber(tester), 3);
       expect(tester.widget<ButtonStyleButton>(find.byKey(const Key('next-page'))).onPressed, isNull);
     });
 
@@ -167,18 +209,12 @@ void main() {
       expect(pageNumber(tester), 1);
     });
 
-    testWidgets('page count changes with font size', (tester) async {
+    testWidgets('the left arrow does nothing on the first page', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      final before = pageCount(tester);
-      await openSettings(tester);
-      for (var i = 0; i < 4; i++) {
-        await tester.tap(find.byKey(const Key('font-increase')));
-        await tester.pumpAndSettle();
-      }
-      await tester.tap(find.byKey(const Key('settings-close')));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowLeft);
       await tester.pumpAndSettle();
-      expect(pageCount(tester), greaterThan(before));
+      expect(env.engines.last.calls, isEmpty);
     });
   });
 
@@ -189,11 +225,11 @@ void main() {
       await openSettings(tester);
       await tester.tap(find.byKey(const Key('view-scroll')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('settings-close')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('reader-scroll')), findsOneWidget);
+      await closeSettings(tester);
+      expect(env.engines.last.settings!.viewMode, ViewMode.scroll);
       expect(find.byKey(const Key('next-page')), findsNothing);
-      expect(find.byKey(const Key('reader-paragraph-0')), findsOneWidget);
+      expect(find.byKey(const Key('page-indicator')), findsNothing);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
     });
 
     testWidgets('the choice is remembered', (tester) async {
@@ -201,34 +237,24 @@ void main() {
         'reader_settings': '{"viewMode":"scroll"}',
       });
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(find.byKey(const Key('reader-scroll')), findsOneWidget);
+      expect(env.engines.last.settings!.viewMode, ViewMode.scroll);
+      expect(find.byKey(const Key('next-page')), findsNothing);
     });
 
-    testWidgets('switching views keeps your place', (tester) async {
-      final env = await readerEnv(tester);
+    testWidgets('arrow keys are left to the engine in scroll view', (tester) async {
+      final env = await readerEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
       await openBook(tester, env, 'w-pride', gutenberg);
-      await nextPage(tester, 4);
-      await openSettings(tester);
-      await tester.tap(find.byKey(const Key('view-scroll')));
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('settings-close')));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const Key('reader-paragraph-0')), findsNothing);
-      await openSettings(tester);
-      await tester.tap(find.byKey(const Key('view-page-turner')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('settings-close')));
-      await tester.pumpAndSettle();
-      expect(pageNumber(tester), closeTo(5, 1));
+      expect(env.engines.last.calls, isEmpty);
     });
   });
 
   group('display settings', () {
-    testWidgets('start from the defaults', (tester) async {
+    testWidgets('the engine opens with the defaults', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(pageStyle(tester).fontSize, 18);
-      expect(pageStyle(tester).height, 1.5);
+      expect(env.engines.last.settings, const ReaderSettings());
     });
 
     testWidgets('font size can be increased and decreased', (tester) async {
@@ -237,11 +263,35 @@ void main() {
       await openSettings(tester);
       await tester.tap(find.byKey(const Key('font-increase')));
       await tester.pumpAndSettle();
-      expect(pageStyle(tester).fontSize, 20);
+      expect(env.engines.last.settings!.fontSize, 20);
       await tester.tap(find.byKey(const Key('font-decrease')));
       await tester.tap(find.byKey(const Key('font-decrease')));
       await tester.pumpAndSettle();
-      expect(pageStyle(tester).fontSize, 16);
+      expect(env.engines.last.settings!.fontSize, 16);
+    });
+
+    testWidgets('each change is sent to the engine at once', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      await tester.tap(find.byKey(const Key('font-increase')));
+      await tester.tap(find.byKey(const Key('theme-dark')));
+      await tester.pumpAndSettle();
+      expect(env.engines.last.applied.map((s) => (s.fontSize, s.theme)),
+          [(20.0, ReaderTheme.light), (20.0, ReaderTheme.dark)]);
+    });
+
+    testWidgets('the book is covered while the settings are open, so its view cannot take their clicks',
+        (tester) async {
+      // On web the engine's view is an iframe, which otherwise gets every
+      // click on the sheet drawn over it.
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(find.byKey(const Key('reader-click-shield')), findsNothing);
+      await openSettings(tester);
+      expect(find.byKey(const Key('reader-click-shield')), findsOneWidget);
+      await closeSettings(tester);
+      expect(find.byKey(const Key('reader-click-shield')), findsNothing);
     });
 
     testWidgets('font size shows its current value as text', (tester) async {
@@ -262,11 +312,10 @@ void main() {
     testWidgets('font style can be changed', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      final before = pageStyle(tester).fontFamily;
       await openSettings(tester);
       await tester.tap(find.byKey(const Key('font-sansSerif')));
       await tester.pumpAndSettle();
-      expect(pageStyle(tester).fontFamily, isNot(before));
+      expect(env.engines.last.settings!.fontFamily, ReaderFont.sansSerif);
     });
 
     testWidgets('a dyslexia-friendly font is offered', (tester) async {
@@ -289,44 +338,23 @@ void main() {
           containsSemantics(isSlider: true, label: 'Paragraph spacing'));
     });
 
-    testWidgets('increasing line spacing with assistive technology changes the text', (tester) async {
-      final env = await readerEnv(tester);
-      await openBook(tester, env, 'w-pride', gutenberg);
-      await openSettings(tester);
-      final handle = tester.ensureSemantics();
-      tester.semantics.increase(sliderNamed('Line spacing'));
-      await tester.pumpAndSettle();
-      expect(pageStyle(tester).height, greaterThan(1.5));
-      handle.dispose();
-    });
-
-    testWidgets('increasing letter spacing changes the text', (tester) async {
-      final env = await readerEnv(tester);
-      await openBook(tester, env, 'w-pride', gutenberg);
-      await openSettings(tester);
-      final handle = tester.ensureSemantics();
-      tester.semantics.increase(sliderNamed('Letter spacing'));
-      await tester.pumpAndSettle();
-      expect(pageStyle(tester).letterSpacing, greaterThan(0));
-      handle.dispose();
-    });
-
-    testWidgets('paragraph spacing applies in scroll view', (tester) async {
-      final env = await readerEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
-      await openBook(tester, env, 'w-pride', gutenberg);
-      final gapBefore = tester.getTopLeft(find.byKey(const Key('reader-paragraph-1'))).dy -
-          tester.getBottomLeft(find.byKey(const Key('reader-paragraph-0'))).dy;
-      await openSettings(tester);
-      final handle = tester.ensureSemantics();
-      tester.semantics.increase(sliderNamed('Paragraph spacing'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('settings-close')));
-      await tester.pumpAndSettle();
-      final gapAfter = tester.getTopLeft(find.byKey(const Key('reader-paragraph-1'))).dy -
-          tester.getBottomLeft(find.byKey(const Key('reader-paragraph-0'))).dy;
-      expect(gapAfter, greaterThan(gapBefore));
-      handle.dispose();
-    });
+    for (final (name, read) in [
+      ('Line spacing', (ReaderSettings s) => s.lineHeight),
+      ('Letter spacing', (ReaderSettings s) => s.letterSpacing),
+      ('Paragraph spacing', (ReaderSettings s) => s.paragraphSpacing),
+    ]) {
+      testWidgets('increasing $name with assistive technology reaches the engine', (tester) async {
+        final env = await readerEnv(tester);
+        await openBook(tester, env, 'w-pride', gutenberg);
+        final before = read(env.engines.last.settings!);
+        await openSettings(tester);
+        final handle = tester.ensureSemantics();
+        tester.semantics.increase(sliderNamed(name));
+        await tester.pumpAndSettle();
+        expect(read(env.engines.last.settings!), greaterThan(before));
+        handle.dispose();
+      });
+    }
 
     testWidgets('settings are remembered on the device', (tester) async {
       final env = await readerEnv(tester);
@@ -343,7 +371,7 @@ void main() {
     testWidgets('settings apply the next time a book is opened', (tester) async {
       final env = await readerEnv(tester, prefs: {'reader_settings': '{"fontSize":28}'});
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(pageStyle(tester).fontSize, 28);
+      expect(env.engines.last.settings!.fontSize, 28);
     });
   });
 
@@ -358,7 +386,7 @@ void main() {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
       expect(surface(tester), const ReaderSettings().backgroundColor);
-      expect(pageStyle(tester).color, const ReaderSettings().textColor);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
     });
 
     testWidgets('can switch to dark and back', (tester) async {
@@ -367,12 +395,12 @@ void main() {
       await openSettings(tester);
       await tester.tap(find.byKey(const Key('theme-dark')));
       await tester.pumpAndSettle();
-      const dark = ReaderSettings(theme: ReaderTheme.dark);
-      expect(surface(tester), dark.backgroundColor);
-      expect(pageStyle(tester).color, dark.textColor);
+      expect(surface(tester), const ReaderSettings(theme: ReaderTheme.dark).backgroundColor);
+      expect(env.engines.last.settings!.theme, ReaderTheme.dark);
       await tester.tap(find.byKey(const Key('theme-light')));
       await tester.pumpAndSettle();
       expect(surface(tester), const ReaderSettings().backgroundColor);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
     });
 
     testWidgets('the selected mode is exposed as selected', (tester) async {
@@ -392,11 +420,12 @@ void main() {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
       expect(env.bookmarks.load(gutenberg), isNull);
+      expect(env.engines.last.opens.single.at, isNull);
       expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
           containsSemantics(isButton: true, label: 'Add bookmark'));
     });
 
-    testWidgets('saves the place on this device and confirms it', (tester) async {
+    testWidgets("saves the engine's position on this device and confirms it", (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
       await nextPage(tester, 2);
@@ -405,7 +434,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
       final bookmark = env.bookmarks.load(gutenberg);
       expect(bookmark, isNotNull);
-      expect(bookmark!.progress, closeTo(2 / (pageCount(tester) - 1), 0.001));
+      expect(bookmark!.progress, closeTo(2 / 9, 0.001));
+      expect(bookmark.locator, 'fake:2');
       expect(find.text('Bookmark saved'), findsOneWidget);
       expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
           containsSemantics(isButton: true, label: 'Remove bookmark'));
@@ -417,15 +447,11 @@ void main() {
       await nextPage(tester, 2);
       await tester.tap(find.byKey(const Key('bookmark-button')));
       await tester.pumpAndSettle();
-      final total = pageCount(tester);
-      await tester.pageBack();
-      await tester.pumpAndSettle();
-      final open = find.byKey(const Key('open-gutenberg:1342'));
-      await tester.ensureVisible(open);
-      await tester.tap(open);
-      await tester.pumpAndSettle();
+      await reopen(tester);
+      final at = env.engines.last.opens.single.at!;
+      expect(at.locator, 'fake:2');
+      expect(at.progress, closeTo(2 / 9, 0.001));
       expect(pageNumber(tester), 3);
-      expect(pageCount(tester), total);
     });
 
     testWidgets('is restored after the app restarts', (tester) async {
@@ -441,13 +467,24 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await pumpApp(tester, restarted);
       await openBook(tester, restarted, 'w-pride', gutenberg);
+      expect(restarted.engines.last.opens.single.at!.locator, 'fake:3');
       expect(pageNumber(tester), 4);
     });
 
-    testWidgets('a book without a bookmark opens on the first page', (tester) async {
+    testWidgets('an old bookmark without a locator still opens at its progress', (tester) async {
+      final env = await readerEnv(tester);
+      await env.bookmarks.save(gutenberg, const Bookmark(progress: 0.5));
+      await openBook(tester, env, 'w-pride', gutenberg);
+      final at = env.engines.last.opens.single.at!;
+      expect(at.locator, isNull);
+      expect(at.progress, 0.5);
+    });
+
+    testWidgets('a book without a bookmark opens at the start', (tester) async {
       final env = await readerEnv(tester);
       await env.bookmarks.save('gutenberg:999', const Bookmark(progress: 0.5));
       await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.opens.single.at, isNull);
       expect(pageNumber(tester), 1);
     });
 
@@ -482,7 +519,7 @@ void main() {
       await nextPage(tester, 3);
       await tester.tap(find.byKey(const Key('bookmark-button')));   // add at page 4
       await tester.pumpAndSettle();
-      expect(env.bookmarks.load(gutenberg)!.progress, closeTo(3 / (pageCount(tester) - 1), 0.001));
+      expect(env.bookmarks.load(gutenberg)!.locator, 'fake:3');
     });
 
     testWidgets('bookmarks never leave the device (no network request is made to save one)',
@@ -493,7 +530,8 @@ void main() {
       await tester.tap(find.byKey(const Key('bookmark-button')));
       await tester.pumpAndSettle();
       expect(env.api.queries.length, searches);
-      expect(env.loader.requests, hasLength(1));
+      expect(env.engines.last.opens, hasLength(1));
+      expect(env.loader.requests, isEmpty);
     });
   });
 
@@ -512,10 +550,10 @@ void main() {
       expect(find.textContaining('9783847408130.pdf'), findsOneWidget);
     });
 
-    testWidgets('a pdf does not go through the text loader', (tester) async {
+    testWidgets('a pdf does not open a reader engine', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-kinder', 'doab:20.500.12854/95506');
-      expect(env.loader.requests, isEmpty);
+      expect(env.engines.asked, isEmpty);
     });
   });
 }

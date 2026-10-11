@@ -1,8 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
+
 import 'package:free_book_reader/api/search_api.dart';
 import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/reader/content.dart';
+import 'package:free_book_reader/reader/reader_engine.dart';
+import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/services/audio_engine.dart';
 import 'package:free_book_reader/services/url_opener.dart';
 
@@ -71,6 +75,128 @@ TextContent longText({int paragraphs = 60}) => TextContent(List.generate(
       (i) => 'Paragraph $i. ${'It is a truth universally acknowledged, that a single man '
           'in possession of a good fortune, must be in want of a wife. ' * 3}',
     ));
+
+/// A reader engine with [pageCount] pages that records what the reader page
+/// asks of it. Its view is one line of text in the settings' colors.
+class FakeReaderEngine implements ReaderEngine {
+  FakeReaderEngine(
+      {this.pageCount = 10, this.pageNumbers = true, this.never = false, this.failNext = false});
+
+  final int pageCount;
+
+  /// When false, positions carry no page numbers (like Readium on web).
+  final bool pageNumbers;
+
+  /// When true, opening never finishes (to test the one-minute limit).
+  bool never;
+
+  /// When true, the next open fails once with a [ReaderOpenException].
+  bool failNext;
+
+  /// 0-based.
+  int page = 0;
+  ReaderSettings? settings;
+  bool disposed = false;
+  final List<({ReadingOptions book, ReaderPosition? at})> opens = [];
+  final List<ReaderSettings> applied = [];
+  final List<String> calls = [];
+  final _positions = StreamController<ReaderPosition>.broadcast();
+
+  @override
+  Future<void> open(ReadingOptions book, {required ReaderSettings settings, ReaderPosition? at}) {
+    opens.add((book: book, at: at));
+    this.settings = settings;
+    if (never) return Completer<void>().future;
+    if (failNext) {
+      failNext = false;
+      return Future.error(const ReaderOpenException('could not open'));
+    }
+    if (at != null) _goTo(at);
+    return Future.value();
+  }
+
+  @override
+  ReaderPosition get position => ReaderPosition(
+        progress: pageCount <= 1 ? 0 : page / (pageCount - 1),
+        locator: 'fake:$page',
+        page: pageNumbers ? page + 1 : null,
+        pageCount: pageNumbers ? pageCount : null,
+        atStart: page == 0,
+        atEnd: page == pageCount - 1,
+      );
+
+  @override
+  Stream<ReaderPosition> get positions => _positions.stream;
+
+  void _turn(int to) {
+    page = to.clamp(0, pageCount - 1);
+    _positions.add(position);
+  }
+
+  @override
+  Future<void> next() async {
+    calls.add('next');
+    _turn(page + 1);
+  }
+
+  @override
+  Future<void> previous() async {
+    calls.add('previous');
+    _turn(page - 1);
+  }
+
+  void _goTo(ReaderPosition at) {
+    final exact = int.tryParse(at.locator?.replaceFirst('fake:', '') ?? '');
+    page = (exact ?? (at.progress * (pageCount - 1)).round()).clamp(0, pageCount - 1);
+  }
+
+  @override
+  Future<void> goTo(ReaderPosition position) async {
+    calls.add('goTo');
+    _goTo(position);
+    _positions.add(this.position);
+  }
+
+  @override
+  Future<void> apply(ReaderSettings settings) async {
+    applied.add(settings);
+    this.settings = settings;
+  }
+
+  @override
+  Widget buildView(BuildContext context) => Text('Text of page ${page + 1}',
+      key: const Key('fake-reader-view'), style: TextStyle(color: settings!.textColor, fontSize: 18));
+
+  @override
+  Future<void> dispose() async {
+    disposed = true;
+    await _positions.close();
+  }
+}
+
+/// Makes a [FakeReaderEngine] per opened book, or none when [none] is set.
+class FakeReaderEngines {
+  int pageCount = 10;
+  bool pageNumbers = true;
+  bool never = false;
+  bool failNext = false;
+  bool none = false;
+  final List<FakeReaderEngine> created = [];
+  final List<ReadingOptions> asked = [];
+
+  /// The engine of the book opened last.
+  FakeReaderEngine get last => created.last;
+
+  ReaderEngine? call(ReadingOptions book) {
+    asked.add(book);
+    if (none) return null;
+    final engine = FakeReaderEngine(
+        pageCount: pageCount, pageNumbers: pageNumbers, never: never, failNext: failNext);
+    failNext = false;
+    created.add(engine);
+    return engine;
+  }
+}
 
 class FakeAudioEngine implements AudioEngine {
   final List<String> calls = [];

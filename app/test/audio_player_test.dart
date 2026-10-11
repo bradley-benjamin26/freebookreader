@@ -44,7 +44,7 @@ void main() {
       await pumpApp(tester, env);
       await openAudio(tester, env);
       expect(find.byKey(const Key('audio-player')), findsOneWidget);
-      expect(find.byKey(const Key('reader-page-text')), findsNothing);
+      expect(find.byKey(const Key('fake-reader-view')), findsNothing);
     });
 
     testWidgets('lists the chapters with their lengths', (tester) async {
@@ -155,7 +155,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await openBook(tester, env, 'w-pride', 'gutenberg:1342');
-      expect(find.byKey(const Key('reader-page-text')), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
       expect(find.byKey(const Key('audio-player')), findsOneWidget);
     });
 
@@ -166,7 +166,7 @@ void main() {
       await tester.tap(find.byKey(const Key('play-pause')));
       await tester.pumpAndSettle();
       expect(env.audio.calls.last, 'play $chapter1');
-      expect(find.byKey(const Key('reader-page-text')), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
     });
 
     testWidgets('the recording can be paused while turning pages', (tester) async {
@@ -186,7 +186,7 @@ void main() {
       }));
       await pumpApp(tester, env);
       await openBook(tester, env, 'w-pride', 'gutenberg:1342');
-      expect(find.byKey(const Key('reader-page-text')), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
       expect(find.byKey(const Key('audio-player')), findsNothing);
     });
 
@@ -212,7 +212,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env, size: smallPhone);
       await openBook(tester, env, 'w-pride', 'gutenberg:1342');
-      final text = tester.getRect(find.byKey(const Key('reader-page-text')));
+      final text = tester.getRect(find.byKey(const Key('reader-surface')));
       final player = tester.getRect(find.byKey(const Key('audio-player')));
       expect(text.overlaps(player), isFalse);
       expect(text.height, greaterThan(200));
