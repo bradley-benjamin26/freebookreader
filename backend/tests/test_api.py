@@ -1,4 +1,6 @@
 """HTTP API the Flutter app talks to."""
+from datetime import date
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -25,7 +27,8 @@ def works():
     return merge_books([
         make_book(source="gutenberg", source_id="1342", title="Pride and Prejudice",
                   authors=["Jane Austen"], content={"text/html": "https://g/1342.html"},
-                  cover_url="https://g/cover.jpg"),
+                  cover_url="https://g/cover.jpg", release_date=date(1998, 6, 1),
+                  last_updated=date(2026, 9, 29), credits="Chuck Greif"),
         make_book(source="librivox", source_id="253", title="Pride and Prejudice",
                   authors=["Jane Austen"], format="audio", audio_seconds=47204),
     ])
@@ -70,6 +73,17 @@ class TestSearchEndpoint:
         audio = next(b for b in books if b["format"] == "audio")
         assert audio["reading"]["mode"] == "external"       # no chapters in this stub
         assert audio["audio_seconds"] == 47204
+
+    def test_book_json_includes_edition_details(self, client):
+        """ISO dates; null when the source does not say (only Gutenberg fills them)."""
+        books = client.get("/search", params={"q": "pride"}).json()["works"][0]["books"]
+        text = next(b for b in books if b["source"] == "gutenberg")
+        assert text["release_date"] == "1998-06-01"
+        assert text["last_updated"] == "2026-09-29"
+        assert text["credits"] == "Chuck Greif"
+        assert text["original_publication"] is None
+        audio = next(b for b in books if b["source"] == "librivox")
+        assert audio["release_date"] is None and audio["credits"] is None
 
     def test_query_parameters_reach_the_service(self, stub, client):
         client.get("/search", params={

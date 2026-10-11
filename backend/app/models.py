@@ -1,4 +1,5 @@
 """Data model from spec.md: a Work unites books from different sources (Work -> book)."""
+from datetime import date
 from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
@@ -45,6 +46,11 @@ class Book(BaseModel):
     content: dict[str, str] = Field(default_factory=dict)   # MIME type -> file URL
     chapters: list[Chapter] = Field(default_factory=list)
     access: Access = "open"
+    # Edition details that tell apart several records of one work (only Gutenberg fills them).
+    release_date: Optional[date] = None
+    last_updated: Optional[date] = None                     # None when not changed since release
+    credits: Optional[str] = None                           # who produced it; one credit per line
+    original_publication: Optional[str] = None              # e.g. "Budapest: Athenaeum, 1926."
 
     @computed_field
     @property

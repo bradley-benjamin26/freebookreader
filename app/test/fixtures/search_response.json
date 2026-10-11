@@ -64,6 +64,10 @@
           },
           "chapters": [],
           "access": "open",
+          "release_date": "1998-06-01",
+          "last_updated": "2026-09-29",
+          "credits": "Chuck Greif and the Online Distributed Proofreading Team at www.pgdp.net",
+          "original_publication": null,
           "reading": {
             "mode": "in_app",
             "kind": "html",

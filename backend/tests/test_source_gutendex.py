@@ -1,4 +1,6 @@
 """Project Gutenberg via the self-hosted Gutendex API (see api_gutendex.documentation.md)."""
+from datetime import date
+
 import httpx
 import pytest
 
@@ -155,6 +157,40 @@ class TestMapping:
         book = source.search(SearchQuery(q="x"))[0]
         assert book.authors == ["Charles Dickens"]
         assert book.contributors == ["Lascelles Wraxall", "Ann Smith"]
+
+    def test_edition_details_tell_gutenberg_ebooks_apart(self, source_for, sample_json):
+        """Gutenberg often has several eBooks of one work (1342 and 42671 are both
+        Pride and Prejudice); release date, last update, credits and original
+        publication tell them apart, as on gutenberg.org."""
+        source, _ = source_for(json=sample_json("gutendex-search.json"))
+        text, audio = source.search(SearchQuery(q="dickens great"))
+        assert text.release_date == date(1998, 7, 1)
+        assert text.last_updated == date(2024, 12, 17)
+        assert text.credits == "An Anonymous Volunteer and David Widger"
+        assert text.original_publication is None
+        assert audio.release_date == date(2005, 8, 1)
+        assert audio.credits is None
+
+    def test_original_publication(self, source_for, sample_json):
+        source, _ = source_for(json=sample_json("gutendex-french.json"))
+        books = source.search(SearchQuery(q="hugo", language="fr"))
+        book = next(b for b in books if b.source_id == "70891")
+        assert book.original_publication == "France: Hetzel-Quantin, 1880."
+
+    def test_missing_or_unreadable_edition_details_are_none(self, source_for, sample_json):
+        """An older Gutendex has none of these fields; a bad date must not cost the whole search."""
+        payload = sample_json("gutendex-search.json")
+        for field in ("release_date", "last_updated", "credits", "original_publication"):
+            del payload["results"][0][field]
+        payload["results"][1]["release_date"] = "1998-13-45"
+        payload["results"][1]["last_updated"] = 19980701
+        payload["results"][1]["credits"] = "   "
+        source, _ = source_for(json=payload)
+        for book in source.search(SearchQuery(q="x")):
+            assert book.release_date is None
+            assert book.last_updated is None
+            assert book.credits is None
+            assert book.original_publication is None
 
     def test_empty_result(self, source_for):
         source, _ = source_for(json={"count": 0, "next": None, "previous": None, "results": []})

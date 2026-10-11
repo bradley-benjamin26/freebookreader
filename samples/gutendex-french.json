@@ -45,7 +45,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/17489/pg17489.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/17489/17489-8.zip"
             },
-            "download_count": 7808
+            "download_count": 7808,
+            "release_date": "2006-01-10",
+            "last_updated": "2023-10-30",
+            "credits": "Produced by www.ebooksgratuits.com and Chuck Greif",
+            "original_publication": null
         },
         {
             "id": 70891,
@@ -93,7 +97,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/70891/pg70891.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/70891/70891-0.zip"
             },
-            "download_count": 2890
+            "download_count": 2890,
+            "release_date": "2023-06-01",
+            "last_updated": null,
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "France: Hetzel-Quantin, 1880."
         },
         {
             "id": 17519,
@@ -139,7 +147,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/17519/pg17519.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/17519/17519-8.zip"
             },
-            "download_count": 2402
+            "download_count": 2402,
+            "release_date": "2006-01-15",
+            "last_updated": null,
+            "credits": "Produced by www.ebooksgratuits.com and Chuck Greif",
+            "original_publication": null
         },
         {
             "id": 19657,
@@ -190,7 +202,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19657/pg19657.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19657/19657-8.zip"
             },
-            "download_count": 2266
+            "download_count": 2266,
+            "release_date": "2006-10-29",
+            "last_updated": null,
+            "credits": "Produced by Chuck Greif and ebooksgratuits.com",
+            "original_publication": null
         },
         {
             "id": 17518,
@@ -235,7 +251,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/17518/pg17518.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/17518/17518-8.zip"
             },
-            "download_count": 1875
+            "download_count": 1875,
+            "release_date": "2006-01-15",
+            "last_updated": "2006-04-13",
+            "credits": "Produced by www.ebooksgratuits.com and Chuck Greif",
+            "original_publication": null
         },
         {
             "id": 17494,
@@ -280,7 +300,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/17494/pg17494.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/17494/17494-8.zip"
             },
-            "download_count": 1843
+            "download_count": 1843,
+            "release_date": "2006-01-11",
+            "last_updated": "2010-09-27",
+            "credits": "Produced by Ebooks libres et gratuits and Chuck Greif; this text is also available at http://www.ebooksgratuits.com",
+            "original_publication": null
         },
         {
             "id": 17493,
@@ -326,7 +350,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/17493/pg17493.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/17493/17493-8.zip"
             },
-            "download_count": 1588
+            "download_count": 1588,
+            "release_date": "2006-01-11",
+            "last_updated": "2018-12-25",
+            "credits": "Produced by www.ebooksgratuits.com and Chuck Greif",
+            "original_publication": null
         },
         {
             "id": 79493,
@@ -363,7 +391,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/79493/pg79493.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/79493/pg79493-h.zip"
             },
-            "download_count": 1178
+            "download_count": 1178,
+            "release_date": "2026-09-01",
+            "last_updated": "2026-09-27",
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "Paris: Hetzel-Quantin, 1880."
         },
         {
             "id": 5423,
@@ -409,7 +441,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/5423/pg5423.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/5423/5423-0.zip"
             },
-            "download_count": 1072
+            "download_count": 1072,
+            "release_date": "2004-04-01",
+            "last_updated": "2015-03-23",
+            "credits": "Produced by Carlo Traverso, Robert Rowe, Charles Franks and the Online Distributed Proofreading Team.",
+            "original_publication": null
         },
         {
             "id": 6838,
@@ -451,7 +487,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/6838/pg6838.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/6838/6838-8.zip"
             },
-            "download_count": 1002
+            "download_count": 1002,
+            "release_date": "2004-11-01",
+            "last_updated": "2015-01-03",
+            "credits": "Produced by Laurent Le Guillou. Image files courtesy of the Bibliothèque Nationale de France gallica.bnf.fr",
+            "original_publication": null
         },
         {
             "id": 12137,
@@ -492,7 +532,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/12137/pg12137.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/12137/12137-8.zip"
             },
-            "download_count": 896
+            "download_count": 896,
+            "release_date": "2004-04-01",
+            "last_updated": "2024-10-28",
+            "credits": "Produced by Stan Goodman, Rénald Lévesque and the Online Distributed Proofreading Team.",
+            "original_publication": null
         },
         {
             "id": 15739,
@@ -533,7 +577,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/15739/pg15739.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/15739/15739-0.zip"
             },
-            "download_count": 773
+            "download_count": 773,
+            "release_date": "2005-04-30",
+            "last_updated": "2021-01-26",
+            "credits": "Produced by Frank van Drogen, Renald Levesque and the Online Distributed Proofreading Team. This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica)",
+            "original_publication": null
         },
         {
             "id": 29844,
@@ -573,7 +621,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/29844/pg29844.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/29844/29844-8.zip"
             },
-            "download_count": 753
+            "download_count": 753,
+            "release_date": "2009-08-29",
+            "last_updated": null,
+            "credits": "Produced by Adrian Mastronardi, Rénald Lévesque and the Online Distributed Proofreading Team at http://www.pgdp.net (This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica).",
+            "original_publication": null
         },
         {
             "id": 9645,
@@ -614,7 +666,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/9645/pg9645.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/9645/9645-8.zip"
             },
-            "download_count": 684
+            "download_count": 684,
+            "release_date": "2006-01-01",
+            "last_updated": "2021-01-02",
+            "credits": "Produced by Stan Goodman, Renald Levesque and PG Distributed Proofreaders",
+            "original_publication": null
         },
         {
             "id": 9976,
@@ -657,7 +713,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/9976/pg9976.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/9976/9976-8.zip"
             },
-            "download_count": 680
+            "download_count": 680,
+            "release_date": "2006-02-01",
+            "last_updated": "2020-12-27",
+            "credits": "Produced by Stan Goodman, Anne Dreze, Marc D'Hooghe and the PG Online Distributed Proofreaders",
+            "original_publication": null
         },
         {
             "id": 8454,
@@ -701,7 +761,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/8454/pg8454.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/8454/8454-8.zip"
             },
-            "download_count": 663
+            "download_count": 663,
+            "release_date": "2005-07-01",
+            "last_updated": "2014-09-20",
+            "credits": "Produced by Carlo Traverso, Marc D'Hooghe and the Online Distributed Proofreaders",
+            "original_publication": null
         },
         {
             "id": 29843,
@@ -741,7 +805,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/29843/pg29843.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/29843/29843-8.zip"
             },
-            "download_count": 663
+            "download_count": 663,
+            "release_date": "2009-08-29",
+            "last_updated": null,
+            "credits": "Produced by Adrian Mastronardi, Rénald Lévesque and the Online Distributed Proofreading Team at http://www.pgdp.net (This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica)",
+            "original_publication": null
         },
         {
             "id": 8186,
@@ -783,7 +851,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/8186/pg8186.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/8186/8186.zip"
             },
-            "download_count": 661
+            "download_count": 661,
+            "release_date": "2005-05-01",
+            "last_updated": "2014-09-20",
+            "credits": "Produced by Carlo Traverso, Anne Dreze, Marc D'Hooghe and the Online Distributed Proofreading Team",
+            "original_publication": null
         },
         {
             "id": 13628,
@@ -824,7 +896,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/13628/pg13628.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/13628/pg13628-h.zip"
             },
-            "download_count": 617
+            "download_count": 617,
+            "release_date": "2004-10-05",
+            "last_updated": "2024-10-28",
+            "credits": "Produced by PG Distributed Proofreaders from images generously made available by the Bibliotheque nationale de France (BnF/Gallica) at http://gallica.bnf.fr",
+            "original_publication": null
         },
         {
             "id": 6994,
@@ -870,7 +946,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/6994/pg6994.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/6994/6994-0.zip"
             },
-            "download_count": 610
+            "download_count": 610,
+            "release_date": "2004-11-01",
+            "last_updated": "2021-01-27",
+            "credits": "Produced by Carlo Traverso, Juliette Sutherland Charles Franks and the Online Distributed Proofreading Team This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica) at http://gallica.bnf.fr.",
+            "original_publication": null
         },
         {
             "id": 8453,
@@ -913,7 +993,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/8453/pg8453.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/8453/8453.zip"
             },
-            "download_count": 606
+            "download_count": 606,
+            "release_date": "2005-07-01",
+            "last_updated": "2014-09-20",
+            "credits": "Produced by Carlo Traverso, Anne Dreze, Marc D'Hooghe and the Online Distributed Proofreading Team",
+            "original_publication": null
         },
         {
             "id": 12289,
@@ -953,7 +1037,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/12289/pg12289.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/12289/pg12289-h.zip"
             },
-            "download_count": 596
+            "download_count": 596,
+            "release_date": "2004-05-01",
+            "last_updated": "2024-10-28",
+            "credits": "Produced by Tonya Allen, Wilelmina Mallière and the Online Distributed Proofreading Team. This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica) at http://gallica.bnf.fr.,",
+            "original_publication": null
         },
         {
             "id": 72885,
@@ -993,7 +1081,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/72885/pg72885.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/72885/pg72885-h.zip"
             },
-            "download_count": 586
+            "download_count": 586,
+            "release_date": "2024-02-06",
+            "last_updated": null,
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "Paris: Hetzel-Quantin, 1880."
         },
         {
             "id": 71445,
@@ -1040,7 +1132,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/71445/pg71445.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/71445/71445-h.zip"
             },
-            "download_count": 578
+            "download_count": 578,
+            "release_date": "2023-08-19",
+            "last_updated": null,
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "Paris: Hetzel-Quantin, 1880."
         },
         {
             "id": 8490,
@@ -1083,7 +1179,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/8490/pg8490.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/8490/8490-8.zip"
             },
-            "download_count": 571
+            "download_count": 571,
+            "release_date": "2005-07-01",
+            "last_updated": "2014-09-20",
+            "credits": "Produced by Carlo Traverso, Anne Dreze, Marc D'Hooghe and the Online Distributed Proofreading Team",
+            "original_publication": null
         },
         {
             "id": 22048,
@@ -1127,7 +1227,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/22048/pg22048.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/22048/22048-8.zip"
             },
-            "download_count": 555
+            "download_count": 555,
+            "release_date": "2007-07-11",
+            "last_updated": null,
+            "credits": "Produced by Mireille Harmelin, Eric Vautier and the Online Distributed Proofreaders Europe at http://dp.rastko.net. This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica)",
+            "original_publication": null
         },
         {
             "id": 76638,
@@ -1167,7 +1271,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/76638/pg76638.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/76638/pg76638-h.zip"
             },
-            "download_count": 504
+            "download_count": 504,
+            "release_date": "2025-08-06",
+            "last_updated": null,
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "Paris: Hetzel-Quantin, 1880."
         },
         {
             "id": 76396,
@@ -1208,7 +1316,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/76396/pg76396.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/76396/pg76396-h.zip"
             },
-            "download_count": 503
+            "download_count": 503,
+            "release_date": "2025-06-27",
+            "last_updated": null,
+            "credits": "Claudine Corbasson and the Online Distributed Proofreading Team at https://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": "Paris: Hetzel-Quantin, 1880."
         },
         {
             "id": 51977,
@@ -1251,7 +1363,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/51977/pg51977.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/51977/pg51977-h.zip"
             },
-            "download_count": 493
+            "download_count": 493,
+            "release_date": "2016-05-03",
+            "last_updated": "2024-10-23",
+            "credits": "Produced by Laura Natal Rodriguez and Marc D'Hooghe (Images generously made available by the Hathi Trust.)",
+            "original_publication": null
         },
         {
             "id": 9644,
@@ -1293,7 +1409,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/9644/pg9644.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/9644/9644-8.zip"
             },
-            "download_count": 473
+            "download_count": 473,
+            "release_date": "2006-01-01",
+            "last_updated": "2021-01-02",
+            "credits": "Produced by Carlo Traverso, Anne Dreze and PG Distributed Proofreaders. This file was produced from images generously made available by the Bibliothèque nationale de France (BnF/Gallica) at http://gallica.bnf.fr",
+            "original_publication": null
         },
         {
             "id": 29549,
@@ -1336,7 +1456,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/29549/pg29549.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/29549/29549-0.zip"
             },
-            "download_count": 464
+            "download_count": 464,
+            "release_date": "2009-07-30",
+            "last_updated": "2021-01-05",
+            "credits": "Produced by Chuck Greif and www.ebooksgratuits.com",
+            "original_publication": null
         },
         {
             "id": 60354,
@@ -1382,7 +1506,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/60354/pg60354.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/60354/pg60354-h.zip"
             },
-            "download_count": 463
+            "download_count": 463,
+            "release_date": "2019-09-25",
+            "last_updated": "2024-10-17",
+            "credits": "Produced by Ramon Pajares Box and the Online Distributed Proofreading Team at http://www.pgdp.net (This file was produced from images generously made available by The Internet Archive/Canadian Libraries)",
+            "original_publication": null
         }
     ]
 }

@@ -10,6 +10,15 @@ String? formatDuration(int? seconds) {
   return [if (hours > 0) '$hours hr', if (minutes > 0) '$minutes min'].join(' ');
 }
 
+const _months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+/// "May 9, 2013"; null when unknown.
+String? formatDate(DateTime? date) =>
+    date == null ? null : '${_months[date.month - 1]} ${date.day}, ${date.year}';
+
 /// "A", "A and B", "A, B and C".
 String formatAuthors(List<String> authors) => joinNames(authors) ?? 'Unknown author';
 

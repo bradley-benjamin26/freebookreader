@@ -29,6 +29,9 @@ Map<String, List<String>> _stringLists(Object? raw) => {
         entry.key as String: _strings(entry.value),
     };
 
+/// An ISO date (`1998-06-01`), or null when missing or unreadable.
+DateTime? _date(Object? raw) => raw is String ? DateTime.tryParse(raw) : null;
+
 /// How a book is opened: in the app (with [kind] html, epub, text, pdf or
 /// audio) or at its source.
 class ReadingOptions {
@@ -84,6 +87,10 @@ class Book {
     this.chapters = const [],
     required this.access,
     required this.reading,
+    this.releaseDate,
+    this.lastUpdated,
+    this.credits,
+    this.originalPublication,
   });
 
   factory Book.fromJson(Map<String, dynamic> json) => Book(
@@ -106,6 +113,10 @@ class Book {
             .toList(),
         access: _parseEnum(_access, json['access'], 'access'),
         reading: ReadingOptions.fromJson(json['reading'] as Map<String, dynamic>),
+        releaseDate: _date(json['release_date']),
+        lastUpdated: _date(json['last_updated']),
+        credits: json['credits'] as String?,
+        originalPublication: json['original_publication'] as String?,
       );
 
   final String source;
@@ -127,6 +138,14 @@ class Book {
   final List<Chapter> chapters;
   final Access access;
   final ReadingOptions reading;
+
+  // Edition details that tell apart several books of one work (only Project
+  // Gutenberg gives them). [lastUpdated] is null when unchanged since release;
+  // [credits] has one credit per line.
+  final DateTime? releaseDate;
+  final DateTime? lastUpdated;
+  final String? credits;
+  final String? originalPublication;
 
   /// Unique across sources, e.g. `gutenberg:1342`. Bookmarks are stored under it.
   String get key => '$source:$sourceId';

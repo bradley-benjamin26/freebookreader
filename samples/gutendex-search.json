@@ -49,7 +49,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/1400/pg1400.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/cache/epub/1400/pg1400-h.zip"
             },
-            "download_count": 38268
+            "download_count": 38268,
+            "release_date": "1998-07-01",
+            "last_updated": "2024-12-17",
+            "credits": "An Anonymous Volunteer and David Widger",
+            "original_publication": null
         },
         {
             "id": 8608,
@@ -90,7 +94,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/8608/pg8608.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/8608/8608-mp3.zip"
             },
-            "download_count": 1835
+            "download_count": 1835,
+            "release_date": "2005-08-01",
+            "last_updated": "2011-03-05",
+            "credits": null,
+            "original_publication": null
         }
     ]
 }

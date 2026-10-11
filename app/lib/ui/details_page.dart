@@ -108,6 +108,13 @@ class _BookCard extends StatelessWidget {
       if (book.pages != null) '${book.pages} pages',
       ?length,
     ].join(' · ');
+    final released = formatDate(book.releaseDate);
+    final updated = formatDate(book.lastUpdated);
+    final edition = [
+      if (book.source == 'gutenberg') 'eBook #${book.sourceId}',
+      if (released != null) 'Released $released',
+      if (updated != null) 'Last updated $updated',
+    ].join(' · ');
     return Card(
       margin: const EdgeInsets.only(top: 12),
       child: Padding(
@@ -118,6 +125,10 @@ class _BookCard extends StatelessWidget {
             Heading(sourceName(book.source), style: text.titleMedium),
             Text(facts, style: text.bodyMedium),
             if (narrators != null) Text('Read by $narrators', style: text.bodyMedium),
+            if (edition.isNotEmpty) Text(edition, style: text.bodyMedium),
+            if (book.originalPublication != null)
+              Text('Original publication: ${book.originalPublication}', style: text.bodyMedium),
+            if (book.credits != null) Text('Credits: ${book.credits}', style: text.bodySmall),
             const SizedBox(height: 4),
             Text(_accessNote(book), style: text.bodyMedium),
             const SizedBox(height: 8),

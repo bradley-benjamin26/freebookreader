@@ -82,6 +82,30 @@ void main() {
       expect(book.reading.publication, '/publications/gutenberg/1342/manifest.json');
     });
 
+    test('Gutenberg book has edition details', () {
+      final book = response.works.first.books.first;
+      expect(book.releaseDate, DateTime(1998, 6, 1));
+      expect(book.lastUpdated, DateTime(2026, 9, 29));
+      expect(book.credits, startsWith('Chuck Greif'));
+      expect(book.originalPublication, isNull);
+    });
+
+    test('edition details are null when missing or unreadable', () {
+      // LibriVox and older responses have no such fields.
+      final audio = response.works.first.books[1];
+      expect(audio.releaseDate, isNull);
+      expect(audio.lastUpdated, isNull);
+      expect(audio.credits, isNull);
+      expect(audio.originalPublication, isNull);
+      final json = Map<String, dynamic>.from(
+          (loadJson('search_response.json')['works'][0]['books'][0]) as Map);
+      json['release_date'] = 'June 1998';
+      json['last_updated'] = 19980601;
+      final book = Book.fromJson(json);
+      expect(book.releaseDate, isNull);
+      expect(book.lastUpdated, isNull);
+    });
+
     test('books without a publication, or older responses without the field', () {
       expect(response.works.first.books[1].reading.publication, isNull);
       final reading = ReadingOptions.fromJson({'mode': 'external', 'kind': null, 'url': 'https://x'});

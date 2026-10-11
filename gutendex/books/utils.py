@@ -1,8 +1,11 @@
+import datetime
 import defusedxml.ElementTree as parser
 import re
 
 
 LINE_BREAK_PATTERN = re.compile(r'[ \t]*[\n\r]+[ \t]*')
+MARC_SUBFIELD_PATTERN = re.compile(r'\s*\$[a-z]\s*')
+UPDATED_PATTERN = re.compile(r'\s*Updated:', re.IGNORECASE)
 NAMESPACES = {
     'dc': 'http://purl.org/dc/terms/',
     'dcam': 'http://purl.org/dc/dcam/',
@@ -147,7 +150,88 @@ def get_book(id, xml_file_path):
     summaries = book.findall('.//{%(pg)s}marc520' % NAMESPACES)
     result['summaries'] = [summary.text for summary in summaries]
 
+    # Edition details, which tell apart several eBooks of one work
+    issued = book.find('.//{%(dc)s}issued' % NAMESPACES)
+    result['release_date'] = parse_date(issued.text if issued is not None else None)
+    result['last_updated'] = get_last_updated(book, result['release_date'])
+    result['credits'] = get_credits(book)
+    publication = book.find('.//{%(pg)s}marc260' % NAMESPACES)
+    result['original_publication'] = (
+        clean_publication(publication.text) if publication is not None else None
+    )
+
     return result
+
+
+def parse_date(text):
+    """ The date part of an ISO date or date-time, or None. """
+    try:
+        return datetime.date.fromisoformat((text or '')[:10])
+    except ValueError:
+        return None
+
+
+def get_last_updated(book, release_date):
+    """
+    When the book was last edited: the newest uploaded file (under /files/).
+    Generated files (/ebooks/, /cache/epub/) are rebuilt every few weeks, so
+    they are ignored. Like gutenberg.org, this is None when nothing changed
+    after the release date.
+    """
+
+    dates = []
+    for file in book.findall('.//{%(pg)s}file' % NAMESPACES):
+        if '/files/' not in (file.get('{%(rdf)s}about' % NAMESPACES) or ''):
+            continue
+        modified = file.find('{%(dc)s}modified' % NAMESPACES)
+        date = parse_date(modified.text if modified is not None else None)
+        if date is not None:
+            dates.append(date)
+    if not dates:
+        return None
+    newest = max(dates)
+    if release_date is not None and newest <= release_date:
+        return None
+    return newest
+
+
+def get_credits(book):
+    """
+    Who produced the eBook (MARC 508), one line per distinct credit.
+    "Updated: <date>" notes are dropped, as gutenberg.org does.
+    """
+
+    credits = []
+    for element in book.findall('.//{%(pg)s}marc508' % NAMESPACES):
+        lines = [
+            line for line in (element.text or '').splitlines()
+            if not UPDATED_PATTERN.match(line)
+        ]
+        credit = ' '.join(' '.join(lines).split())
+        if credit and credit not in credits:
+            credits.append(credit)
+    return '\n'.join(credits) or None
+
+
+def clean_publication(text):
+    """
+    Formats an original publication (MARC 260) for display.
+
+    >>> clean_publication('  $aBudapest :$bAthenaeum, $c1926.')
+    'Budapest: Athenaeum, 1926.'
+    """
+
+    parts = [part.strip() for part in LINE_BREAK_PATTERN.split(text or '')]
+    joined = ''
+    for part in parts:
+        if not part:
+            continue
+        if joined:
+            joined += ' ' if joined[-1] in ':;,.' else ', '
+        joined += part
+    joined = MARC_SUBFIELD_PATTERN.sub(' ', joined)
+    joined = re.sub(r'\s+([:;,.])', r'\1', joined)
+    return ' '.join(joined.split()) or None
 
 
 def get_person(person_element):

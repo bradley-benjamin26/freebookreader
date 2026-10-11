@@ -86,6 +86,10 @@ def put_catalog_in_db():
                 book_in_db.download_count = book['downloads']
                 book_in_db.media_type = book['type']
                 book_in_db.title = book['title']
+                book_in_db.release_date = book['release_date']
+                book_in_db.last_updated = book['last_updated']
+                book_in_db.credits = book['credits']
+                book_in_db.original_publication = book['original_publication']
                 book_in_db.save()
             else:
                 book_in_db = Book.objects.create(
@@ -93,7 +97,11 @@ def put_catalog_in_db():
                     copyright=book['copyright'],
                     download_count=book['downloads'],
                     media_type=book['type'],
-                    title=book['title']
+                    title=book['title'],
+                    release_date=book['release_date'],
+                    last_updated=book['last_updated'],
+                    credits=book['credits'],
+                    original_publication=book['original_publication']
                 )
 
             ''' Make/update the authors. '''
@@ -219,7 +227,7 @@ def put_catalog_in_db():
                     old_summary.delete()
 
         except Exception as error:
-            book_json = json.dumps(book, indent=4)
+            book_json = json.dumps(book, indent=4, default=str)
             log(
                 '  Error while putting this book info in the database:\n',
                 book_json,

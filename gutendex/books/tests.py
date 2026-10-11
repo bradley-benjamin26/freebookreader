@@ -6,18 +6,26 @@ they never touch the real database; Django creates a throwaway test database.
 
 Run: python manage.py test books
 """
-from django.test import TestCase
+import datetime
+import os
+import tempfile
 
+from django.test import SimpleTestCase, TestCase
+
+from . import utils
 from .models import Book, Bookshelf, Format, Language, Person, Subject, Summary
 
 
 def make_book(gutenberg_id, title, *, authors=(), languages=('en',),
               downloads=100, media_type='Text', copyright=False,
               formats=None, subjects=(), bookshelves=(), summary=None,
-              translators=()):
+              translators=(), release_date=None, last_updated=None,
+              credits=None, original_publication=None):
     book = Book.objects.create(
         gutenberg_id=gutenberg_id, title=title, download_count=downloads,
-        media_type=media_type, copyright=copyright)
+        media_type=media_type, copyright=copyright,
+        release_date=release_date, last_updated=last_updated,
+        credits=credits, original_publication=original_publication)
     for name, birth, death in authors:
         person, _ = Person.objects.get_or_create(
             name=name, birth_year=birth, death_year=death)
@@ -55,6 +63,9 @@ class CatalogTestCase(TestCase):
                   subjects=['Courtship -- Fiction'],
                   bookshelves=['Category: Novels'],
                   summary='A novel of manners.',
+                  release_date=datetime.date(1998, 6, 1),
+                  last_updated=datetime.date(2026, 9, 29),
+                  credits='Chuck Greif and the Online Distributed Proofreading Team',
                   formats={
                       'text/html': 'https://www.gutenberg.org/ebooks/1342.html.images',
                       'application/epub+zip': 'https://www.gutenberg.org/ebooks/1342.epub3.images',
@@ -108,7 +119,8 @@ class ListBooksTests(CatalogTestCase):
         self.assertEqual(set(book), {
             'id', 'title', 'authors', 'summaries', 'editors', 'translators',
             'subjects', 'bookshelves', 'languages', 'copyright', 'media_type',
-            'formats', 'download_count'})
+            'formats', 'download_count', 'release_date', 'last_updated',
+            'credits', 'original_publication'})
         self.assertEqual(book['id'], 1342)
         self.assertEqual(book['authors'], [
             {'name': 'Austen, Jane', 'birth_year': 1775, 'death_year': 1817}])
@@ -117,6 +129,19 @@ class ListBooksTests(CatalogTestCase):
         self.assertEqual(book['formats']['application/epub+zip'],
                          'https://www.gutenberg.org/ebooks/1342.epub3.images')
         self.assertIn('image/jpeg', book['formats'])
+
+    def test_edition_details_tell_editions_apart(self):
+        book = self.get('?ids=1342').json()['results'][0]
+        self.assertEqual(book['release_date'], '1998-06-01')
+        self.assertEqual(book['last_updated'], '2026-09-29')
+        self.assertEqual(book['credits'],
+                         'Chuck Greif and the Online Distributed Proofreading Team')
+        self.assertIsNone(book['original_publication'])
+
+    def test_missing_edition_details_are_null(self):
+        book = self.get('?ids=1400').json()['results'][0]
+        for field in ('release_date', 'last_updated', 'credits', 'original_publication'):
+            self.assertIsNone(book[field])
 
     def test_translators_are_separate_from_authors(self):
         book = self.get('?ids=17489').json()['results'][0]
@@ -235,3 +260,113 @@ class HttpBehaviorTests(CatalogTestCase):
     def test_cors_allows_any_origin(self):
         response = self.client.get('/books/', HTTP_ORIGIN='https://example.org')
         self.assertEqual(response['Access-Control-Allow-Origin'], '*')
+
+
+RDF_TEMPLATE = '''<?xml version="1.0" encoding="utf-8"?>
+<rdf:RDF xml:base="http://www.gutenberg.org/"
+  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+  xmlns:pgterms="http://www.gutenberg.org/2009/pgterms/"
+  xmlns:dcterms="http://purl.org/dc/terms/"
+  xmlns:dcam="http://purl.org/dc/dcam/"
+>
+  <pgterms:ebook rdf:about="ebooks/6630">
+    <dcterms:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">%(issued)s</dcterms:issued>
+    <dcterms:rights>Public domain in the USA.</dcterms:rights>
+    <dcterms:title>Sample</dcterms:title>
+    %(extra)s
+    <dcterms:hasFormat>
+      <pgterms:file rdf:about="https://www.gutenberg.org/ebooks/6630.epub3.images">
+        <dcterms:format><rdf:Description><rdf:value>application/epub+zip</rdf:value></rdf:Description></dcterms:format>
+        <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2026-09-03T10:00:00.000000</dcterms:modified>
+      </pgterms:file>
+    </dcterms:hasFormat>
+    %(source_files)s
+  </pgterms:ebook>
+</rdf:RDF>
+'''
+
+SOURCE_FILE = '''<dcterms:hasFormat>
+      <pgterms:file rdf:about="https://www.gutenberg.org/files/6630/%(name)s">
+        <dcterms:format><rdf:Description><rdf:value>text/html</rdf:value></rdf:Description></dcterms:format>
+        <dcterms:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">%(modified)s</dcterms:modified>
+      </pgterms:file>
+    </dcterms:hasFormat>'''
+
+
+class EditionDetailsParsingTests(SimpleTestCase):
+    """How updatecatalog reads the edition details from Project Gutenberg's RDF."""
+
+    def parse(self, *, issued='2004-10-01', extra='', source_files=()):
+        rdf = RDF_TEMPLATE % {
+            'issued': issued,
+            'extra': extra,
+            'source_files': '\n'.join(
+                SOURCE_FILE % {'name': name, 'modified': modified}
+                for name, modified in source_files),
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            path = os.path.join(directory, 'pg6630.rdf')
+            with open(path, 'w', encoding='utf-8') as rdf_file:
+                rdf_file.write(rdf)
+            return utils.get_book(6630, path)
+
+    def test_release_date_is_dcterms_issued(self):
+        self.assertEqual(self.parse()['release_date'], datetime.date(2004, 10, 1))
+
+    def test_unreadable_release_date_is_none(self):
+        self.assertIsNone(self.parse(issued='None')['release_date'])
+
+    def test_last_updated_is_the_newest_uploaded_file(self):
+        # Files under /files/<id>/ change only when someone edits the book.
+        # Generated files (/ebooks/, /cache/epub/) are rebuilt every few
+        # weeks, so their dates say nothing about the book.
+        book = self.parse(source_files=[
+            ('6630-0.txt', '2022-12-28T08:00:00.000000'),
+            ('6630-h/6630-h.htm', '2021-01-05T08:00:00.000000'),
+        ])
+        self.assertEqual(book['last_updated'], datetime.date(2022, 12, 28))
+
+    def test_no_last_updated_when_never_changed_after_release(self):
+        # gutenberg.org shows no "Last Update" for these either.
+        book = self.parse(source_files=[('6630-0.txt', '2004-10-01T08:00:00.000000')])
+        self.assertIsNone(book['last_updated'])
+        self.assertIsNone(self.parse()['last_updated'])
+
+    def test_credits_come_from_marc508_without_update_notes(self):
+        book = self.parse(extra='''
+            <pgterms:marc508>Produced by Juliet Sutherland and the Online Distributed
+Proofreading Team.
+Updated: 2022-12-28.</pgterms:marc508>''')
+        self.assertEqual(book['credits'],
+                         'Produced by Juliet Sutherland and the Online Distributed '
+                         'Proofreading Team.')
+
+    def test_repeated_credits_are_listed_once(self):
+        book = self.parse(extra='''
+            <pgterms:marc508>Produced by Pedro Saborano (from scanned images)</pgterms:marc508>
+            <pgterms:marc508>Produced by Pedro Saborano (from scanned
+images)</pgterms:marc508>
+            <pgterms:marc508>William McClain</pgterms:marc508>''')
+        self.assertEqual(book['credits'],
+                         'Produced by Pedro Saborano (from scanned images)\nWilliam McClain')
+
+    def test_no_credits_is_none(self):
+        self.assertIsNone(self.parse()['credits'])
+
+    def test_original_publication_drops_marc_subfield_markers(self):
+        for raw, expected in [
+            ('  $aBudapest :$bAthenaeum, $c1926.', 'Budapest: Athenaeum, 1926.'),
+            ('Los Angeles : $b The Augustan Reprint Society, $c 1958',
+             'Los Angeles: The Augustan Reprint Society, 1958'),
+            ('  $aUnited Kingdom :$bFrank Palmer,$c1910.', 'United Kingdom: Frank Palmer, 1910.'),
+            ('Washington&#13;\n1918', 'Washington, 1918'),
+            ('Lisboa:&#13;\n1866', 'Lisboa: 1866'),
+            ('$aNew York :$bNickerson &amp; Collins, $c1903, copyright 1921.',
+             'New York: Nickerson & Collins, 1903, copyright 1921.'),
+        ]:
+            with self.subTest(raw=raw):
+                book = self.parse(extra=f'<pgterms:marc260>{raw}</pgterms:marc260>')
+                self.assertEqual(book['original_publication'], expected)
+
+    def test_no_original_publication_is_none(self):
+        self.assertIsNone(self.parse()['original_publication'])

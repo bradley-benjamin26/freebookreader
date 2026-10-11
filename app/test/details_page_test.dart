@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:free_book_reader/models/models.dart';
+
+import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -64,6 +67,54 @@ void main() {
       await pumpApp(tester, await TestEnv.create());
       await openDetails(tester, 'w-quijote');
       expect(find.textContaining('863 pages'), findsOneWidget);
+    });
+
+    testWidgets('a Gutenberg book shows its release, last update and credits', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await openDetails(tester, 'w-pride');
+      final book = find.byKey(const Key('book-gutenberg:1342'));
+      await tester.ensureVisible(book);
+      Finder inBook(String text) => find.descendant(of: book, matching: find.textContaining(text));
+      expect(inBook('eBook #1342 · Released June 1, 1998'), findsOneWidget);
+      expect(inBook('Last updated September 29, 2026'), findsOneWidget);
+      expect(inBook('Credits: Chuck Greif'), findsOneWidget);
+      expect(inBook('Original publication'), findsNothing); // none in the catalog
+    });
+
+    testWidgets('books without edition details show none', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await openDetails(tester, 'w-pride');
+      final book = find.byKey(const Key('book-librivox:253'));
+      await tester.ensureVisible(book);
+      // Only Gutenberg numbers its books; other sources' ids mean nothing to readers.
+      for (final text in ['eBook #', 'Released', 'Last updated', 'Credits', 'Original publication']) {
+        expect(find.descendant(of: book, matching: find.textContaining(text)), findsNothing,
+            reason: text);
+      }
+    });
+
+    testWidgets('two Gutenberg editions of one work can be told apart', (tester) async {
+      // Gutenberg has several eBooks of many works (1342 and 42671 are both
+      // Pride and Prejudice); they merge into one work.
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      final books = json['works'][0]['books'] as List;
+      final edition = Map<String, dynamic>.from(books[0] as Map)
+        ..['source_id'] = '42671'
+        ..['url'] = 'https://www.gutenberg.org/ebooks/42671'
+        ..['release_date'] = '2013-05-09'
+        ..['last_updated'] = null
+        ..['credits'] = 'E-text prepared by Greg Weeks and Jon Hurst'
+        ..['original_publication'] = 'London: Chatto & Windus, 1894.';
+      books.insert(1, edition);
+      await pumpApp(tester, await TestEnv.create(response: SearchResponse.fromJson(json)));
+      await openDetails(tester, 'w-pride');
+      final book = find.byKey(const Key('book-gutenberg:42671'));
+      await tester.ensureVisible(book);
+      Finder inBook(String text) => find.descendant(of: book, matching: find.textContaining(text));
+      expect(inBook('eBook #42671 · Released May 9, 2013'), findsOneWidget);
+      expect(inBook('Last updated'), findsNothing);
+      expect(inBook('Credits: E-text prepared by Greg Weeks'), findsOneWidget);
+      expect(inBook('Original publication: London: Chatto & Windus, 1894.'), findsOneWidget);
     });
 
     testWidgets('explains how each book can be accessed', (tester) async {

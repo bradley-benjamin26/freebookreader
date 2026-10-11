@@ -183,7 +183,11 @@ Sample response (real, unabridged):
     "image/jpeg": "https://www.gutenberg.org/cache/epub/11/pg11.cover.medium.jpg",
     "application/octet-stream": "https://www.gutenberg.org/cache/epub/11/pg11-h.zip"
   },
-  "download_count": 121623
+  "download_count": 121623,
+  "release_date": "2008-06-27",
+  "last_updated": "2025-06-26",
+  "credits": "Arthur DiBianca and David Widger",
+  "original_publication": null
 }
 ```
 
@@ -219,6 +223,50 @@ curl "http://localhost:8001/books/?search=x&page=999"
 | `media_type` | string | `Text` or `Sound` seen so far. |
 | `formats` | object | MIME type to URL on gutenberg.org. |
 | `download_count` | number | Used for the default ordering. |
+| `release_date` | string or null | ISO date. **Ours** (see below). |
+| `last_updated` | string or null | ISO date; `null` when not edited after release. **Ours.** |
+| `credits` | string or null | Who produced the eBook, one credit per line. **Ours.** |
+| `original_publication` | string or null | The printed book it was made from, e.g. `Budapest: Athenaeum, 1926.` **Ours.** |
+
+## Edition details (our addition)
+
+Project Gutenberg often has several eBooks of one work: Pride and Prejudice is #1342 and #42671 (two text editions) and #20686, #20687 and #26301 (audiobooks). They merge into one work and looked the same in the app. gutenberg.org tells them apart with "Release Date", "Last Update", "Credits" and "Original Publication", so our copy of Gutendex adds those four fields (added 2026-10-10; migration `0006_book_edition_details`). **Upstream Gutendex and gutendex.com do not have them.** The fields are computed from each book's RDF file by `books/utils.py` when `updatecatalog` runs:
+
+| Field | RDF source | Coverage (catalog of 2026-10-09, 79,572 books) |
+|---|---|---|
+| `release_date` | `dcterms:issued` | every book |
+| `last_updated` | newest `dcterms:modified` of the files under `https://www.gutenberg.org/files/<id>/` (the uploaded files; they change only when someone edits the book). Generated files (`/ebooks/`, `/cache/epub/`) are rebuilt every few weeks, so their dates mean nothing. `null` when not after the release date, as on gutenberg.org. | 56,239 books (23,326 never edited after release; 7 have no uploaded files) |
+| `credits` | `pgterms:marc508`. Line breaks become spaces. Lines starting `Updated:` are dropped, as gutenberg.org does. Repeated credits (69 books list one twice, re-wrapped) are listed once. | 76,560 books |
+| `original_publication` | `pgterms:marc260`, without MARC subfield markers (`  $aBudapest :$bAthenaeum, $c1926.` becomes `Budapest: Athenaeum, 1926.`). A line break becomes `, ` (or a space after `:`). | 13,191 books (mostly recent releases) |
+
+The results match gutenberg.org's book pages (checked 2026-10-10 for #1342, #42671, #20686, #26301, #6630, #29394, #72591, #73350; gutenberg.org shows a "Last Update" a day or so earlier than our nightly catalog).
+
+```bash
+curl "http://localhost:8001/books/?ids=1342,42671,20686,20687,26301"
+```
+
+Sample response (real; other fields left out):
+
+```json
+{
+  "count": 5,
+  "results": [
+    {"id": 1342, "media_type": "Text", "release_date": "1998-06-01", "last_updated": "2026-09-29",
+     "credits": "Chuck Greif and the Online Distributed Proofreading Team at http://www.pgdp.net (This file was produced from images available at The Internet Archive)",
+     "original_publication": null},
+    {"id": 42671, "media_type": "Text", "release_date": "2013-05-09", "last_updated": "2026-01-25",
+     "credits": "E-text prepared by Greg Weeks, Jon Hurst, Mary Meehan, and the Online Distributed Proofreading Team (http://www.pgdp.net) from page images generously made available by Internet Archive (http://archive.org)",
+     "original_publication": null},
+    {"id": 20687, "media_type": "Sound", "release_date": "2007-02-03", "last_updated": "2021-01-30", "credits": null, "original_publication": null},
+    {"id": 20686, "media_type": "Sound", "release_date": "2007-02-03", "last_updated": "2021-01-30", "credits": null, "original_publication": null},
+    {"id": 26301, "media_type": "Sound", "release_date": "2008-08-01", "last_updated": "2021-01-30", "credits": null, "original_publication": null}
+  ]
+}
+```
+
+Limits: #20686 and #20687 are identical in all four fields; the catalog has nothing that tells them apart except the eBook number, which the app also shows on each card ("eBook #20686"). The edition statement (`pgterms:marc250`, e.g. "Third edition", 352 books) is not used yet.
+
+After pulling this change, run `python manage.py migrate` and then `updatecatalog` (or re-read the RDF files already on disk) to fill the fields. Until then they are `null`.
 
 ## Notes for the Free Book Reader
 
@@ -228,6 +276,7 @@ Mapping onto the data model in [spec.md](spec.md):
 * **Titles carry MARC subfield markers** in some records: "Black Beauty : $b The autobiography of a horse", "Greasy luck : $b A whaling sketch book". The backend removes them ("Black Beauty: The autobiography of a horse").
 * **Cover image:** the `image/jpeg` entry in `formats` (not checked for every book).
 * **In-app reading:** the `text/html` and `application/epub+zip` URLs are the candidates for the viewer, with `text/plain` as the fallback. gutenberg.org sends **no CORS headers** (checked 2026-10-10), so a web app cannot fetch them directly. For the web reader the backend downloads the EPUB and serves it (see "Book files (EPUB)" below).
+* **Edition details:** `release_date`, `last_updated`, `credits` and `original_publication` go into the backend's book fields of the same names and are shown on each book's card on the details page.
 * **Number of pages and audio length:** not provided.
 * **Filters:** language maps to `languages`. Format (text/audio) maps to `mime_type` or `media_type`.
 * **Merging:** Gutenberg has no ISBN or OCLC number, so it only takes part in the exact and fuzzy title+author passes. Author names need normalizing from "Last, First".

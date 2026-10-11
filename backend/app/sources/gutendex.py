@@ -1,5 +1,6 @@
 """Project Gutenberg through the self-hosted Gutendex API (see api_gutendex.documentation.md)."""
 import re
+from datetime import date
 
 import httpx
 
@@ -69,7 +70,25 @@ class GutendexSource:
             cover_url=formats.get("image/jpeg"),
             content={mime: url for mime, url in formats.items() if mime.startswith(_KEEP)},
             access="open",
+            release_date=_date(record.get("release_date")),
+            last_updated=_date(record.get("last_updated")),
+            credits=_text(record.get("credits")),
+            original_publication=_text(record.get("original_publication")),
         )
+
+
+def _date(value) -> date | None:
+    """An ISO date from Gutendex, or None when missing or unreadable."""
+    if not isinstance(value, str):
+        return None
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _text(value) -> str | None:
+    return value.strip() or None if isinstance(value, str) else None
 
 
 def _clean_title(title: str) -> str:

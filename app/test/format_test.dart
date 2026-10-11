@@ -14,6 +14,11 @@ void main() {
     });
   });
 
+  group('formatDate (month spelled out, so it reads the same everywhere)', () {
+    test('a date', () => expect(formatDate(DateTime(2013, 5, 9)), 'May 9, 2013'));
+    test('unknown', () => expect(formatDate(null), isNull));
+  });
+
   group('authors', () {
     test('none', () => expect(formatAuthors([]), 'Unknown author'));
     test('one', () => expect(formatAuthors(['Jane Austen']), 'Jane Austen'));

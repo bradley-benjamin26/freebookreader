@@ -35,7 +35,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/26296.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/26296/pg26296.cover.medium.jpg"
             },
-            "download_count": 16435
+            "download_count": 16435,
+            "release_date": "2008-08-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 26471,
@@ -68,7 +72,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/26471.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/26471/pg26471.cover.medium.jpg"
             },
-            "download_count": 16380
+            "download_count": 16380,
+            "release_date": "2008-09-01",
+            "last_updated": "2023-06-28",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 26225,
@@ -101,7 +109,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/26225.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/26225/pg26225.cover.medium.jpg"
             },
-            "download_count": 14114
+            "download_count": 14114,
+            "release_date": "2008-08-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 28942,
@@ -140,7 +152,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/28942.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/28942/pg28942.cover.medium.jpg"
             },
-            "download_count": 12098
+            "download_count": 12098,
+            "release_date": "2009-05-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20968,
@@ -174,7 +190,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20968/pg20968.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20968/20968-m4b.zip"
             },
-            "download_count": 11915
+            "download_count": 11915,
+            "release_date": "2007-04-04",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 21436,
@@ -210,7 +230,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/21436.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/21436/pg21436.cover.medium.jpg"
             },
-            "download_count": 9835
+            "download_count": 9835,
+            "release_date": "2007-05-18",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19839,
@@ -251,7 +275,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19839/pg19839.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19839/19839-m4b.zip"
             },
-            "download_count": 9055
+            "download_count": 9055,
+            "release_date": "2006-11-18",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20027,
@@ -290,7 +318,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20027/pg20027.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20027/20027-m4b.zip"
             },
-            "download_count": 8936
+            "download_count": 8936,
+            "release_date": "2006-11-06",
+            "last_updated": "2009-05-25",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 22788,
@@ -336,7 +368,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/22788.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/22788/pg22788.cover.medium.jpg"
             },
-            "download_count": 8365
+            "download_count": 8365,
+            "release_date": "2007-09-01",
+            "last_updated": "2022-12-28",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 22789,
@@ -372,7 +408,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/22789.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/22789/pg22789.cover.medium.jpg"
             },
-            "download_count": 8282
+            "download_count": 8282,
+            "release_date": "2007-09-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 22452,
@@ -412,7 +452,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/22452.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/22452/pg22452.cover.medium.jpg"
             },
-            "download_count": 8280
+            "download_count": 8280,
+            "release_date": "2007-09-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 21160,
@@ -447,7 +491,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/21160/pg21160.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/21160/21160-m4b.zip"
             },
-            "download_count": 8049
+            "download_count": 8049,
+            "release_date": "2007-04-24",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20000,
@@ -487,7 +535,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20000/pg20000.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20000/20000-m4b.zip"
             },
-            "download_count": 7988
+            "download_count": 7988,
+            "release_date": "2007-09-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20593,
@@ -529,7 +581,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20593/pg20593.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20593/anne_green_gables_38_montgomery.ogg~"
             },
-            "download_count": 7306
+            "download_count": 7306,
+            "release_date": "2007-01-20",
+            "last_updated": "2009-05-26",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20051,
@@ -570,7 +626,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20051/pg20051.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20051/20051-m4b.zip"
             },
-            "download_count": 7279
+            "download_count": 7279,
+            "release_date": "2006-12-09",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19640,
@@ -616,7 +676,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19640/pg19640.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19640/19640-m4b.zip"
             },
-            "download_count": 6861
+            "download_count": 6861,
+            "release_date": "2006-10-28",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 21181,
@@ -654,7 +718,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/21181/pg21181.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/21181/21181-m4b.zip"
             },
-            "download_count": 6707
+            "download_count": 6707,
+            "release_date": "2007-04-26",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19637,
@@ -693,7 +761,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19637/pg19637.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19637/19637-m4b.zip"
             },
-            "download_count": 6700
+            "download_count": 6700,
+            "release_date": "2006-10-28",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20687,
@@ -736,7 +808,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20687/pg20687.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20687/20687-m4b.zip"
             },
-            "download_count": 6591
+            "download_count": 6591,
+            "release_date": "2007-02-03",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 21605,
@@ -777,7 +853,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/21605.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/21605/pg21605.cover.medium.jpg"
             },
-            "download_count": 6579
+            "download_count": 6579,
+            "release_date": "2007-05-31",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19506,
@@ -820,7 +900,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19506/pg19506.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19506/19506-m4b.zip"
             },
-            "download_count": 6515
+            "download_count": 6515,
+            "release_date": "2006-10-14",
+            "last_updated": "2011-04-18",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19576,
@@ -864,7 +948,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19576/pg19576.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19576/19576-m4b.zip"
             },
-            "download_count": 6472
+            "download_count": 6472,
+            "release_date": "2006-10-20",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20676,
@@ -894,7 +982,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20676/pg20676.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20676/20676-m4b.zip"
             },
-            "download_count": 6251
+            "download_count": 6251,
+            "release_date": "2007-02-03",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20686,
@@ -937,7 +1029,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20686/pg20686.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20686/20686-m4b.zip"
             },
-            "download_count": 6188
+            "download_count": 6188,
+            "release_date": "2007-02-03",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 28811,
@@ -973,7 +1069,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/28811.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/28811/pg28811.cover.medium.jpg"
             },
-            "download_count": 6044
+            "download_count": 6044,
+            "release_date": "2009-05-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19636,
@@ -1011,7 +1111,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19636/pg19636.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19636/19636-m4b.zip"
             },
-            "download_count": 6008
+            "download_count": 6008,
+            "release_date": "2006-10-28",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19513,
@@ -1050,7 +1154,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19513/pg19513.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19513/19513-m4b.zip"
             },
-            "download_count": 5936
+            "download_count": 5936,
+            "release_date": "2006-10-11",
+            "last_updated": "2009-05-23",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 21175,
@@ -1087,7 +1195,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/21175/pg21175.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/21175/21175-m4b.zip"
             },
-            "download_count": 5900
+            "download_count": 5900,
+            "release_date": "2007-04-26",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 28946,
@@ -1124,7 +1236,11 @@
                 "application/rdf+xml": "https://www.gutenberg.org/ebooks/28946.rdf",
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/28946/pg28946.cover.medium.jpg"
             },
-            "download_count": 5746
+            "download_count": 5746,
+            "release_date": "2009-05-01",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19577,
@@ -1158,7 +1274,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19577/pg19577.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19577/19577-m4b.zip"
             },
-            "download_count": 5699
+            "download_count": 5699,
+            "release_date": "2006-10-20",
+            "last_updated": "2023-04-22",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 20682,
@@ -1201,7 +1321,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/20682/pg20682.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/20682/20682-m4b.zip"
             },
-            "download_count": 5682
+            "download_count": 5682,
+            "release_date": "2007-02-03",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         },
         {
             "id": 19797,
@@ -1244,7 +1368,11 @@
                 "image/jpeg": "https://www.gutenberg.org/cache/epub/19797/pg19797.cover.medium.jpg",
                 "application/octet-stream": "https://www.gutenberg.org/files/19797/19797-m4b.zip"
             },
-            "download_count": 5505
+            "download_count": 5505,
+            "release_date": "2006-11-15",
+            "last_updated": "2021-01-30",
+            "credits": null,
+            "original_publication": null
         }
     ]
 }

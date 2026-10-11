@@ -41,5 +41,9 @@
         "image/jpeg": "https://www.gutenberg.org/cache/epub/11/pg11.cover.medium.jpg",
         "application/octet-stream": "https://www.gutenberg.org/cache/epub/11/pg11-h.zip"
     },
-    "download_count": 121623
+    "download_count": 121623,
+    "release_date": "2008-06-27",
+    "last_updated": "2025-06-26",
+    "credits": "Arthur DiBianca and David Widger",
+    "original_publication": null
 }

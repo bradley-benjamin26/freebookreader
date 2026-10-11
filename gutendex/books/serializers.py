@@ -67,7 +67,11 @@ class BookSerializer(serializers.ModelSerializer):
             'copyright',
             'media_type',
             'formats',
-            'download_count'
+            'download_count',
+            'release_date',
+            'last_updated',
+            'credits',
+            'original_publication'
         )
 
     def get_bookshelves(self, book):

@@ -94,5 +94,6 @@ injected so tests can fake it.
 
 - A bookmark is a fraction (`progress`) of the way through the book, so it survives a change of font size or view mode, plus the engine's `locator` for the exact place. The page opens the engine at the bookmark; an engine that cannot read the locator uses the progress.
 - The results-page button for a work goes to the best way in: read in app, else listen, else open at the source.
+- Each book's card on the details page shows its edition details when known (added 2026-10-10): "eBook #1342 · Released June 1, 1998 · Last updated September 29, 2026", "Original publication: …" and "Credits: …". Only Project Gutenberg gives them; they tell apart several Gutenberg eBooks of one work. Dates spell out the month (`formatDate`). Missing or unreadable values show nothing (`models_test`, `details_page_test`, `format_test`). The fixture's `gutenberg:1342` has them; the two-editions test adds a `gutenberg:42671` to its own copy of the response.
 - `Image` widgets in tests get no network; give them an `errorBuilder` and a `semanticLabel` (or `excludeFromSemantics` for decoration).
 - Bookmark and settings changes are shown with a SnackBar ("Bookmark saved", "Bookmark removed").
