@@ -50,13 +50,24 @@ class DetailsPage extends StatelessWidget {
   }
 }
 
-class _Metadata extends StatelessWidget {
+/// Identifiers shown before "Show all". An Open Library work can have thousands of ISBNs.
+const _identifiersShown = 5;
+
+class _Metadata extends StatefulWidget {
   const _Metadata({super.key, required this.work});
 
   final Work work;
 
   @override
+  State<_Metadata> createState() => _MetadataState();
+}
+
+class _MetadataState extends State<_Metadata> {
+  final Set<String> _expanded = {};
+
+  @override
   Widget build(BuildContext context) {
+    final work = widget.work;
     final text = Theme.of(context).textTheme;
     Widget line(String label, String value) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 2),
@@ -69,8 +80,24 @@ class _Metadata extends StatelessWidget {
         line('Language', languageName(work.language)),
         line('Available from', work.sources.map(sourceName).join(', ')),
         for (final entry in work.identifiers.entries)
-          if (entry.value.isNotEmpty)
-            line(_identifierNames[entry.key] ?? entry.key.toUpperCase(), entry.value.join(', ')),
+          if (entry.value.isNotEmpty) ...[
+            () {
+              final name = _identifierNames[entry.key] ?? entry.key.toUpperCase();
+              final all = _expanded.contains(entry.key) || entry.value.length <= _identifiersShown;
+              final shown = all ? entry.value : entry.value.take(_identifiersShown).toList();
+              return line(name, shown.join(', '));
+            }(),
+            if (!_expanded.contains(entry.key) && entry.value.length > _identifiersShown)
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: TextButton(
+                  key: Key('show-all-${entry.key}'),
+                  onPressed: () => setState(() => _expanded.add(entry.key)),
+                  child: Text('Show all ${entry.value.length} '
+                      '${_identifierNames[entry.key] ?? entry.key.toUpperCase()}s'),
+                ),
+              ),
+          ],
       ],
     );
   }

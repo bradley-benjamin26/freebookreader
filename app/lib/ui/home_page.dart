@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/models.dart';
 import '../util/format.dart';
 import 'about_page.dart';
 import 'common.dart';
@@ -11,8 +12,9 @@ const exampleSearches = ['Pride and Prejudice', 'Frankenstein', 'Moby Dick', 'Th
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  void _search(BuildContext context, String text) {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => ResultsPage(initialText: text)));
+  void _search(BuildContext context, SearchField field, String text) {
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => ResultsPage(initialText: text, initialField: field)));
   }
 
   @override
@@ -32,14 +34,14 @@ class HomePage extends StatelessWidget {
                     style: text.headlineMedium,
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
-                BookSearchBar(onSearch: (q) => _search(context, q)),
+                BookSearchBar(onSearch: (field, text) => _search(context, field, text)),
                 const SizedBox(height: 8),
                 Text(
                   'Find free books from Project Gutenberg, LibriVox, DOAB and Open Library.',
                   style: text.bodyLarge,
                 ),
                 const SizedBox(height: 24),
-                Text('Try one of these', style: text.titleMedium),
+                Heading('Try one of these', style: text.titleMedium),
                 const SizedBox(height: 8),
                 Wrap(
                   key: const Key('example-books'),
@@ -48,12 +50,12 @@ class HomePage extends StatelessWidget {
                     for (final example in exampleSearches)
                       ActionChip(
                         label: Text(example),
-                        onPressed: () => _search(context, example),
+                        onPressed: () => _search(context, SearchField.title, example),
                       ),
                   ],
                 ),
                 const SizedBox(height: 24),
-                Text('Where the books come from', style: text.titleMedium),
+                Heading('Where the books come from', style: text.titleMedium),
                 for (final id in sourceIds)
                   ListTile(
                     key: Key('about-link-$id'),

@@ -71,20 +71,62 @@ class HttpContentLoader implements ContentLoader {
   }
 }
 
-String _clean(String text) => text.replaceAll(RegExp(r'\s+'), ' ').trim();
+/// Stands for a line break (<br>, or a newline in <pre>) until [_clean] turns it into a '\n'.
+const _lineBreak = '\u0001';
 
-/// Headings and paragraphs from an HTML book, without Project Gutenberg's
-/// license header and footer.
+/// Folds whitespace into single spaces, keeps each line break as one '\n' with no spaces around it, and
+/// trims the ends.
+String _clean(String text) => text
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .replaceAll(RegExp('[ $_lineBreak]*$_lineBreak[ $_lineBreak]*'), '\n')
+    .trim();
+
+/// Elements that start a new paragraph. Anything else (span, em, a, ...) continues the one it is in.
+const _blocks = {
+  'address', 'article', 'aside', 'blockquote', 'body', 'caption', 'dd', 'details', 'div', 'dl', 'dt',
+  'fieldset', 'figcaption', 'figure', 'footer', 'form', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'header', 'hr',
+  'html', 'li', 'main', 'nav', 'ol', 'p', 'pre', 'section', 'table', 'tbody', 'td', 'tfoot', 'th', 'thead',
+  'tr', 'ul',
+};
+
+/// Headings, paragraphs, verse, list items and table cells from an HTML book, in order, without Project
+/// Gutenberg's license header and footer. A <br> is a line break inside its paragraph ('\n'), which is how
+/// verse keeps its lines. Text between blocks (a bare div of text) is a paragraph of its own.
 List<String> htmlParagraphs(String source) {
   final document = html_parser.parse(source);
   document
       .querySelectorAll('#pg-header, #pg-footer, .pg-boilerplate, script, style')
       .forEach((dom.Element e) => e.remove());
-  return document
-      .querySelectorAll('h1, h2, h3, h4, p')
-      .map((e) => _clean(e.text))
-      .where((t) => t.isNotEmpty)
-      .toList();
+  final paragraphs = <String>[];
+  final text = StringBuffer();
+
+  void flush() {
+    final paragraph = _clean(text.toString());
+    text.clear();
+    if (paragraph.isNotEmpty) paragraphs.add(paragraph);
+  }
+
+  void walk(dom.Node node, {required bool preformatted}) {
+    if (node is dom.Text) {
+      text.write(preformatted ? node.text.replaceAll(RegExp(r'\r?\n'), _lineBreak) : node.text);
+    } else if (node is dom.Element) {
+      final name = node.localName;
+      if (name == 'br') {
+        text.write(_lineBreak);
+        return;
+      }
+      final block = _blocks.contains(name);
+      if (block) flush();
+      for (final child in node.nodes) {
+        walk(child, preformatted: preformatted || name == 'pre');
+      }
+      if (block) flush();
+    }
+  }
+
+  walk(document.documentElement ?? document, preformatted: false);
+  flush();
+  return paragraphs;
 }
 
 /// Paragraphs of a plain-text book, separated by blank lines.

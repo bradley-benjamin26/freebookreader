@@ -8,6 +8,11 @@ abstract class UrlOpener {
 class LauncherUrlOpener implements UrlOpener {
   const LauncherUrlOpener();
 
+  /// Links in book data come from other people's servers, so only web links with a host are opened:
+  /// not an `intent:` (Android) or `file:` URL, whatever a record says.
+  static bool isWebLink(Uri url) => (url.scheme == 'https' || url.scheme == 'http') && url.host.isNotEmpty;
+
   @override
-  Future<bool> open(Uri url) => launchUrl(url, mode: LaunchMode.externalApplication);
+  Future<bool> open(Uri url) async =>
+      isWebLink(url) && await launchUrl(url, mode: LaunchMode.externalApplication);
 }

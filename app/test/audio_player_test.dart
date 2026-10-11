@@ -4,10 +4,15 @@
 // NOT covered yet: syncing the text position to the audio position. The spec
 // allows falling back to "viewer and player both display" if syncing is too
 // hard; decide before writing tests for it.
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/models/models.dart';
+import 'package:free_book_reader/services/audio_engine.dart';
+import 'package:free_book_reader/ui/audio_player.dart';
 
+import 'helpers/fakes.dart';
 import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
 
@@ -147,6 +152,142 @@ void main() {
       await tester.pageBack();
       await tester.pumpAndSettle();
       expect(env.audio.playing, isFalse);
+    });
+  });
+
+  group('when playback fails or ends', () {
+    // Review 2026-10-11, #12: the button stayed on "Pause" with no message, and chapters never moved on.
+    testWidgets('a recording that cannot be played shows a message and the button reads Play', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      env.audio.failNext = true;
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      expect(playLabel(tester), 'Play');
+      final error = find.byKey(const Key('audio-error'));
+      expect(error, findsOneWidget);
+      expect(tester.getSemantics(error), containsSemantics(isLiveRegion: true));
+      expect(find.descendant(of: error, matching: find.textContaining('could not be played')), findsOneWidget);
+    });
+
+    testWidgets('Try again plays it, and the message goes away', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      env.audio.failNext = true;
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('audio-retry')));
+      await tester.pumpAndSettle();
+      expect(env.audio.calls.where((c) => c == 'play $chapter1'), hasLength(2));
+      expect(find.byKey(const Key('audio-error')), findsNothing);
+      expect(playLabel(tester), 'Pause');
+    });
+
+    testWidgets('a chapter that fails shows the same message', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      env.audio.failNext = true;
+      await tester.tap(find.byKey(const Key('chapter-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('audio-error')), findsOneWidget);
+      expect(playLabel(tester), 'Play');
+    });
+
+    testWidgets('the compact player under the reader shows the message too', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', 'gutenberg:1342');
+      env.audio.failNext = true;
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('audio-error')), findsOneWidget);
+      expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
+    });
+
+    testWidgets('when a chapter ends, the next one starts', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      env.audio.emitStatus(playing: false, completed: true);
+      await tester.pumpAndSettle();
+      expect(env.audio.calls.last, 'play $chapter2');
+      expect(playLabel(tester), 'Pause');
+      expect(tester.getSemantics(find.byKey(const Key('chapter-1'))), containsSemantics(isSelected: true));
+    });
+
+    testWidgets('when the last chapter ends, the button reads Play again', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('chapter-2')));
+      await tester.pumpAndSettle();
+      env.audio.emitStatus(playing: false, completed: true);
+      await tester.pumpAndSettle();
+      expect(env.audio.calls.last, 'play $chapter3');
+      expect(playLabel(tester), 'Play');
+      expect(find.byKey(const Key('audio-error')), findsNothing);
+    });
+
+    testWidgets('playback stopped from outside (a headset button) shows as Play', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      env.audio.emitStatus(playing: false);
+      await tester.pumpAndSettle();
+      expect(playLabel(tester), 'Play');
+    });
+  });
+
+  group('one engine, several recordings', () {
+    // Review 2026-10-11, #18: the player is shared, and a new listener gets its last position at once.
+    Book recording(String id) {
+      final json = jsonDecode(loadFixtureText('search_response.json')) as Map<String, dynamic>;
+      final book = ((json['works'] as List).first['books'] as List)
+          .cast<Map<String, dynamic>>()
+          .firstWhere((b) => b['source'] == 'librivox');
+      book['source_id'] = id;
+      for (final chapter in book['chapters'] as List) {
+        chapter['url'] = (chapter['url'] as String).replaceFirst('/p/', '/$id/');
+      }
+      book['content'] = {'audio/mpeg': 'https://archive.org/download/$id/01.mp3'};
+      return Book.fromJson(book);
+    }
+
+    test("a new recording does not start at the previous recording's position", () async {
+      final engine = FakeAudioEngine();
+      final a = AudioController(engine, recording('a'));
+      await a.togglePlay();
+      engine.emitPosition(Uri.parse('https://archive.org/download/a/01.mp3'), const Duration(minutes: 20));
+      await Future<void>.delayed(Duration.zero);
+      expect(a.position, const Duration(minutes: 20));
+      await a.togglePlay(); // pause
+      a.dispose();
+
+      final b = AudioController(engine, recording('b'));
+      await Future<void>.delayed(Duration.zero);
+      expect(b.position, Duration.zero);
+      await b.togglePlay();
+      expect(engine.calls.last, 'play https://archive.org/download/b/01.mp3');
+      expect(engine.playedFrom.last, isNull);
+      b.dispose();
+    });
+
+    test('a position of another file is ignored while playing too', () async {
+      final engine = FakeAudioEngine();
+      final b = AudioController(engine, recording('b'));
+      await b.togglePlay();
+      engine.emitPosition(Uri.parse('https://archive.org/download/a/01.mp3'), const Duration(minutes: 5));
+      engine.emitPosition(Uri.parse('https://archive.org/download/b/01.mp3'), const Duration(seconds: 12));
+      await Future<void>.delayed(Duration.zero);
+      expect(b.position, const Duration(seconds: 12));
+      b.dispose();
     });
   });
 

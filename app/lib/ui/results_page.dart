@@ -11,9 +11,10 @@ import 'search_bar.dart';
 /// Search results: the search box on top, filters (left on wide screens, under
 /// the search box on phones), then one row per work.
 class ResultsPage extends StatefulWidget {
-  const ResultsPage({super.key, required this.initialText});
+  const ResultsPage({super.key, required this.initialText, this.initialField = SearchField.anything});
 
   final String initialText;
+  final SearchField initialField;
 
   @override
   State<ResultsPage> createState() => _ResultsPageState();
@@ -22,7 +23,7 @@ class ResultsPage extends StatefulWidget {
 class _ResultsPageState extends State<ResultsPage> {
   static const wideLayout = 840.0;
 
-  late SearchQuery _query = SearchQuery(q: widget.initialText);
+  late SearchQuery _query = SearchQuery().withTerm(widget.initialField, widget.initialText);
   Set<String> _sources = {...sourceIds};
   Future<SearchResponse>? _results;
 
@@ -53,7 +54,8 @@ class _ResultsPageState extends State<ResultsPage> {
   Widget build(BuildContext context) {
     final searchBar = BookSearchBar(
       initialText: widget.initialText,
-      onSearch: (text) => _search(_query.copyWith(q: text)),
+      initialField: widget.initialField,
+      onSearch: (field, text) => _search(_query.withTerm(field, text)),
     );
     final filters = _Filters(
       key: const Key('filters'),
@@ -170,16 +172,20 @@ class _Filters extends StatelessWidget {
               onSelected: (_) => onFormat(format),
             ),
         ]),
-        DropdownButton<String?>(
-          key: const Key('filter-language'),
-          isExpanded: true,
-          value: query.language,
-          onChanged: onLanguage,
-          items: [
-            const DropdownMenuItem(value: null, child: Text('Any language')),
-            for (final entry in languageNames.entries)
-              DropdownMenuItem(value: entry.key, child: Text(entry.value)),
-          ],
+        // Without a label, a chosen language is announced as just "French, button".
+        Semantics(
+          label: 'Language',
+          child: DropdownButton<String?>(
+            key: const Key('filter-language'),
+            isExpanded: true,
+            value: query.language,
+            onChanged: onLanguage,
+            items: [
+              const DropdownMenuItem(value: null, child: Text('Any language')),
+              for (final entry in languageNames.entries)
+                DropdownMenuItem(value: entry.key, child: Text(entry.value)),
+            ],
+          ),
         ),
       ],
     );
@@ -209,9 +215,12 @@ class _ResultsBody extends StatelessWidget {
     }
     if (snapshot.hasError) {
       final error = snapshot.error;
-      final message = error is SearchException && error.isTimeout
-          ? 'The search took too long.'
-          : 'The search did not work. Check your connection.';
+      final message = switch (error) {
+        SearchException(isTimeout: true) => 'The search took too long.',
+        SearchException(isRejected: true) =>
+          "This search can't be run. Shorten it or change the filters.",
+        _ => 'The search did not work. Check your connection.',
+      };
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Column(
@@ -225,12 +234,12 @@ class _ResultsBody extends StatelessWidget {
       );
     }
     final response = snapshot.data!;
-    final searched = query.q ?? '';
-    final unavailable = response.unavailableSources.map(sourceName).toList();
+    final searched = query.searchedText;
+    final notice = _skippedNotice(response);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (unavailable.isNotEmpty)
+        if (notice != null)
           Card(
             color: Theme.of(context).colorScheme.secondaryContainer,
             child: Padding(
@@ -238,8 +247,7 @@ class _ResultsBody extends StatelessWidget {
               child: LiveRegion(
                 key: const Key('unavailable-notice'),
                 child: Text(
-                  '${joinNames(unavailable)} did not answer, so some results may be missing. '
-                  'A source that is down is skipped for up to 24 hours.',
+                  notice,
                   style: TextStyle(color: Theme.of(context).colorScheme.onSecondaryContainer),
                 ),
               ),
@@ -270,6 +278,29 @@ class _ResultsBody extends StatelessWidget {
       ],
     );
   }
+}
+
+/// What to tell the user about the sources missing from a search, worded by the reason: a source in an
+/// outage is skipped for 24 hours, a slow one is asked again on the next search. Null when none is missing.
+String? _skippedNotice(SearchResponse response) {
+  List<String> named(Set<SkipReason> reasons) => [
+        for (final id in response.unavailableSources)
+          if (reasons.contains(response.reasonFor(id))) sourceName(id),
+      ];
+  final down = named({SkipReason.outage});
+  final slow = named({SkipReason.timeout, SkipReason.busy});
+  final failed = named({SkipReason.rejected, SkipReason.error});
+  final parts = [
+    if (down.isNotEmpty)
+      '${joinNames(down)} did not answer, so some results may be missing. '
+          'A source that is down is skipped for up to 24 hours.',
+    if (slow.isNotEmpty)
+      '${joinNames(slow)} ${slow.length == 1 ? 'was' : 'were'} too slow this time, so some results may '
+          'be missing. Search again to ask ${slow.length == 1 ? 'it' : 'them'} again.',
+    if (failed.isNotEmpty)
+      '${joinNames(failed)} could not run this search, so some results may be missing.',
+  ];
+  return parts.isEmpty ? null : parts.join(' ');
 }
 
 /// One work: cover, title, authors, sources, formats, and a button that goes

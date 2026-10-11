@@ -46,6 +46,10 @@ class TestRequests:
         ("L'homme qui rit", "^homme qui rit"),
         ("Die Leiden des jungen Werther", "^Leiden des jungen Werther"),
         ("The", "^The"),                      # nothing left after the article: send as is
+        # Kept in LibriVox's catalog (checked live 2026-10-11): "^Principe" and "^Profundis" find nothing.
+        ("Il Principe", "^Il Principe"),
+        ("De Profundis", "^De Profundis"),
+        ("De Bello Gallico", "^De Bello Gallico"),
     ])
     def test_leading_articles_are_dropped(self, source_for, sample_json, text, sent):
         """LibriVox catalogs "Time Machine", "Misérables - tome 1": "^the time machine" finds nothing."""

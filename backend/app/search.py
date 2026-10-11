@@ -2,6 +2,7 @@
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor, wait
+from typing import Literal
 
 from pydantic import BaseModel
 
@@ -18,13 +19,21 @@ log = logging.getLogger(__name__)
 MAX_IN_FLIGHT = 4
 
 
+class SkippedSource(BaseModel):
+    source: str
+    # outage: down, not asked for up to 24 hours. timeout: too slow, asked again next time.
+    # busy: it still has MAX_IN_FLIGHT searches running. rejected: it answered 4xx. error: our adapter crashed.
+    reason: Literal["outage", "timeout", "busy", "rejected", "error"]
+
+
 class SearchResponse(BaseModel):
     works: list[Work]
-    unavailable_sources: list[str]   # selected sources that are in their outage period
+    unavailable_sources: list[str]   # every selected source missing from this response, whatever the reason
+    skipped: list[SkippedSource] = []   # the same sources with the reason, in source-name order
 
 
 class SearchService:
-    def __init__(self, sources: list[Source], outage: OutageTracker, timeout_seconds: float = 15,
+    def __init__(self, sources: list[Source], outage: OutageTracker, timeout_seconds: float = 12,
                  max_in_flight: int = MAX_IN_FLIGHT):
         self.sources = list(sources)
         self.outage = outage
@@ -38,16 +47,18 @@ class SearchService:
     def search(self, query: SearchQuery) -> SearchResponse:
         selected = [s for s in self.sources if query.sources is None or s.name in query.sources]
         to_query = [s for s in selected if self.outage.is_available(s.name)]
-        books, timed_out = self._fan_out(to_query, query)
+        books, missing = self._fan_out(to_query, query)
         books = [b for b in books if _passes_filters(b, query)]
         works = merge_books(books)
         if query.is_known_item:
             works = [w for w in works if any(_is_the_item(b, query) for b in w.books)]
-        unavailable = sorted({s.name for s in selected if not self.outage.is_available(s.name)} | timed_out)
-        return SearchResponse(works=works, unavailable_sources=unavailable)
+        reasons = {s.name: "outage" for s in selected if not self.outage.is_available(s.name)}
+        reasons.update(missing)    # a source that failed just now is in an outage too, and says so
+        skipped = [SkippedSource(source=name, reason=reasons[name]) for name in sorted(reasons)]
+        return SearchResponse(works=works, unavailable_sources=sorted(reasons), skipped=skipped)
 
-    def _fan_out(self, sources: list[Source], query: SearchQuery) -> tuple[list[Book], set[str]]:
-        """Books from every source that answered, and the names of the sources that were too slow.
+    def _fan_out(self, sources: list[Source], query: SearchQuery) -> tuple[list[Book], dict[str, str]]:
+        """Books from every source that answered, and why each other source is missing.
 
         A slow source is left out of this response but is not marked down: it is asked again next time.
         So is a source that rejected our request (4xx) or whose adapter crashed: that is our fault,
@@ -55,13 +66,13 @@ class SearchService:
         its outage period. A source that already has max_in_flight searches running (left behind by
         earlier timeouts) is not asked, and is left out of this search only.
         """
-        missing: set[str] = set()       # left out of this search only
+        missing: dict[str, str] = {}    # source name -> reason
         futures = {}
         for source in sources:
             slot = self._slots[source.name]
             if not slot.acquire(blocking=False):
                 log.warning("source %s skipped: %s searches still running", source.name, self.max_in_flight)
-                missing.add(source.name)
+                missing[source.name] = "busy"
                 continue
             futures[self._executor.submit(_run, source, query, slot)] = source
         if not futures:
@@ -73,21 +84,22 @@ class SearchService:
             source = futures[future]
             if future in not_done:
                 log.warning("source %s timed out after %ss", source.name, self.timeout_seconds)
-                missing.add(source.name)
+                missing[source.name] = "timeout"
                 continue
             error = future.exception()
             if isinstance(error, SourceTimeout):
                 log.warning("source %s timed out: %s", source.name, error)
-                missing.add(source.name)
+                missing[source.name] = "timeout"
             elif isinstance(error, SourceRejected):
                 log.warning("source %s rejected the request: %s", source.name, error)
-                missing.add(source.name)
+                missing[source.name] = "rejected"
             elif isinstance(error, SourceError):
                 log.warning("source %s failed: %r", source.name, error)
                 self.outage.record_failure(source.name)
+                missing[source.name] = "outage"
             elif error is not None:
                 log.error("source %s adapter crashed", source.name, exc_info=error)
-                missing.add(source.name)
+                missing[source.name] = "error"
             else:
                 books.extend(future.result())
         return books, missing
@@ -112,13 +124,20 @@ def _is_the_item(book: Book, query: SearchQuery) -> bool:
     """A known-item search keeps only works with a book matching every given title/author/ISBN."""
     if query.title and not title_matches(book.title, query.title):
         return False
-    if query.author:
-        wanted = set(author_key(query.author).split())
-        if not any(wanted <= set(author_key(a).split()) for a in book.authors):
-            return False
+    if query.author and not any(_same_author(a, query.author) for a in book.authors):
+        return False
     if query.isbn:
         isbn = normalize_isbn(query.isbn)
         have = {normalize_isbn(i) for i in book.identifiers.get("isbn", [])}
         if isbn is None or isbn not in have:
             return False
     return True
+
+
+def _same_author(book_author: str, wanted: str) -> bool:
+    """Every word of the wanted name is in the book's author ("Mary Shelley" finds "Mary Wollstonecraft
+    Shelley", "Charles Dickens" finds "Charles Dickens Jr."). A name with nothing left in it ("(anon)")
+    is nobody."""
+    wanted_words = set(author_key(wanted).split())
+    have = set(author_key(book_author).split())
+    return bool(wanted_words) and wanted_words <= have

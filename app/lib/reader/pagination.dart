@@ -9,10 +9,19 @@ class BookText {
   BookText(this.paragraphs) {
     for (final (p, paragraph) in paragraphs.indexed) {
       paragraphStarts.add(words.length);
-      for (final word in paragraph.split(' ')) {
-        if (word.isEmpty) continue;
-        words.add(word);
-        paragraphOfWord.add(p);
+      var offset = 0; // where the current piece starts in the paragraph
+      for (final piece in paragraph.split(' ')) {
+        // A line break inside a paragraph (verse) starts the word after it: "a\nb" is "a" and "\nb".
+        var at = offset;
+        for (final (i, part) in piece.split('\n').indexed) {
+          if (part.isNotEmpty) {
+            words.add(i == 0 ? part : '\n$part');
+            wordOffsets.add(at);
+            paragraphOfWord.add(p);
+          }
+          at += part.length + 1;
+        }
+        offset += piece.length + 1;
       }
     }
   }
@@ -21,19 +30,27 @@ class BookText {
   final List<String> words = [];
   final List<int> paragraphOfWord = [];
 
+  /// Where each word's own text starts in its paragraph (after the line break, if the word follows one).
+  final List<int> wordOffsets = [];
+
   /// The index of each paragraph's first word.
   final List<int> paragraphStarts = [];
 
   int get length => words.length;
 
-  /// Words [start, end) as text, with [paragraphBreak] between paragraphs.
+  /// Words [start, end) as text, with [paragraphBreak] between paragraphs and a '\n' where a line breaks.
   String text(int start, int end, String paragraphBreak) {
     final out = StringBuffer();
     for (var i = start; i < end; i++) {
+      final word = words[i];
       if (i > start) {
-        out.write(paragraphOfWord[i] != paragraphOfWord[i - 1] ? paragraphBreak : ' ');
+        if (paragraphOfWord[i] != paragraphOfWord[i - 1]) {
+          out.write(paragraphBreak);
+        } else if (!word.startsWith('\n')) {
+          out.write(' ');
+        }
       }
-      out.write(words[i]);
+      out.write(i == start && word.startsWith('\n') ? word.substring(1) : word);
     }
     return out.toString();
   }
@@ -41,6 +58,10 @@ class BookText {
 
 /// Splits [book] into pages that fit [width] x [height] in [style]. Returns
 /// the index of each page's first word.
+///
+/// A page break falls between lines. The book is laid out once, a paragraph at a time, and the lines
+/// are counted onto pages, instead of laying out a page's text again for every guess at where it ends
+/// (which took over a second for a novel).
 List<int> paginate(
   BookText book, {
   required TextStyle style,
@@ -49,51 +70,110 @@ List<int> paginate(
   required double height,
   required String paragraphBreak,
 }) {
-  final painter = TextPainter(textDirection: TextDirection.ltr, textScaler: textScaler);
-  bool fits(int start, int end) {
-    painter.text = TextSpan(text: book.text(start, end, paragraphBreak), style: style);
-    painter.layout(maxWidth: width);
-    return painter.height <= height;
+  final paginator = Paginator(book,
+      style: style, textScaler: textScaler, width: width, height: height, paragraphBreak: paragraphBreak);
+  while (paginator.step()) {}
+  return paginator.finish();
+}
+
+/// [paginate] in steps of one paragraph, so a caller can give the screen time to draw in between.
+class Paginator {
+  Paginator(
+    this.book, {
+    required this.style,
+    required this.textScaler,
+    required this.width,
+    required this.height,
+    required String paragraphBreak,
+  }) : _painter = TextPainter(textDirection: TextDirection.ltr, textScaler: textScaler) {
+    // The blank line between paragraphs is as tall as a line of text.
+    _gap = paragraphBreak == '\n\n'
+        ? (_painter
+              ..text = TextSpan(text: 'A', style: style)
+              ..layout(maxWidth: width))
+            .preferredLineHeight
+        : 0;
   }
 
-  final starts = <int>[];
-  var start = 0;
-  var guess = 64;
-  while (start < book.length) {
-    starts.add(start);
-    // Grow until a page overflows, then binary-search the last word that fits.
-    var good = start + 1; // a page always holds at least one word
-    var bad = -1;
-    var probe = start + guess;
-    while (bad < 0) {
-      if (probe >= book.length) {
-        if (fits(start, book.length)) {
-          good = book.length;
-          break;
-        }
-        bad = book.length;
-      } else if (fits(start, probe)) {
-        good = probe;
-        probe = start + (probe - start) * 2;
-      } else {
-        bad = probe;
-      }
+  final BookText book;
+  final TextStyle style;
+  final TextScaler textScaler;
+  final double width;
+  final double height;
+  final TextPainter _painter;
+  late final double _gap;
+
+  /// The first word of each page found so far.
+  final List<int> starts = [0];
+
+  int _paragraph = 0;
+  double _y = 0; // height used on the current page
+  bool _pageEmpty = true;
+
+  /// Whether every paragraph has been placed.
+  bool get done => _paragraph >= book.paragraphs.length;
+
+  /// Places the next paragraph. Returns false when there is none left.
+  bool step() {
+    if (done) return false;
+    final p = _paragraph++;
+    final first = book.paragraphStarts[p];
+    final end = p + 1 < book.paragraphs.length ? book.paragraphStarts[p + 1] : book.length;
+    if (first == end) return !done; // no words
+    _painter
+      ..text = TextSpan(text: book.paragraphs[p], style: style)
+      ..layout(maxWidth: width);
+    // The first character of each line. (computeLineMetrics gives heights but not offsets, and costs as
+    // much as the layout itself, so every line is taken to be as tall as the paragraph's average.)
+    final text = book.paragraphs[p];
+    final lineStarts = <int>[];
+    var at = 0;
+    while (at < text.length) {
+      final line = _painter.getLineBoundary(TextPosition(offset: at));
+      if (line.start >= (lineStarts.lastOrNull ?? -1) + 1) lineStarts.add(line.start);
+      at = line.end > at ? line.end : at + 1;
     }
-    if (bad > 0) {
-      while (bad - good > 1) {
-        final mid = (good + bad) ~/ 2;
-        if (fits(start, mid)) {
-          good = mid;
-        } else {
-          bad = mid;
-        }
+    final lineHeight = _painter.height / lineStarts.length;
+    var word = first;
+    var gap = _pageEmpty ? 0.0 : _gap;
+    for (final lineStart in lineStarts) {
+      // The first word on this line: the first word that starts at or after the line's first character.
+      word = _firstWordFrom(word, end, lineStart);
+      // A line that starts inside a word (a word wider than the page) cannot start a page.
+      final canBreak = word < end && word > starts.last;
+      if (!_pageEmpty && _y + gap + lineHeight > height && canBreak) {
+        starts.add(word); // the line does not fit: it starts the next page
+        _y = 0;
+        gap = 0;
       }
+      _y += gap + lineHeight;
+      _pageEmpty = false;
+      gap = 0;
     }
-    guess = good - start;
-    start = good;
+    return !done;
   }
-  painter.dispose();
-  return starts.isEmpty ? [0] : starts;
+
+  int _firstWordFrom(int from, int end, int offset) {
+    var lo = from, hi = end; // `end` when no word starts at or after the offset
+    while (lo < hi) {
+      final mid = (lo + hi) ~/ 2;
+      if (book.wordOffsets[mid] >= offset) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
+    return lo;
+  }
+
+  /// The page starts. Call once, when [done]; frees the text painter.
+  List<int> finish() {
+    _painter.dispose();
+    return starts;
+  }
+
+  /// Gives up the text painter of a pagination that is not wanted any more.
+  void cancel() => _painter.dispose();
 }
 
 /// The page that holds [word], given each page's first word.

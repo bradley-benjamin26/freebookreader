@@ -16,7 +16,7 @@ uvicorn app.main:create_app --factory --port 8000
 ```
 
 Settings come from `FBR_*` environment variables: `FBR_GUTENDEX_URL`, `FBR_LIBRIVOX_URL`, `FBR_OPENLIBRARY_URL`,
-`FBR_DOAB_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
+`FBR_DOAB_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
 default `*`) and `FBR_CONTACT`. The EPUB cache for the web reader uses `FBR_GUTENBERG_URL` (default
 `https://www.gutenberg.org`), `FBR_EPUB_CACHE_DIR` (default `backend/cache/epub`, ignored by git),
 `FBR_MAX_DOWNLOAD_MB` (200) and `FBR_EPUB_CACHE_MB` (2000). The `User-Agent` is built from the project's top-level `.env` (JSON:
@@ -40,7 +40,7 @@ Gutendex has its own regression tests (it is already built):
 | Records merged into works by the Data Merging rules | `test_merge.py`, `test_normalize.py` |
 | Search across / select targets, filters, known-item search | `test_search_service.py` |
 | Source outage: stop returning results for 24 h | `test_outage.py`, `TestOutages` in `test_search_service.py` |
-| Search results within 15 s | `TestTimeout`, `test_default_timeout_is_15_seconds`, `test_sources_are_queried_in_parallel` |
+| Search results within 15 s | `TestTimeout`, `test_default_timeout_leaves_room_inside_the_15_second_budget`, `test_sources_are_queried_in_parallel` |
 | Viewer displays in-app sources, others link out | `test_reader.py` |
 | Gutenberg EPUB served for the web reader (decision_reader.md, spike 9b/9c) | `test_publications.py`, `TestPublication` in `test_reader.py` |
 | About pages content | `test_sources_info.py` |
@@ -61,10 +61,10 @@ backend/app/
     doab.py        DoabSource(client, base_url); .parse_opensearch(xml), .parse_xoai(xml) (static)  name "doab"
   merge.py         merge_books(list[Book]) -> list[Work]
   outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
-  search.py        SearchService(sources, outage, timeout_seconds=15, max_in_flight=4): search(SearchQuery) -> SearchResponse
+  search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=4): search(SearchQuery) -> SearchResponse
   reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
-  publications.py  build_manifest(ZipFile) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
-                   max_cache_bytes, max_entry_bytes): manifest(id), resource(id, href) -> (bytes, type);
+  publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
+                   max_cache_bytes, max_entry_bytes, catalog): GutendexCatalog(client, gutendex_url)(id) -> True/False/None; manifest(id), resource(id, href) -> (bytes, type);
                    PublicationNotFound (404), PublicationUnavailable (502), PublicationTimeout (504)
   sources_info.py  SOURCES, get_source_info(id)
   config.py        Settings.from_env, build_search_service(settings, client)
@@ -123,9 +123,17 @@ queried in parallel threads, on one executor shared by all searches.
 - **LibriVox title and free-text searches send `title=^<text>`.** Without `^`, LibriVox matches the exact
   full title only (`title=pride` finds nothing, and other recordings such as "... (version 2)" are missed).
   It has no keyword search, so free text is a title-prefix search.
-- **A timeout is not an outage.** A source that misses the 15 s deadline, or whose HTTP request times out
+- **A timeout is not an outage.** A source that misses the 12 s deadline (`FBR_SEARCH_TIMEOUT_SECONDS`, review 2026-10-11, #20: the spec's 15 s for results includes the merging and the network after it), or whose HTTP request times out
   (`SourceTimeout`), is listed in `unavailable_sources` for that search only and is asked again next time.
   Errors (refused connections, `5xx`, unusable bodies) still start the 24-hour outage.
+- **`skipped` says why a source is missing** (review 2026-10-11, #13). `unavailable_sources` lists every selected
+  source missing from the response; `skipped` is the same list as `{source, reason}`, reason one of `outage`
+  (down, not asked for up to 24 hours), `timeout` (too slow, asked again next time), `busy` (4 searches already
+  running), `rejected` (it answered 4xx) or `error` (our adapter crashed). The app words each case.
+- **Long identifier lists are cut in the response** (review 2026-10-11, #15). A `Book` or `Work` serializes at most
+  20 identifiers of each kind (`MAX_SERIALIZED_IDENTIFIERS`); merging and the known-item ISBN check see them all.
+- **LibriVox keeps "Il" and "De"** (review 2026-10-11, #16): "Il Principe" and "De Profundis" are searched as
+  titled. Dutch "De Kleine Johannes" is the price (LibriVox drops that one).
 - **At most 4 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
   its place until its thread finishes. A source with no free place is not asked: it is listed in
   `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 4 threads.
@@ -134,6 +142,13 @@ queried in parallel threads, on one executor shared by all searches.
   the source out of that search only (listed in `unavailable_sources`) without `record_failure`.
   `test_hostile_inputs.py` sends odd input (`(anon)`, punctuation, maximum-length text, the last page) to every
   adapter: each must return a list or raise `SourceError`.
+- **Unknown book ids are refused locally** (review 2026-10-11, #19). Before downloading an EPUB that is not cached, the store asks the local Gutendex (`GET /books/<id>/`, 3 s) through `GutendexCatalog`: no such book, or no EPUB format, is a 404 without any request to gutenberg.org. If Gutendex is down or answers oddly the answer is unknown and the book is asked for at Gutenberg as before. A book already on disk is never looked up. Per-book download locks are a fixed set of 64 (`id % 64`) instead of one per id. A book newer than the last `updatecatalog` is a 404 until the catalog is updated.
+- **Searches have their own thread limit** (review 2026-10-11, #24). `/search` is `async` and runs the search with `anyio.to_thread.run_sync` on a `CapacityLimiter` of `FBR_MAX_CONCURRENT_SEARCHES` (default 20). A search over the limit waits as a coroutine, without a thread, so `/health` and book files still answer when slow searches pile up (`TestSlowSearchesDoNotStarveTheRest`). A waiting search still counts against the app's 20 s timeout.
+- **Source ids are case-sensitive on purpose** (user decision 2026-10-11): `sources=DOAB` is a 422 that lists the valid ids. Only the app's source chips set `sources`, and they send the lowercase ids. (`language`, by contrast, is normalized.)
+- **A known-item author matches when every word of the wanted name is in the book's author** ("Mary Shelley" finds
+  "Mary Wollstonecraft Shelley"; "Charles Dickens" finds "Charles Dickens Jr." on purpose, user decision 2026-10-11,
+  so a search for the father also returns the son; "Charles Dickens Jr." does not find the father). A name with
+  nothing left after cleaning ("(anon)") matches no book (review 2026-10-11, #21).
 - **Search input is limited:** `q`, `title`, `author`, `keyword` and `isbn` at most 300 characters (`MAX_TEXT_LENGTH`),
   `page` at most 1000 (`MAX_PAGE`); beyond that the API answers 422. Open Library answered `500` to a 3,000-character
   `q` and to `page=10**9`.
@@ -173,7 +188,7 @@ queried in parallel threads, on one executor shared by all searches.
   (checked in Chromium 2026-10-10).
 - **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.
   404 there is 404; any other failure is 502, a timeout 504. Downloads over 200 MB, files that are not a usable EPUB
-  and zip entries over 100 MB (checked before and while reading, against zip bombs) are refused with 502. A book is
+  and zip entries over 100 MB (package files, i.e. container, OPF, nav and NCX, over 5 MB) are refused with 502, checked before and while reading (against zip bombs). A book is
   downloaded once even when several requests arrive together, and a failed download is not cached. The cache is a
   directory of `<id>.epub` files; when it is over its limit, the least recently used books are deleted. Book ids are
   1 to 99,999,999 (422 otherwise). This endpoint does not use the outage rule; it only serves books already found.

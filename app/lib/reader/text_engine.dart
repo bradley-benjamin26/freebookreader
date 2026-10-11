@@ -1,6 +1,8 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../models/models.dart';
 import 'content.dart';
@@ -11,6 +13,9 @@ import 'reader_settings.dart';
 /// Our own renderer: paragraphs from the book's HTML or text, drawn by the app
 /// and paginated with [TextPainter]. Used where flutter_readium is not set up
 /// yet (everywhere but web). It has no EPUB, images or TTS.
+///
+/// Counting the pages of a novel takes about half a second, so it runs in slices of a few milliseconds
+/// between frames. Until it is done, the text from the reader's place is shown without page numbers.
 ///
 /// Its locator is the index of the first word on screen ("word:123"), which
 /// survives a change of font, size or view.
@@ -28,8 +33,13 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   double? _pendingProgress;
 
   // Last layout, for turning pages and converting positions.
+  static const _sliceMilliseconds = 8;
   List<int> _pageStarts = const [0];
+  bool _paginated = false; // whether _pageStarts is for the layout now on screen
+  int _wordsPerPage = 300; // for the text shown while the pages are counted
   Object? _pagesFor;
+  int _job = 0; // the pagination that is wanted; an older one stops
+  bool _disposed = false;
   _ScrollLayout? _scroll;
   (int, int)? _emitted;
 
@@ -60,6 +70,13 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
         atStart: anchor == 0,
       );
     }
+    if (!_paginated) {
+      return ReaderPosition(
+        progress: book.length <= 1 ? 0 : _anchor / (book.length - 1),
+        locator: 'word:$_anchor',
+        atStart: _anchor == 0,
+      );
+    }
     final page = _page, pages = _pageStarts.length;
     return ReaderPosition(
       progress: pages <= 1 ? 0 : page / (pages - 1),
@@ -82,13 +99,13 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   /// Tells listeners when the page or the page count changes.
   void _emit() {
     final now = (_page, _pageStarts.length);
-    if (_scrolling || now == _emitted || _positions.isClosed) return;
+    if (_scrolling || !_paginated || now == _emitted || _positions.isClosed) return;
     _emitted = now;
     _positions.add(position);
   }
 
   void _goToPage(int page) {
-    if (page < 0 || page >= _pageStarts.length) return;
+    if (!_paginated || page < 0 || page >= _pageStarts.length) return;
     _anchor = _pageStarts[page];
     _changed();
   }
@@ -141,6 +158,8 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
 
   @override
   Future<void> dispose() async {
+    _disposed = true;
+    _job++;
     _scroll?.controller.dispose();
     _scroll = null;
     await _positions.close();
@@ -175,11 +194,31 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
           ),
         );
       }
-      _pageStarts = _layoutPages(
-          book, style, scaler, width, constraints.maxHeight - 2 * padding, paragraphBreak);
+      final layout = (book, style, scaler, width, constraints.maxHeight - 2 * padding, paragraphBreak);
+      if (layout != _pagesFor) {
+        _pagesFor = layout;
+        _paginated = false;
+        _emitted = null;
+        unawaited(_paginate(++_job, book, style, scaler, width, constraints.maxHeight - 2 * padding,
+            paragraphBreak));
+      }
       if (_pendingProgress != null) {
-        _anchor = _pageStarts[(_pendingProgress! * (_pageStarts.length - 1)).round()];
+        _anchor = (_pendingProgress! * (book.length - 1)).round();
         _pendingProgress = null;
+      }
+      if (!_paginated) {
+        // Not counted yet: the text from the reader's place, cut off where the screen ends.
+        final end = (_anchor + _wordsPerPage).clamp(0, book.length);
+        return ClipRect(
+          child: Padding(
+            padding: const EdgeInsets.all(padding),
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(book.text(_anchor, end, paragraphBreak),
+                  key: const Key('reader-page-pending'), style: style),
+            ),
+          ),
+        );
       }
       // The page count is known only now; delivery is async, so listeners
       // update after this frame.
@@ -200,14 +239,28 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
     });
   }
 
-  // Pagination is costly; redo it only when the layout changes.
-  List<int> _layoutPages(
-      BookText book, TextStyle style, TextScaler scaler, double width, double height, String br) {
-    final key = (book, style, scaler, width, height, br);
-    if (key == _pagesFor) return _pageStarts;
-    _pagesFor = key;
-    return paginate(book,
-        style: style, textScaler: scaler, width: width, height: height, paragraphBreak: br);
+  /// Counts the pages in slices, one per frame, so the screen keeps drawing. Stops if the layout changes
+  /// meanwhile.
+  Future<void> _paginate(int job, BookText book, TextStyle style, TextScaler scaler, double width,
+      double height, String paragraphBreak) async {
+    await SchedulerBinding.instance.endOfFrame; // not inside the build that asked for it
+    if (job != _job) return;
+    final paginator = Paginator(book,
+        style: style, textScaler: scaler, width: width, height: height, paragraphBreak: paragraphBreak);
+    final watch = Stopwatch()..start();
+    while (paginator.step()) {
+      if (watch.elapsedMilliseconds < _sliceMilliseconds) continue;
+      await SchedulerBinding.instance.endOfFrame;
+      if (job != _job) {
+        paginator.cancel();
+        return;
+      }
+      watch.reset();
+    }
+    _pageStarts = paginator.finish();
+    _paginated = true;
+    _wordsPerPage = max(50, (book.length / _pageStarts.length).ceil());
+    if (!_disposed) _changed();
   }
 }
 

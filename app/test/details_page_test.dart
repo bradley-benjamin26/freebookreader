@@ -29,6 +29,31 @@ void main() {
       expect(find.descendant(of: meta, matching: find.textContaining('ISBN')), findsWidgets);
     });
 
+    testWidgets('shows a few identifiers, and all of them on request', (tester) async {
+      // Review 2026-10-11, #15: one Open Library work had 3,714 ISBNs, printed as one 65,000-character line.
+      final isbns = [for (var i = 0; i < 1000; i++) '97800000${i.toString().padLeft(5, '0')}'];
+      final env = await TestEnv.create();
+      final pride = env.api.response.works.first;
+      env.api.response = SearchResponse(works: [
+        Work(id: pride.id, title: pride.title, authors: pride.authors, language: pride.language,
+            sources: pride.sources, identifiers: {'isbn': isbns, 'oclc': ['1', '2']}, books: pride.books),
+      ], unavailableSources: const []);
+      await pumpApp(tester, env);
+      await openDetails(tester, 'w-pride');
+      final meta = find.byKey(const Key('details-metadata'));
+      expect(find.descendant(of: meta, matching: find.textContaining(isbns[4])), findsOneWidget);
+      expect(find.descendant(of: meta, matching: find.textContaining(isbns[5])), findsNothing);
+      expect(find.descendant(of: meta, matching: find.textContaining('1, 2')), findsOneWidget);   // short lists unchanged
+      final more = find.byKey(const Key('show-all-isbn'));
+      expect(find.descendant(of: more, matching: find.text('Show all 1000 ISBNs')), findsOneWidget);
+      expect(find.byKey(const Key('show-all-oclc')), findsNothing);
+      await tester.ensureVisible(more);
+      await tester.tap(more);
+      await tester.pumpAndSettle();
+      expect(find.descendant(of: meta, matching: find.textContaining(isbns[999])), findsOneWidget);
+      expect(find.byKey(const Key('show-all-isbn')), findsNothing);
+    });
+
     testWidgets('shows a work with an unknown language without crashing', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await openDetails(tester, 'w-quijote');
@@ -191,6 +216,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
+      await tester.ensureVisible(find.byKey(const Key('open-w-quijote')));
       await tester.tap(find.byKey(const Key('open-w-quijote')));
       await tester.pumpAndSettle();
       expect(env.urls.opened.single.toString(), 'https://openlibrary.org/works/OL503666W');

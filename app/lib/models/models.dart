@@ -1,6 +1,8 @@
 // The app's models mirror the backend's JSON (backend/app/models.py and
 // backend/app/search.py). Unknown enum values are rejected, not guessed.
 
+import '../util/isbn.dart';
+
 enum BookFormat { text, audio }
 
 enum Access { open, borrow, printDisabled, none }
@@ -215,20 +217,61 @@ class Work {
       books.firstOrNull;
 }
 
+/// Why a source is missing from a search (the backend's `skipped[].reason`).
+enum SkipReason {
+  /// Down: not asked again for up to 24 hours.
+  outage,
+
+  /// Too slow this time; asked again on the next search.
+  timeout,
+
+  /// Still busy with earlier searches; asked again on the next search.
+  busy,
+
+  /// It turned down this search (4xx).
+  rejected,
+
+  /// Something failed on our side.
+  error;
+
+  /// Unlike the other enums, an unknown reason is not an error: the source is still missing, so
+  /// a newer backend's new reason is worded as a failure rather than breaking the whole search.
+  static SkipReason parse(Object? name) =>
+      SkipReason.values.where((r) => r.name == name).firstOrNull ?? SkipReason.error;
+}
+
+class SkippedSource {
+  const SkippedSource({required this.source, required this.reason});
+
+  final String source;
+  final SkipReason reason;
+}
+
 class SearchResponse {
-  const SearchResponse({required this.works, required this.unavailableSources});
+  const SearchResponse({required this.works, required this.unavailableSources, this.skipped = const []});
 
   factory SearchResponse.fromJson(Map<String, dynamic> json) => SearchResponse(
         works: ((json['works'] as List?) ?? const [])
             .map((w) => Work.fromJson(w as Map<String, dynamic>))
             .toList(),
         unavailableSources: _strings(json['unavailable_sources']),
+        skipped: ((json['skipped'] as List?) ?? const [])
+            .map((s) => SkippedSource(
+                source: (s as Map<String, dynamic>)['source'] as String,
+                reason: SkipReason.parse(s['reason'])))
+            .toList(),
       );
 
   final List<Work> works;
 
-  /// Sources that did not answer this search.
+  /// Sources that did not answer this search, for whatever reason.
   final List<String> unavailableSources;
+
+  /// The same sources with the reason. An older backend sends none: then every one is taken as an outage.
+  final List<SkippedSource> skipped;
+
+  SkipReason reasonFor(String source) =>
+      skipped.where((s) => s.source == source).firstOrNull?.reason ?? SkipReason.outage;
 }
 
 /// One entry of the backend's `/sources`.
@@ -268,6 +311,9 @@ class SourceInfo {
   final bool inApp;
 }
 
+/// What the search box searches in.
+enum SearchField { anything, title, author, subject, isbn }
+
 class SearchQuery {
   SearchQuery({
     this.q,
@@ -298,6 +344,25 @@ class SearchQuery {
   static bool _filled(String? s) => s != null && s.trim().isNotEmpty;
 
   bool get isSearchable => [q, title, author, keyword, isbn].any(_filled);
+
+  /// The text that was searched for, whichever field it is in.
+  String get searchedText => [q, title, author, keyword, isbn].firstWhere(_filled, orElse: () => '')!.trim();
+
+  /// A query for [text] in [field] with this query's filters. An ISBN typed as "anything" is sent as an
+  /// ISBN, which makes the backend look for that book only.
+  SearchQuery withTerm(SearchField field, String text) {
+    final target = field == SearchField.anything && looksLikeIsbn(text) ? SearchField.isbn : field;
+    return SearchQuery(
+      q: target == SearchField.anything ? text : null,
+      title: target == SearchField.title ? text : null,
+      author: target == SearchField.author ? text : null,
+      keyword: target == SearchField.subject ? text : null,
+      isbn: target == SearchField.isbn ? text : null,
+      language: language,
+      format: format,
+      sources: sources,
+    );
+  }
 
   Map<String, String> toQueryParameters() => {
         for (final (name, value) in [

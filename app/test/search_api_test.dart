@@ -75,6 +75,16 @@ void main() {
       await expectLater(api.search(SearchQuery(q: 'x')), throwsA(isA<SearchException>()));
     });
 
+    test('the exception carries the status, so a 4xx can be told from a failing server', () async {
+      final api = apiWith(MockClient((_) async => http.Response('{"detail": []}', 422)));
+      await expectLater(api.search(SearchQuery(q: 'x')),
+          throwsA(isA<SearchException>().having((e) => e.statusCode, 'statusCode', 422)
+              .having((e) => e.isRejected, 'isRejected', isTrue)));
+      final failing = apiWith(MockClient((_) async => http.Response('oops', 500)));
+      await expectLater(failing.search(SearchQuery(q: 'x')),
+          throwsA(isA<SearchException>().having((e) => e.isRejected, 'isRejected', isFalse)));
+    });
+
     test('a 500 becomes a SearchException', () async {
       final api = apiWith(MockClient((_) async => http.Response('oops', 500)));
       await expectLater(api.search(SearchQuery(q: 'x')),

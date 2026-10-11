@@ -34,9 +34,11 @@ def build(sources, clock, **kwargs):
 
 
 class TestFanOut:
-    def test_default_timeout_is_15_seconds(self, clock):
+    def test_default_timeout_leaves_room_inside_the_15_second_budget(self, clock):
+        """Review 2026-10-11, #20: merging, serializing, the network and drawing come after the wait, so the
+        wait for sources may not use the whole 15 s the spec allows for results."""
         service, _ = build([], clock)
-        assert service.timeout_seconds == 15
+        assert service.timeout_seconds == 12
 
     def test_every_source_is_queried_once_with_the_query(self, clock):
         sources = [FakeSource(n) for n in ("gutenberg", "librivox", "doab", "openlibrary")]
@@ -129,6 +131,32 @@ class TestKnownItemSearch:
         titles = {b.title for w in works for b in w.books}
         assert titles == {"Great Expectations"}
 
+    def test_a_search_for_the_father_also_finds_the_son(self, clock):
+        """Decided 2026-10-11 (review #21 suggested the opposite): "Charles Dickens" returns "Charles Dickens Jr."."""
+        books = [
+            make_book(source="gutenberg", source_id="1", title="Oliver Twist", authors=["Charles Dickens"]),
+            make_book(source="gutenberg", source_id="2", title="Dickens Dictionary of London",
+                      authors=["Charles Dickens Jr."]),
+        ]
+        works = self.run(clock, books, author="Charles Dickens")
+        assert {b.source_id for w in works for b in w.books} == {"1", "2"}
+        works = self.run(clock, books, author="CHarles Dickens, jr")
+        assert {b.source_id for w in works for b in w.books} == {"2"}
+        works = self.run(clock, books, author="Charles Dickens Jr.")
+        assert {b.source_id for w in works for b in w.books} == {"2"}
+
+    def test_a_middle_name_is_still_a_match(self, clock):
+        books = [make_book(source="gutenberg", source_id="1", title="Frankenstein",
+                           authors=["Mary Wollstonecraft Shelley"])]
+        assert len(self.run(clock, books, author="Mary Shelley")) == 1
+
+    def test_an_author_with_no_name_left_matches_nothing(self, clock):
+        """"(anon)" is dropped as a parenthetical: an empty name is a subset of every author."""
+        books = [make_book(source="gutenberg", source_id="1", title="Emma", authors=["Jane Austen"]),
+                 make_book(source="gutenberg", source_id="2", title="Beowulf", authors=[])]
+        assert self.run(clock, books, author="(anon)") == []
+        assert self.run(clock, books, title="Emma", author="(anon)") == []
+
     def test_title_finds_books_with_a_subtitle_but_not_study_guides(self, clock):
         """Review 2026-10-10, #5 (option B): seen live for Moby Dick, Les Misérables, Black Beauty."""
         books = [
@@ -184,6 +212,11 @@ class TestKnownItemSearch:
         assert len(works) >= 3
 
 
+def reasons(response) -> dict[str, str]:
+    """Why each source is missing from a response: outage, timeout, busy, rejected or error."""
+    return {s.source: s.reason for s in response.skipped}
+
+
 class TestOutages:
     def test_failing_source_is_dropped_and_reported(self, clock):
         good = FakeSource("gutenberg", [austen_text()])
@@ -192,6 +225,7 @@ class TestOutages:
         response = service.search(SearchQuery(q="pride"))
         assert [w.sources for w in response.works] == [["gutenberg"]]
         assert response.unavailable_sources == ["librivox"]
+        assert reasons(response) == {"librivox": "outage"}
 
     @pytest.mark.parametrize("error", [SourceError("down"), SourceError("HTTP 503")])
     def test_a_source_error_counts_as_an_outage(self, clock, error):
@@ -211,6 +245,7 @@ class TestOutages:
         service, outage = build([bad, FakeSource("gutenberg", [austen_text()])], clock)
         response = service.search(SearchQuery(q="x"))
         assert response.unavailable_sources == ["doab"]
+        assert reasons(response) == {"doab": "rejected" if isinstance(error, SourceRejected) else "error"}
         assert [w.sources for w in response.works] == [["gutenberg"]]
         assert outage.is_available("doab")
         service.search(SearchQuery(q="y"))
@@ -242,6 +277,7 @@ class TestOutages:
         response = service.search(SearchQuery(q="x"))
         assert response.works == []
         assert response.unavailable_sources == ["gutenberg", "librivox"]
+        assert reasons(response) == {"gutenberg": "outage", "librivox": "outage"}
 
     def test_outage_of_an_unselected_source_is_not_reported(self, clock):
         service, outage = build([FakeSource("gutenberg"), FakeSource("librivox")], clock)
@@ -254,6 +290,7 @@ class TestOutages:
         outage.record_failure("librivox")
         response = service.search(SearchQuery(q="x", sources=["librivox"]))
         assert response.unavailable_sources == ["librivox"]
+        assert reasons(response) == {"librivox": "outage"}
 
 
 class TestTimeout:
@@ -267,6 +304,7 @@ class TestTimeout:
         assert time.monotonic() - started < 1.2
         assert len(response.works) == 1
         assert response.unavailable_sources == ["doab"]      # no results from it this time
+        assert reasons(response) == {"doab": "timeout"}
 
     @pytest.mark.slow
     def test_a_slow_source_is_not_marked_down(self, clock):
@@ -284,6 +322,7 @@ class TestTimeout:
         service, outage = build([flaky], clock)
         response = service.search(SearchQuery(q="x"))
         assert response.unavailable_sources == ["librivox"]
+        assert reasons(response) == {"librivox": "timeout"}
         assert outage.is_available("librivox")
 
 
@@ -313,6 +352,7 @@ class TestSearchesInFlight:
         response = service.search(SearchQuery(q="pride"))     # the first doab search is still running
         assert len(slow.calls) == 1
         assert response.unavailable_sources == ["doab"]
+        assert reasons(response) == {"doab": "busy"}
         assert len(response.works) == 1
         assert outage.is_available("doab")
 

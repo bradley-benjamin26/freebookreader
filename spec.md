@@ -121,7 +121,7 @@ A homepage features a search box and maybe some example books. After accounts ar
 
 After accounts are added, there is a link to an account view.
 
-Typing a query and hitting submit directs the user to the search results page.
+Typing a query and hitting submit directs the user to the search results page. Next to the box, a choice says what is searched: anything, title, author, subject or ISBN. A title, author or ISBN search shows results only for that item (known-item search). Free text that is a valid ISBN is searched as an ISBN. A search over 300 characters is not sent; the app says so.
 
 ### Search Results
 The top of the page displays a search box with the user's query, enabling the user to edit their search.
@@ -129,7 +129,7 @@ The top of the page displays a search box with the user's query, enabling the us
 The left side of the screen has some filter options. On mobile they display under the search box but before the listing of results.
 The results are displayed in rows in a single column. Each listing has an image of the cover, author, title, source, and a way to access that book. Clicking on a record brings the user to a details page.
 
-When a source is left out of a search, a notice above the results says so. The notice must match the reason. A source in an outage is skipped for up to 24 hours. A source that was only too slow is asked again on the next search, so its notice must not mention the 24 hours. Today the app shows the outage wording for both (found 2026-10-10).
+When a source is left out of a search, a notice above the results says so. The notice must match the reason. A source in an outage is skipped for up to 24 hours. A source that was only too slow is asked again on the next search, so its notice must not mention the 24 hours. The backend says why a source is missing (`skipped`: outage, timeout, busy, rejected, error), and the app words each case (fixed 2026-10-11).
 
 ### Details
 The details page includes a full list of the book's metadata. Maybe this could include other information such as other books by the author or the following book in a series or something.
@@ -170,7 +170,7 @@ The goal is to limit data on the user. The first version has no accounts and col
 
 - There are no rate limits because use is expected to be very low.
 
-- Search results should appear within 15 seconds.
+- Search results should appear within 15 seconds. The backend waits at most 12 seconds for the sources, so merging, the network and drawing fit in the rest.
 
 - Book should display in viewer in under a minute.
 
@@ -185,7 +185,7 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Open Library's work records span many languages, so they often cannot be merged with other sources' records.
 - Most DOAB books' PDFs are in the OAPEN Library, whose book pages and PDF files are behind a bot check that browsers pass but HTTP clients do not. The planned workaround is for the user's device to fetch the PDF through an in-app WebView. This is unverified until the reader spike. On web, these books open in an iframe or a new tab. Some publisher links that end in `.pdf` return a web page, so the reader must fall back to the DOAB page. See api_doab.documentation.md and decision_reader.md.
 - LibriVox has no keyword search. Free text is sent as a title-prefix search, so it finds only recordings whose title starts with the query. See api_librivox.documentation.md.
-- LibriVox's server can be slower than our 15-second search limit. On 2026-10-10 every API request took 14–16 s to answer (even `limit=1` without `extended`), and the librivox.org home page did not load within 40 s. Gutenberg and archive.org answered in under 0.4 s. LibriVox was therefore left out of most searches, and every search took the full 15 s. Not decided:
+- LibriVox's server can be slower than our search limit (15 s then, 12 s since 2026-10-11). On 2026-10-10 every API request took 14–16 s to answer (even `limit=1` without `extended`), and the librivox.org home page did not load within 40 s. Gutenberg and archive.org answered in under 0.4 s. LibriVox was therefore left out of most searches, and every search took the full 15 s. Not decided:
     - wait and recheck, since this may be temporary on LibriVox's side;
     - a separate timeout per source;
     - return the sources that are ready and add slower ones' results when they arrive (changes the API and the app);

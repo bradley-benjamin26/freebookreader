@@ -15,9 +15,11 @@ from app.sources.base import SourceError, get_json
 
 PAGE_SIZE = 25   # extended responses list every section, so keep pages small
 _GUTENBERG_ID = re.compile(r"gutenberg\.org/(?:etext|ebooks)/(\d+)")
-# LibriVox catalogs titles without a leading article ("Time Machine", "Misérables - tome 1").
+# LibriVox catalogs titles without a leading article ("Time Machine", "Misérables - tome 1"), except
+# "Il" (Italian: "Il Principe") and "De" (Latin: "De Profundis"), which it keeps; Dutch "De" is the
+# price: "De Kleine Johannes" is searched as "^De Kleine Johannes" and is not found.
 _LEADING_ARTICLE = re.compile(
-    r"^(?:(?:the|a|an|le|la|les|un|une|der|die|das|ein|eine|el|los|las|il|lo|gli|de|het|een)\s+"
+    r"^(?:(?:the|a|an|le|la|les|un|une|der|die|das|ein|eine|el|los|las|lo|gli|het|een)\s+"
     r"|l['’]\s*)", re.I)
 
 

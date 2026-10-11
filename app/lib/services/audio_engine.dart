@@ -1,11 +1,44 @@
+import 'dart:async';
+
 import 'package:just_audio/just_audio.dart';
+
+/// Playback could not start: the file is missing, the network is down, or the format is not supported.
+class AudioException implements Exception {
+  const AudioException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => 'AudioException: $message';
+}
+
+/// Where the player is in [url]. The engine is shared by every recording in the app, so a position says
+/// which file it belongs to.
+class AudioPosition {
+  const AudioPosition(this.url, this.position);
+
+  final Uri? url;
+  final Duration position;
+}
+
+/// Whether [url] is playing, and whether it has played to the end.
+class AudioStatus {
+  const AudioStatus({required this.url, required this.playing, this.completed = false});
+
+  final Uri? url;
+  final bool playing;
+  final bool completed;
+}
 
 /// Plays one audio file at a time.
 abstract class AudioEngine {
+  /// Starts [url] ([from] when given). Completes once playback has started; throws [AudioException] when it
+  /// cannot.
   Future<void> play(Uri url, {Duration? from});
   Future<void> pause();
   Future<void> seek(Duration position);
-  Stream<Duration> get positionStream;
+  Stream<AudioPosition> get positionStream;
+  Stream<AudioStatus> get statusStream;
   Future<void> dispose();
 }
 
@@ -15,14 +48,19 @@ class JustAudioEngine implements AudioEngine {
 
   @override
   Future<void> play(Uri url, {Duration? from}) async {
-    if (url != _current) {
-      _current = url;
-      await _player.setUrl(url.toString(), initialPosition: from);
-    } else if (from != null) {
-      await _player.seek(from);
+    try {
+      if (url != _current) {
+        _current = url;
+        await _player.setUrl(url.toString(), initialPosition: from);
+      } else if (from != null) {
+        await _player.seek(from);
+      }
+    } on Object catch (e) {
+      _current = null; // load again next time
+      throw AudioException('$e');
     }
     // just_audio's play() completes when playback stops, so don't wait for it.
-    _player.play();
+    unawaited(_player.play());
   }
 
   @override
@@ -32,7 +70,15 @@ class JustAudioEngine implements AudioEngine {
   Future<void> seek(Duration position) => _player.seek(position);
 
   @override
-  Stream<Duration> get positionStream => _player.positionStream;
+  Stream<AudioPosition> get positionStream =>
+      _player.positionStream.map((position) => AudioPosition(_current, position));
+
+  @override
+  Stream<AudioStatus> get statusStream => _player.playerStateStream.map((state) {
+        final completed = state.processingState == ProcessingState.completed;
+        // just_audio keeps `playing` true at the end of a file.
+        return AudioStatus(url: _current, playing: state.playing && !completed, completed: completed);
+      });
 
   @override
   Future<void> dispose() => _player.dispose();

@@ -12,10 +12,16 @@ abstract class SearchApi {
 }
 
 class SearchException implements Exception {
-  const SearchException(this.message, {this.isTimeout = false});
+  const SearchException(this.message, {this.isTimeout = false, this.statusCode});
 
   final String message;
   final bool isTimeout;
+
+  /// The HTTP status when the server answered with something other than 200.
+  final int? statusCode;
+
+  /// The server turned down this search (4xx): sending it again will not help.
+  bool get isRejected => statusCode != null && statusCode! >= 400 && statusCode! < 500;
 
   @override
   String toString() => 'SearchException: $message';
@@ -45,7 +51,7 @@ class HttpSearchApi implements SearchApi {
       throw SearchException('Could not reach the server: ${e.message}');
     }
     if (response.statusCode != 200) {
-      throw SearchException('The server answered ${response.statusCode}.');
+      throw SearchException('The server answered ${response.statusCode}.', statusCode: response.statusCode);
     }
     try {
       return jsonDecode(utf8.decode(response.bodyBytes));

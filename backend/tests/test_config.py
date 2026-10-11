@@ -13,7 +13,8 @@ def test_defaults():
     assert settings.librivox_url == "https://librivox.org"
     assert settings.openlibrary_url == "https://openlibrary.org"
     assert settings.doab_url == "https://directory.doabooks.org"
-    assert settings.search_timeout_seconds == 15
+    assert settings.search_timeout_seconds == 12
+    assert settings.max_concurrent_searches == 20
     assert settings.outage_cooldown_hours == 24
 
 
@@ -21,10 +22,12 @@ def test_environment_overrides():
     settings = Settings.from_env({
         "FBR_GUTENDEX_URL": "http://gutendex:8000",
         "FBR_SEARCH_TIMEOUT_SECONDS": "5",
+        "FBR_MAX_CONCURRENT_SEARCHES": "3",
         "FBR_OUTAGE_COOLDOWN_HOURS": "1",
     })
     assert settings.gutendex_url == "http://gutendex:8000"
     assert settings.search_timeout_seconds == 5
+    assert settings.max_concurrent_searches == 3
     assert settings.outage_cooldown_hours == 1
 
 
@@ -64,7 +67,7 @@ class TestEnvFile:
 def test_service_has_all_four_sources():
     service = build_search_service(Settings.from_env({}), client=httpx.Client())
     assert sorted(s.name for s in service.sources) == ["doab", "gutenberg", "librivox", "openlibrary"]
-    assert service.timeout_seconds == 15
+    assert service.timeout_seconds == 12
 
 
 def test_service_uses_the_configured_gutendex_url(recorder):

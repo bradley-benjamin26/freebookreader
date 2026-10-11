@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-All 292 pass against `app/lib/` (2026-10-10).
+All 366 pass against `app/lib/` (2026-10-11).
 
 ```bash
 cd app
@@ -19,6 +19,17 @@ Change a test and this README together.
 - `reader_test`: imports `helpers/fakes.dart` and `bookmark_store.dart` (it used `longText` and `Bookmark` without them). The PDF file name is `9783847408130.pdf`, as in the fixture (`9783847406334` is the print ISBN).
 - `helpers/test_app.dart` `openDetails`: scrolls a result into view before tapping it. On a phone the third result is below the fold.
 - `search_results_test` (progress indicator) and `reader_test` (`startLoading`): pump an extra frame after pushing a page. Flutter keeps a pushed route offstage for its first frame, and its semantics appear once the transition ends.
+
+### Code review fixes (2026-10-11, `REVIEW-2026-10-11.md`)
+
+- **Search by field (#9, #14):** the search box has a "Search in" choice (`search-in` group; `search-in-anything|title|author|subject|isbn` ChoiceChips). `SearchQuery.withTerm(field, text)` sets one text field and keeps the filters; "anything" that is a valid ISBN (`util/isbn.dart`, `isbn_test`) is sent as `isbn`. The example books on Home are title searches. A search over 300 characters is not sent: `search-too-long` (live region). A 4xx from the server (`SearchException.statusCode`, `isRejected`) says "This search can't be run", not "Check your connection". The chips push the first results down on a phone, so tests that tap a result below the fold call `ensureVisible` first.
+- **Why a source is missing (#13):** `SearchResponse.skipped` (`SkippedSource(source, reason)`, `SkipReason` outage|timeout|busy|rejected|error); without it, every source in `unavailable_sources` is taken as an outage. `unavailable-notice` mentions 24 hours only for outages.
+- **Identifiers (#15):** the details page shows 5 identifiers of a kind, then `show-all-<kind>` ("Show all 1000 ISBNs").
+- **Verse (#10):** `htmlParagraphs` keeps `<br>` as a line break (`\n` inside the paragraph) and takes text from every block element (`content_test`). `BookText` makes the word after a line break start with `\n`.
+- **Pagination (#11):** `paginate` lays the book out once, a paragraph at a time (`Paginator`, `pagination_test`). `TextReaderEngine` runs it one slice (8 ms) per frame. Until the pages are counted it shows `reader-page-pending` (the text from the reader's place, clipped) and `page-indicator` says "N% read"; turning pages does nothing yet. The final page is `reader-page-text`. Tests that need to see the slices pump single frames: under `pumpAndSettle` it is over at once.
+- **Audio (#12, #18):** `AudioEngine.play` throws `AudioException`; `positionStream` carries the file (`AudioPosition`) and `statusStream` says playing/completed (`AudioStatus`). The controller ignores positions of other files, moves to the next chapter when one ends, and shows `audio-error` (live region) with `audio-retry` when playback fails. `FakeAudioEngine` has `failNext`, `emitStatus`, `emitPosition`, and replays its last position to new listeners, as just_audio does.
+- **Links (#22):** `LauncherUrlOpener` opens only `http`/`https` links with a host; others return false (`url_opener_test`). The pages do not yet tell the user.
+- **Headings and labels (#23):** the two Home section titles are headings; the language filter is named "Language" (`accessibility_test`).
 
 ### ReaderEngine (2026-10-10)
 
@@ -52,11 +63,11 @@ app/lib/
   app.dart                     FreeBookReaderApp({api, bookmarks, settingsStore, readerEngine,
                                  urlOpener, audio, themeMode, pdfViewBuilder})   MaterialApp(title: 'Free Book Reader')
                                readerEngine: ReaderEngineFactory = ReaderEngine? Function(ReadingOptions)
-  models/models.dart           Book, Chapter, Work, ReadingOptions, SourceInfo, SearchResponse, SearchQuery,
-                                 enums BookFormat, Access, ReadingMode. const constructors on SearchResponse.
+  models/models.dart           Book, Chapter, Work, ReadingOptions, SourceInfo, SearchResponse(+ skipped), SkippedSource, SkipReason,
+                                 SearchQuery(withTerm, searchedText), SearchField, enums BookFormat, Access, ReadingMode. const constructors on SearchResponse.
                                  ReadingOptions.publication: backend path of a Gutenberg book's Readium manifest
                                  for the web reader, or null (also null when the field is missing).
-  api/search_api.dart          abstract SearchApi {search, sources}; HttpSearchApi(client, baseUrl); SearchException(isTimeout)
+  api/search_api.dart          abstract SearchApi {search, sources}; HttpSearchApi(client, baseUrl); SearchException(isTimeout, statusCode?; isRejected for a 4xx)
   storage/bookmark_store.dart  Bookmark(progress 0..1, locator?, const); BookmarkStore(SharedPreferences)
   reader/reader_settings.dart  ReaderSettings (const, clamped), ReaderSettingsStore, ReaderTheme, ReaderFont, ViewMode
   reader/reader_engine.dart    ReaderEngine {open(book, settings, at), position, positions, next, previous, goTo,
@@ -66,8 +77,10 @@ app/lib/
   reader/engines.dart          chooseReaderEngine(book, web, backend, loader), backendUrl(backend, path)
   reader/readium_engine.dart   ReadiumReaderEngine(manifest Uri), epubPreferences(settings), cssFontStack(font)
   reader/content.dart          BookContent (TextContent(paragraphs) | PdfContent(url)), ContentLoader, ContentLoadException
-  services/url_opener.dart     UrlOpener.open(Uri)
-  services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/dispose
+  services/url_opener.dart     UrlOpener.open(Uri); LauncherUrlOpener opens http(s) only
+  services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/statusStream/dispose; AudioException,
+                                 AudioPosition(url, position), AudioStatus(url, playing, completed)
+  util/isbn.dart               looksLikeIsbn(text)
   util/format.dart             formatDuration, formatAuthors, languageName, sourceName, actionLabel
 ```
 
@@ -81,14 +94,14 @@ injected so tests can fake it.
 
 ### Widget keys the tests look for
 
-- **Home:** `home-heading`, `search-field` (semantic label "Search books"), `search-submit` ("Search"), `example-books` (ActionChips), `about-link-<sourceId>`
+- **Home:** `home-heading`, `search-field` (semantic label "Search books"), `search-submit` ("Search"), `search-in` (group "Search in"), `search-in-anything|title|author|subject|isbn`, `search-too-long` (live region), `example-books` (ActionChips), `about-link-<sourceId>`
 - **Results:** `results-page`, `results-heading`, `result-count` (live region), `filters`, `filter-source-<id>`, `filter-format-all|text|audio`, `filter-language`, `result-<workId>`, `cover`, `open-<workId>`, `searching`, `no-results`, `search-error`, `retry`, `unavailable-notice` (live region)
-- **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
+- **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `show-all-<identifierKind>`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
 - **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"), `visit-website`, `about-error`
 - **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
-- **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
+- **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
 - **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `view-page-turner|scroll`
-- **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `chapter-<i>`
+- **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `chapter-<i>`, `audio-error` (live region), `audio-retry`
 
 ### Behavior notes
 

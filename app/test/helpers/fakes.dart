@@ -200,12 +200,28 @@ class FakeReaderEngines {
 
 class FakeAudioEngine implements AudioEngine {
   final List<String> calls = [];
-  final StreamController<Duration> _position = StreamController<Duration>.broadcast();
+  final List<Duration?> playedFrom = [];
+  final StreamController<AudioPosition> _position = StreamController<AudioPosition>.broadcast();
+  final StreamController<AudioStatus> _status = StreamController<AudioStatus>.broadcast();
   bool playing = false;
+  Uri? current;
+  AudioPosition? _last;
+
+  /// When true, the next [play] fails (the file is missing, or there is no network).
+  bool failNext = false;
 
   @override
   Future<void> play(Uri url, {Duration? from}) async {
     calls.add('play ${url.toString()}');
+    playedFrom.add(from);
+    if (failNext) {
+      failNext = false;
+      throw const AudioException('could not load');
+    }
+    if (url != current) {
+      current = url;
+      emitPosition(url, from ?? Duration.zero);
+    }
     playing = true;
   }
 
@@ -218,9 +234,38 @@ class FakeAudioEngine implements AudioEngine {
   @override
   Future<void> seek(Duration position) async => calls.add('seek ${position.inSeconds}');
 
+  /// Like just_audio, a new listener gets the last position at once, whichever file it belongs to.
   @override
-  Stream<Duration> get positionStream => _position.stream;
+  Stream<AudioPosition> get positionStream {
+    late final StreamController<AudioPosition> controller;
+    StreamSubscription<AudioPosition>? subscription;
+    controller = StreamController<AudioPosition>(
+      onListen: () {
+        if (_last != null) controller.add(_last!);
+        subscription = _position.stream.listen(controller.add);
+      },
+      onCancel: () => subscription?.cancel(),
+    );
+    return controller.stream;
+  }
 
   @override
-  Future<void> dispose() async => _position.close();
+  Stream<AudioStatus> get statusStream => _status.stream;
+
+  void emitPosition(Uri url, Duration position) {
+    _last = AudioPosition(url, position);
+    _position.add(_last!);
+  }
+
+  /// The player stopped by itself (or was stopped from outside, e.g. a headset button).
+  void emitStatus({required bool playing, bool completed = false}) {
+    this.playing = playing;
+    _status.add(AudioStatus(url: current, playing: playing, completed: completed));
+  }
+
+  @override
+  Future<void> dispose() async {
+    await _position.close();
+    await _status.close();
+  }
 }

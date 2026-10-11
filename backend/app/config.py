@@ -9,7 +9,7 @@ from typing import Mapping
 import httpx
 
 from app.outage import OutageTracker
-from app.publications import PublicationStore
+from app.publications import GutendexCatalog, PublicationStore
 from app.search import SearchService
 from app.sources.doab import DoabSource
 from app.sources.gutendex import GutendexSource
@@ -42,7 +42,12 @@ class Settings:
     epub_cache_dir: Path = Path(__file__).resolve().parents[1] / "cache" / "epub"
     max_download_mb: float = 200
     epub_cache_mb: float = 2000
-    search_timeout_seconds: float = 15
+    # How long a search waits for the sources, and the HTTP timeout of each request. The spec allows 15 s
+    # for results; merging, the network and drawing come after this wait (review 2026-10-11, #20).
+    search_timeout_seconds: float = 12
+    # Searches running at once. Each holds a thread for up to search_timeout_seconds, so they get their own
+    # limit and cannot use up the threads that /health and book files need (review 2026-10-11, #24).
+    max_concurrent_searches: int = 20
     outage_cooldown_hours: float = 24
     cors_origins: tuple[str, ...] = ("*",)
     # Open Library allows 3 requests/second instead of 1 when the User-Agent names the app and a contact.
@@ -71,6 +76,7 @@ class Settings:
             max_download_mb=_number(get("MAX_DOWNLOAD_MB", cls.max_download_mb)),
             epub_cache_mb=_number(get("EPUB_CACHE_MB", cls.epub_cache_mb)),
             search_timeout_seconds=_number(get("SEARCH_TIMEOUT_SECONDS", cls.search_timeout_seconds)),
+            max_concurrent_searches=int(_number(get("MAX_CONCURRENT_SEARCHES", cls.max_concurrent_searches))),
             outage_cooldown_hours=_number(get("OUTAGE_COOLDOWN_HOURS", cls.outage_cooldown_hours)),
             cors_origins=tuple(o.strip() for o in origins.split(",")) if origins else cls.cors_origins,
             project_name=file.get("projectName") or None,
@@ -113,4 +119,5 @@ def build_publication_store(settings: Settings, client: httpx.Client) -> Publica
     megabyte = 1024 * 1024
     return PublicationStore(client=client, gutenberg_url=settings.gutenberg_url, cache_dir=settings.epub_cache_dir,
                             max_download_bytes=int(settings.max_download_mb * megabyte),
-                            max_cache_bytes=int(settings.epub_cache_mb * megabyte))
+                            max_cache_bytes=int(settings.epub_cache_mb * megabyte),
+                            catalog=GutendexCatalog(client, settings.gutendex_url))

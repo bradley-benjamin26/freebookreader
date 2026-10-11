@@ -2,7 +2,7 @@
 from datetime import date
 from typing import Annotated, Literal, Optional
 
-from pydantic import BaseModel, Field, computed_field, field_validator, model_validator
+from pydantic import BaseModel, Field, computed_field, field_serializer, field_validator, model_validator
 
 from app.normalize import to_language_code
 
@@ -10,6 +10,16 @@ SourceName = Literal["gutenberg", "librivox", "doab", "openlibrary"]
 Format = Literal["text", "audio"]
 # How a book can be had: freely, by borrowing, for print-disabled readers only, or not at all.
 Access = Literal["open", "borrow", "print_disabled", "none"]
+
+
+# Most identifiers of one kind in a response. Open Library works carry every edition's ISBN (3,714 for
+# Pride and Prejudice), which made a details page print 65,000 characters. Merging and known-item
+# filtering see the full lists; only the serialized response is cut.
+MAX_SERIALIZED_IDENTIFIERS = 20
+
+
+def _cut(identifiers: dict[str, list[str]]) -> dict[str, list[str]]:
+    return {kind: values[:MAX_SERIALIZED_IDENTIFIERS] for kind, values in identifiers.items()}
 
 
 class Chapter(BaseModel):
@@ -52,6 +62,10 @@ class Book(BaseModel):
     credits: Optional[str] = None                           # who produced it; one credit per line
     original_publication: Optional[str] = None              # e.g. "Budapest: Athenaeum, 1926."
 
+    @field_serializer("identifiers")
+    def _serialize_identifiers(self, identifiers):
+        return _cut(identifiers)
+
     @computed_field
     @property
     def reading(self) -> ReadingOptions:
@@ -72,6 +86,10 @@ class Work(BaseModel):
     cover_url: Optional[str]
     formats: list[Format]
     books: list[Book]
+
+    @field_serializer("identifiers")
+    def _serialize_identifiers(self, identifiers):
+        return _cut(identifiers)
 
 
 # Input limits: longer queries or deeper pages make sources answer 5xx (Open Library did for a

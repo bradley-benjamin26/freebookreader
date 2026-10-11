@@ -94,6 +94,33 @@ void main() {
     }
   });
 
+  group('section titles and labels (WCAG 1.3.1, 2.4.6, 4.1.2; review 2026-10-11, #23)', () {
+    testWidgets('home: "Try one of these" and "Where the books come from" are headings', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpApp(tester, await TestEnv.create());
+      for (final title in ['Try one of these', 'Where the books come from']) {
+        final heading = find.text(title);
+        await tester.ensureVisible(heading);
+        expect(tester.getSemantics(heading), containsSemantics(isHeader: true), reason: title);
+      }
+      handle.dispose();
+    });
+
+    testWidgets('the language filter is named "Language", also once a language is chosen', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      expect(tester.getSemantics(find.byKey(const Key('filter-language'))).label, contains('Language'));
+      await tester.tap(find.byKey(const Key('filter-language')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('French').last);
+      await tester.pumpAndSettle();
+      final label = tester.getSemantics(find.byKey(const Key('filter-language'))).label;
+      expect(label, allOf(contains('Language'), contains('French')));
+      handle.dispose();
+    });
+  });
+
   group('resize text to 200% (WCAG 1.4.4) and reflow at 320px (1.4.10)', () {
     for (final entry in screens.entries) {
       testWidgets('${entry.key}: nothing overflows', (tester) async {

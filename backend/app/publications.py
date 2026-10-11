@@ -11,6 +11,7 @@ import tempfile
 import threading
 import time
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from urllib.parse import quote, unquote, urljoin, urlsplit
 from xml.etree import ElementTree as ET
@@ -23,10 +24,17 @@ CONTEXT = "https://readium.org/webpub-manifest/context.jsonld"
 MAX_DOWNLOAD_BYTES = 200 * 1024 * 1024
 MAX_CACHE_BYTES = 2000 * 1024 * 1024
 MAX_ENTRY_BYTES = 100 * 1024 * 1024
+# Package files (container, OPF, nav, NCX) are parsed whole in memory, so they get a smaller limit.
+MAX_PACKAGE_BYTES = 5 * 1024 * 1024
 MAX_REDIRECTS = 5
 # Highest Gutenberg book number accepted (the catalog is near 80,000 in 2026).
 MAX_GUTENBERG_ID = 99_999_999
 _MEMORY_SLOTS = 64
+# Locks that keep two requests from downloading one book. A fixed set (book id mod 64) instead of one per
+# id, which grew with every id ever asked for. Books that share a lock only wait for each other's download.
+_BOOK_LOCKS = 64
+# How long the local catalog may take to answer before the book is simply asked for at Gutenberg.
+CATALOG_TIMEOUT_SECONDS = 3
 
 _CONTAINER = "{urn:oasis:names:tc:opendocument:xmlns:container}"
 _OPF = "{http://www.idpf.org/2007/opf}"
@@ -58,21 +66,36 @@ def gutenberg_manifest_path(book_id: int) -> str:
 
 # --- manifest -------------------------------------------------------------------------------------------
 
-def build_manifest(archive: zipfile.ZipFile) -> dict:
-    """A Readium Web Publication Manifest for an EPUB. Every href is relative to the zip root."""
+def _read_entry(archive: zipfile.ZipFile, name: str, limit: int) -> bytes:
+    """An entry's bytes. Refuses one larger than `limit`, by its listed size and while reading (zip bombs)."""
+    info = archive.getinfo(name)
+    if info.file_size > limit:
+        raise PublicationUnavailable(f"{name} is larger than {limit} bytes")
+    with archive.open(info) as file:
+        data = file.read(limit + 1)
+    if len(data) > limit:
+        raise PublicationUnavailable(f"{name} is larger than {limit} bytes")
+    return data
+
+
+def build_manifest(archive: zipfile.ZipFile, max_entry_bytes: int = MAX_PACKAGE_BYTES) -> dict:
+    """A Readium Web Publication Manifest for an EPUB. Every href is relative to the zip root.
+
+    The package files it reads may not be larger than `max_entry_bytes`.
+    """
     try:
-        container = ET.fromstring(archive.read("META-INF/container.xml"))
+        container = ET.fromstring(_read_entry(archive, "META-INF/container.xml", max_entry_bytes))
         rootfile = container.find(f".//{_CONTAINER}rootfile")
         if rootfile is None or not rootfile.get("full-path"):
             raise PublicationUnavailable("container.xml names no package document")
         opf_path = rootfile.get("full-path")
-        package = ET.fromstring(archive.read(opf_path))
-        return _manifest(archive, package, posixpath.dirname(opf_path))
+        package = ET.fromstring(_read_entry(archive, opf_path, max_entry_bytes))
+        return _manifest(archive, package, posixpath.dirname(opf_path), max_entry_bytes)
     except (KeyError, ET.ParseError, zipfile.BadZipFile, UnicodeDecodeError) as error:
         raise PublicationUnavailable(f"not a usable EPUB: {error}") from error
 
 
-def _manifest(archive: zipfile.ZipFile, package: ET.Element, base: str) -> dict:
+def _manifest(archive: zipfile.ZipFile, package: ET.Element, base: str, limit: int) -> dict:
     metadata = package.find(f"{_OPF}metadata")
     items_parent = package.find(f"{_OPF}manifest")
     if metadata is None or items_parent is None:
@@ -104,15 +127,15 @@ def _manifest(archive: zipfile.ZipFile, package: ET.Element, base: str) -> dict:
         "links": [],
         "readingOrder": [link(i, items[i]) for i in spine if i in items],
         "resources": [link(i, item) for i, item in items.items() if i not in in_spine],
-        "toc": _toc(archive, base, items),
+        "toc": _toc(archive, base, items, limit),
     }
 
 
-def _toc(archive: zipfile.ZipFile, base: str, items: dict) -> list[dict]:
+def _toc(archive: zipfile.ZipFile, base: str, items: dict, limit: int) -> list[dict]:
     nav = next((i for i in items.values() if "nav" in (i.get("properties") or "").split()), None)
     if nav is not None:
         path = _resolve(base, nav.get("href"))
-        root = ET.fromstring(archive.read(path))
+        root = ET.fromstring(_read_entry(archive, path, limit))
         for element in root.iter(f"{_XHTML}nav"):
             if element.get(_EPUB_TYPE) == "toc":
                 ol = element.find(f"{_XHTML}ol")
@@ -121,7 +144,7 @@ def _toc(archive: zipfile.ZipFile, base: str, items: dict) -> list[dict]:
     ncx = next((i for i in items.values() if i.get("media-type") == "application/x-dtbncx+xml"), None)
     if ncx is not None:
         path = _resolve(base, ncx.get("href"))
-        nav_map = ET.fromstring(archive.read(path)).find(f"{_NCX}navMap")
+        nav_map = ET.fromstring(_read_entry(archive, path, limit)).find(f"{_NCX}navMap")
         return _ncx_entries(nav_map, posixpath.dirname(path)) if nav_map is not None else []
     return []
 
@@ -171,6 +194,34 @@ def _text(element: ET.Element | None) -> str:
     return " ".join("".join(element.itertext()).split()) if element is not None else ""
 
 
+# --- catalog --------------------------------------------------------------------------------------------
+
+class GutendexCatalog:
+    """Whether a Gutenberg id is a book with an EPUB, asked of our own Gutendex (no traffic to gutenberg.org).
+
+    Called with a book id; returns True, False (not in the catalog, or no EPUB), or None when Gutendex
+    cannot say (it is down or answers oddly): then the book is asked for at Gutenberg as before.
+    """
+
+    def __init__(self, client: httpx.Client, gutendex_url: str):
+        self._client = client
+        self._base_url = gutendex_url.rstrip("/")
+
+    def __call__(self, book_id: int) -> bool | None:
+        try:
+            response = self._client.get(f"{self._base_url}/books/{book_id}/", timeout=CATALOG_TIMEOUT_SECONDS)
+            if response.status_code == 404:
+                return False
+            if response.status_code != 200:
+                return None
+            formats = response.json()["formats"]
+            if not isinstance(formats, dict):
+                return None
+            return "application/epub+zip" in formats
+        except (httpx.HTTPError, ValueError, KeyError, TypeError):
+            return None
+
+
 # --- store ----------------------------------------------------------------------------------------------
 
 class _Book:
@@ -186,16 +237,19 @@ class PublicationStore:
 
     def __init__(self, client: httpx.Client, gutenberg_url: str, cache_dir: Path | str,
                  max_download_bytes: int = MAX_DOWNLOAD_BYTES, max_cache_bytes: int = MAX_CACHE_BYTES,
-                 max_entry_bytes: int = MAX_ENTRY_BYTES):
+                 max_entry_bytes: int = MAX_ENTRY_BYTES,
+                 catalog: Callable[[int], bool | None] | None = None):
         self._client = client
+        self._catalog = catalog
         self._base_url = gutenberg_url.rstrip("/")
         self._host = urlsplit(self._base_url).hostname
         self._cache_dir = Path(cache_dir)
         self._max_download = max_download_bytes
         self._max_cache = max_cache_bytes
         self._max_entry = max_entry_bytes
+        self._package_limit = min(max_entry_bytes, MAX_PACKAGE_BYTES)
         self._lock = threading.Lock()
-        self._book_locks: dict[int, threading.Lock] = {}
+        self._locks = [threading.Lock() for _ in range(_BOOK_LOCKS)]
         self._books: dict[int, _Book] = {}
         self._last_touch = 0
 
@@ -224,17 +278,20 @@ class PublicationStore:
         return data, media_type
 
     def _book(self, book_id: int) -> _Book:
-        with self._lock:
-            book_lock = self._book_locks.setdefault(book_id, threading.Lock())
-        with book_lock:
-            path = self._cache_dir / f"{book_id}.epub"
+        path = self._cache_dir / f"{book_id}.epub"
+        # Before any lock or download: an id that is not a book is refused without asking Gutenberg. A book
+        # on disk or in memory is not looked up (the catalog may have been rebuilt without it).
+        if self._catalog is not None and book_id not in self._books and not path.exists():
+            if self._catalog(book_id) is False:
+                raise PublicationNotFound(f"{book_id} is not a book with an EPUB")
+        with self._locks[book_id % _BOOK_LOCKS]:
             book = self._books.get(book_id)
             if book is not None and path.exists():
                 self._touch(path)
                 return book
             if path.exists():
                 self._touch(path)
-                book = _Book(path, _read_manifest(path))
+                book = _Book(path, _read_manifest(path, self._package_limit))
             else:
                 book = self._download(book_id, path)
             with self._lock:
@@ -250,7 +307,7 @@ class PublicationStore:
         try:
             with os.fdopen(fd, "wb") as file:
                 self._fetch(f"{self._base_url}/ebooks/{book_id}.epub3.images", file)
-            book = _Book(path, _read_manifest(temp))
+            book = _Book(path, _read_manifest(temp, self._package_limit))
             os.replace(temp, path)
             self._touch(path)
         finally:
@@ -307,9 +364,9 @@ class PublicationStore:
                 self._books.pop(int(old.stem), None)
 
 
-def _read_manifest(path: Path) -> dict:
+def _read_manifest(path: Path, max_entry_bytes: int = MAX_PACKAGE_BYTES) -> dict:
     try:
         with zipfile.ZipFile(path) as archive:
-            return build_manifest(archive)
+            return build_manifest(archive, max_entry_bytes)
     except zipfile.BadZipFile as error:
         raise PublicationUnavailable(f"not an EPUB: {error}") from error

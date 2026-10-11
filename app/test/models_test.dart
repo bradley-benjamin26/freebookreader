@@ -14,6 +14,27 @@ void main() {
       expect(response.unavailableSources, isEmpty);
     });
 
+    test('reads why each source was skipped; without skipped, a source is in an outage', () {
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      json['unavailable_sources'] = ['doab', 'librivox'];
+      expect(SearchResponse.fromJson(json).skipped, isEmpty);
+      expect(SearchResponse.fromJson(json).reasonFor('doab'), SkipReason.outage);
+      json['skipped'] = [
+        {'source': 'doab', 'reason': 'timeout'},
+        {'source': 'librivox', 'reason': 'busy'},
+      ];
+      final response = SearchResponse.fromJson(json);
+      expect(response.reasonFor('doab'), SkipReason.timeout);
+      expect(response.reasonFor('librivox'), SkipReason.busy);
+    });
+
+    test('an unknown skip reason counts as an error', () {
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      json['unavailable_sources'] = ['doab'];
+      json['skipped'] = [{'source': 'doab', 'reason': 'brand-new'}];
+      expect(SearchResponse.fromJson(json).reasonFor('doab'), SkipReason.error);
+    });
+
     test('reads unavailable_sources', () {
       final json = loadJson('search_response.json') as Map<String, dynamic>;
       json['unavailable_sources'] = ['doab', 'librivox'];
@@ -225,6 +246,38 @@ void main() {
       expect(SearchQuery(q: '   ').isSearchable, isFalse);
       expect(SearchQuery(q: 'x').isSearchable, isTrue);
       expect(SearchQuery(isbn: '9780140430721').isSearchable, isTrue);
+    });
+
+    test('withTerm sets one text field, clears the others and keeps the filters', () {
+      final base = SearchQuery(q: 'x', language: 'fr', format: BookFormat.audio, sources: ['doab']);
+      for (final (field, read) in <(SearchField, String? Function(SearchQuery))>[
+        (SearchField.anything, (q) => q.q),
+        (SearchField.title, (q) => q.title),
+        (SearchField.author, (q) => q.author),
+        (SearchField.subject, (q) => q.keyword),
+        (SearchField.isbn, (q) => q.isbn),
+      ]) {
+        final query = base.withTerm(field, 'Emma');
+        expect(read(query), 'Emma', reason: '$field');
+        expect(query.toQueryParameters().keys.where((k) => const ['q', 'title', 'author', 'keyword', 'isbn'].contains(k)),
+            hasLength(1), reason: '$field');
+        expect(query.language, 'fr');
+        expect(query.format, BookFormat.audio);
+        expect(query.sources, ['doab']);
+      }
+    });
+
+    test('anything that is an ISBN is sent as an ISBN', () {
+      expect(SearchQuery().withTerm(SearchField.anything, '978-0-14-043072-1').isbn, '978-0-14-043072-1');
+      expect(SearchQuery().withTerm(SearchField.anything, '978-0-14-043072-1').q, isNull);
+      expect(SearchQuery().withTerm(SearchField.anything, '1234567890123').q, '1234567890123');
+      expect(SearchQuery().withTerm(SearchField.title, '9780140430721').title, '9780140430721');
+    });
+
+    test('searchedText is the text that was searched for, whichever field it is in', () {
+      expect(SearchQuery(title: 'Emma').searchedText, 'Emma');
+      expect(SearchQuery(keyword: 'whales').searchedText, 'whales');
+      expect(SearchQuery().searchedText, '');
     });
 
     test('copyWith changes only what it is given', () {

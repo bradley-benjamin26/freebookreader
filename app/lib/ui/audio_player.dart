@@ -5,25 +5,33 @@ import 'package:flutter/material.dart';
 import '../models/models.dart';
 import '../services/audio_engine.dart';
 import '../util/format.dart';
+import 'common.dart';
 
 /// Playback state for one recording, chapter by chapter.
 class AudioController extends ChangeNotifier {
   AudioController(this._engine, this.book) {
     _positionSub = _engine.positionStream.listen((p) {
-      position = p;
+      // The engine is shared: ignore the position of any other file (the last one played, for one).
+      if (p.url != _url) return;
+      position = p.position;
       notifyListeners();
     });
+    _statusSub = _engine.statusStream.listen(_onStatus);
   }
 
   static const skip = Duration(seconds: 30);
 
   final AudioEngine _engine;
   final Book book;
-  late final StreamSubscription<Duration> _positionSub;
+  late final StreamSubscription<AudioPosition> _positionSub;
+  late final StreamSubscription<AudioStatus> _statusSub;
 
   int chapter = 0;
   bool playing = false;
   Duration position = Duration.zero;
+
+  /// What went wrong when the recording could not be played; null otherwise.
+  String? error;
 
   List<Chapter> get chapters => book.chapters;
 
@@ -34,24 +42,48 @@ class AudioController extends ChangeNotifier {
     return seconds == null ? null : Duration(seconds: seconds);
   }
 
+  void _onStatus(AudioStatus status) {
+    if (status.url != _url) return; // another recording's
+    if (status.completed) {
+      if (chapter + 1 < chapters.length) {
+        unawaited(playChapter(chapter + 1));
+        return;
+      }
+      playing = false;
+      position = Duration.zero;
+    } else {
+      playing = status.playing;
+    }
+    notifyListeners();
+  }
+
+  Future<void> _start(Uri url, {Duration? from}) async {
+    error = null;
+    playing = true;
+    notifyListeners();
+    try {
+      await _engine.play(url, from: from);
+    } on Object {
+      playing = false;
+      error = 'The recording could not be played. Check your connection and try again.';
+      notifyListeners();
+    }
+  }
+
   Future<void> togglePlay() async {
     if (playing) {
       playing = false;
       notifyListeners();
       await _engine.pause();
     } else {
-      playing = true;
-      notifyListeners();
-      await _engine.play(_url, from: position == Duration.zero ? null : position);
+      await _start(_url, from: position == Duration.zero ? null : position);
     }
   }
 
   Future<void> playChapter(int index) async {
     chapter = index;
     position = Duration.zero;
-    playing = true;
-    notifyListeners();
-    await _engine.play(_url);
+    await _start(_url);
   }
 
   Future<void> seek(Duration to) async {
@@ -70,6 +102,7 @@ class AudioController extends ChangeNotifier {
   @override
   void dispose() {
     _positionSub.cancel();
+    _statusSub.cancel();
     if (playing) _engine.pause();
     super.dispose();
   }
@@ -107,20 +140,44 @@ class AudioPlayerPanel extends StatelessWidget {
             icon: const Icon(Icons.forward_30, semanticLabel: 'Skip forward 30 seconds'),
           ),
         ];
+        final error = controller.error == null
+            ? null
+            : Row(
+                children: [
+                  Expanded(
+                    child: LiveRegion(
+                      key: const Key('audio-error'),
+                      child: Text(controller.error!,
+                          style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                    ),
+                  ),
+                  TextButton(
+                    key: const Key('audio-retry'),
+                    onPressed: controller.togglePlay,
+                    child: const Text('Try again'),
+                  ),
+                ],
+              );
         if (compact) {
           final chapters = controller.chapters;
-          return Row(
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Text(
-                  chapters.isEmpty
-                      ? 'LibriVox recording'
-                      : 'LibriVox: ${chapters[controller.chapter].title}',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      chapters.isEmpty
+                          ? 'LibriVox recording'
+                          : 'LibriVox: ${chapters[controller.chapter].title}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  ...buttons,
+                ],
               ),
-              ...buttons,
+              ?error,
             ],
           );
         }
@@ -143,6 +200,7 @@ class AudioPlayerPanel extends StatelessWidget {
               ),
             ),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
+            ?error,
           ],
         );
       },

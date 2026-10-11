@@ -4,6 +4,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:free_book_reader/api/search_api.dart';
 import 'package:free_book_reader/models/models.dart';
 
 import 'helpers/test_app.dart';
@@ -82,6 +83,7 @@ void main() {
     testWidgets('tapping a row opens the details page', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
+      await tester.ensureVisible(find.byKey(const Key('result-w-quijote')));
       await tester.tap(find.byKey(const Key('result-w-quijote')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('details-page')), findsOneWidget);
@@ -111,6 +113,109 @@ void main() {
       await searchFor(tester, 'pride');
       await searchFor(tester, 'emma');
       expect(env.api.queries.map((q) => q.q), ['pride', 'emma']);
+    });
+  });
+
+  group('searching by title, author, subject or ISBN', () {
+    // Review 2026-10-11, #9: the backend narrows a known-item search, but only if it gets title/author/isbn.
+    for (final (key, read) in <(String, String? Function(SearchQuery))>[
+      ('anything', (q) => q.q),
+      ('title', (q) => q.title),
+      ('author', (q) => q.author),
+      ('subject', (q) => q.keyword),
+      ('isbn', (q) => q.isbn),
+    ]) {
+      testWidgets('"$key" sends the text in that field only', (tester) async {
+        final env = await TestEnv.create();
+        await pumpApp(tester, env);
+        await chooseSearchField(tester, key);
+        await searchFor(tester, 'Pride and Prejudice');
+        final query = env.api.queries.single;
+        expect(read(query), 'Pride and Prejudice');
+        expect(query.toQueryParameters().keys.where((k) => const ['q', 'title', 'author', 'keyword', 'isbn'].contains(k)),
+            hasLength(1));
+        expect(find.text('3 results for "Pride and Prejudice"'), findsOneWidget);
+      });
+    }
+
+    testWidgets('the choices are labelled as a group and show which one is chosen', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      expect(tester.getSemantics(find.byKey(const Key('search-in'))), containsSemantics(label: 'Search in'));
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isTrue);
+      await chooseSearchField(tester, 'author');
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-author'))).selected, isTrue);
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isFalse);
+    });
+
+    testWidgets('a search from the home page keeps the choice on the results page', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await chooseSearchField(tester, 'title');
+      await searchFor(tester, 'Emma');
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      await searchFor(tester, 'Persuasion');
+      expect(env.api.queries.map((q) => q.title), ['Emma', 'Persuasion']);
+    });
+
+    testWidgets('changing a filter keeps the title that was searched for', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await chooseSearchField(tester, 'title');
+      await searchFor(tester, 'Emma');
+      await tester.tap(find.byKey(const Key('filter-format-audio')));
+      await tester.pumpAndSettle();
+      expect(env.api.queries.last.title, 'Emma');
+      expect(env.api.queries.last.q, isNull);
+      expect(env.api.queries.last.format, BookFormat.audio);
+    });
+
+    testWidgets('anything that is an ISBN is searched as an ISBN', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, '978-0-14-043072-1');
+      expect(env.api.queries.single.isbn, '978-0-14-043072-1');
+      expect(env.api.queries.single.q, isNull);
+    });
+  });
+
+  group('a search that is too long', () {
+    // Review 2026-10-11, #14: the backend answers 422 above 300 characters.
+    testWidgets('is not sent, and says why', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'a' * 301);
+      expect(env.api.queries, isEmpty);
+      final message = find.byKey(const Key('search-too-long'));
+      expect(message, findsOneWidget);
+      expect(find.descendant(of: message, matching: find.textContaining('300')), findsOneWidget);
+      expect(tester.getSemantics(message), containsSemantics(isLiveRegion: true));
+    });
+
+    testWidgets('300 characters are sent', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'a' * 300);
+      expect(env.api.queries.single.q, 'a' * 300);
+      expect(find.byKey(const Key('search-too-long')), findsNothing);
+    });
+
+    testWidgets('the message goes away once the search is shortened', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'a' * 301);
+      await searchFor(tester, 'emma');
+      expect(find.byKey(const Key('search-too-long')), findsNothing);
+      expect(env.api.queries.single.q, 'emma');
+    });
+
+    testWidgets('a 4xx from the server is not blamed on the connection', (tester) async {
+      final env = await TestEnv.create();
+      env.api.error = const SearchException('The server answered 422.', statusCode: 422);
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final error = find.byKey(const Key('search-error'));
+      expect(find.descendant(of: error, matching: find.textContaining('connection')), findsNothing);
+      expect(find.descendant(of: error, matching: find.textContaining("can't be run")), findsOneWidget);
     });
   });
 
@@ -286,6 +391,54 @@ void main() {
       expect(find.descendant(of: notice, matching: find.textContaining('LibriVox')), findsOneWidget);
       expect(find.descendant(of: notice, matching: find.textContaining('24 hours')), findsOneWidget);
       expect(tester.getSemantics(notice), containsSemantics(isLiveRegion: true));
+    });
+
+    testWidgets('a slow source is not said to be down for 24 hours', (tester) async {
+      // Review 2026-10-11, #13: a timeout is asked again on the next search.
+      final env = await TestEnv.create();
+      env.api.response = SearchResponse(
+          works: env.api.response.works,
+          unavailableSources: const ['librivox', 'doab'],
+          skipped: const [
+            SkippedSource(source: 'doab', reason: SkipReason.timeout),
+            SkippedSource(source: 'librivox', reason: SkipReason.busy),
+          ]);
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final notice = find.byKey(const Key('unavailable-notice'));
+      expect(find.descendant(of: notice, matching: find.textContaining('24 hours')), findsNothing);
+      expect(find.descendant(of: notice, matching: find.textContaining('too slow')), findsOneWidget);
+      expect(find.descendant(of: notice, matching: find.textContaining('DOAB')), findsOneWidget);
+      expect(find.descendant(of: notice, matching: find.textContaining('LibriVox')), findsOneWidget);
+    });
+
+    testWidgets('a source in an outage and a slow one get their own wording', (tester) async {
+      final env = await TestEnv.create();
+      env.api.response = SearchResponse(
+          works: env.api.response.works,
+          unavailableSources: const ['librivox', 'doab'],
+          skipped: const [
+            SkippedSource(source: 'doab', reason: SkipReason.timeout),
+            SkippedSource(source: 'librivox', reason: SkipReason.outage),
+          ]);
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final notice = find.byKey(const Key('unavailable-notice'));
+      expect(find.descendant(of: notice, matching: find.textContaining('24 hours')), findsOneWidget);
+      expect(find.descendant(of: notice, matching: find.textContaining('too slow')), findsOneWidget);
+    });
+
+    testWidgets('a source that could not run the search is not said to be down', (tester) async {
+      final env = await TestEnv.create();
+      env.api.response = SearchResponse(
+          works: env.api.response.works,
+          unavailableSources: const ['doab'],
+          skipped: const [SkippedSource(source: 'doab', reason: SkipReason.rejected)]);
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final notice = find.byKey(const Key('unavailable-notice'));
+      expect(find.descendant(of: notice, matching: find.textContaining('24 hours')), findsNothing);
+      expect(find.descendant(of: notice, matching: find.textContaining('DOAB')), findsOneWidget);
     });
 
     testWidgets('shows no warning when every source answered', (tester) async {

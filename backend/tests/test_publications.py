@@ -13,8 +13,9 @@ import httpx
 import pytest
 from fastapi.testclient import TestClient
 
+from app.config import Settings, build_publication_store
 from app.main import create_app
-from app.publications import (EPUB_PROFILE, PublicationNotFound, PublicationStore, PublicationTimeout,
+from app.publications import (EPUB_PROFILE, GutendexCatalog, PublicationNotFound, PublicationStore, PublicationTimeout,
                               PublicationUnavailable, build_manifest)
 from tests.factories import make_epub
 from tests.test_api import StubService
@@ -291,6 +292,22 @@ class TestDownload:
         with pytest.raises(PublicationUnavailable):
             store.resource(1342, "OEBPS/css/style.css")
 
+    @pytest.mark.parametrize("version, name", [
+        (3, "META-INF/container.xml"), (3, "OEBPS/content.opf"), (3, "OEBPS/nav.xhtml"),
+        (2, "OEBPS/toc.ncx"),
+    ])
+    def test_package_file_larger_than_the_limit_is_unavailable_and_not_cached(self, tmp_path, version, name):
+        # The files the manifest is built from are read whole to be parsed, so they get the limit too.
+        with zipfile.ZipFile(io.BytesIO(make_epub(version=version))) as archive:
+            original = archive.read(name)
+        padded = original + b"<!-- " + b"a" * 5000 + b" -->"
+        gutenberg = Gutenberg(books={1342: make_epub(version=version, extra={name: padded})})
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path,
+                                 max_entry_bytes=1000)
+        with pytest.raises(PublicationUnavailable):
+            store.manifest(1342)
+        assert list(tmp_path.glob("*.epub")) == []
+
     def test_least_recently_used_books_leave_the_cache_when_it_is_full(self, tmp_path):
         epub = make_epub()
         gutenberg = Gutenberg(books={1: epub, 2: epub, 3: epub})
@@ -301,6 +318,115 @@ class TestDownload:
         store.resource(1, "OEBPS/css/style.css")   # 1 is now newer than 2
         store.manifest(3)
         assert sorted(p.name for p in tmp_path.glob("*.epub")) == ["1.epub", "3.epub"]
+
+
+class TestUnknownBooks:
+    """Review 2026-10-11, #19: any id up to 99,999,999 made us ask gutenberg.org, and every id left a lock behind."""
+
+    def store_with(self, tmp_path, catalog, books=None):
+        gutenberg = Gutenberg(books=books)
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path,
+                                 catalog=catalog)
+        return store, gutenberg
+
+    def test_a_book_the_catalog_does_not_know_is_not_asked_for_at_gutenberg(self, tmp_path):
+        store, gutenberg = self.store_with(tmp_path, catalog=lambda book_id: False)
+        for _ in range(3):
+            with pytest.raises(PublicationNotFound):
+                store.manifest(99999999)
+        assert gutenberg.requests == []
+
+    def test_a_book_the_catalog_knows_is_downloaded(self, tmp_path):
+        store, gutenberg = self.store_with(tmp_path, catalog=lambda book_id: book_id == 1342)
+        assert store.manifest(1342)["metadata"]["title"] == "Pride and Prejudice"
+        assert gutenberg.downloads == 1
+
+    def test_when_the_catalog_cannot_say_the_book_is_asked_for_as_before(self, tmp_path):
+        """The local Gutendex may be down: that must not stop books from opening."""
+        store, gutenberg = self.store_with(tmp_path, catalog=lambda book_id: None)
+        assert store.manifest(1342)["metadata"]["title"] == "Pride and Prejudice"
+        with pytest.raises(PublicationNotFound):
+            store.manifest(5)
+        assert gutenberg.downloads == 2
+
+    def test_a_cached_book_is_not_looked_up_again(self, tmp_path):
+        asked = []
+        store, _ = self.store_with(tmp_path, catalog=lambda book_id: asked.append(book_id) or True)
+        store.manifest(1342)
+        store.resource(1342, "OEBPS/css/style.css")
+        store.manifest(1342)
+        assert asked == [1342]
+
+    def test_a_book_cached_on_disk_opens_even_if_the_catalog_forgot_it(self, tmp_path):
+        first, gutenberg = self.store_with(tmp_path, catalog=lambda book_id: True)
+        first.manifest(1342)
+        again = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path,
+                                 catalog=lambda book_id: False)
+        assert again.manifest(1342)["metadata"]["title"] == "Pride and Prejudice"
+
+    def test_asking_for_many_unknown_books_does_not_grow_the_locks(self, tmp_path):
+        store, _ = self.store_with(tmp_path, catalog=lambda book_id: False)
+        locks = len(store._locks)
+        for book_id in range(1, 2000):
+            with pytest.raises(PublicationNotFound):
+                store.manifest(book_id)
+        assert len(store._locks) == locks == 64
+
+    def test_books_that_share_a_lock_still_download(self, tmp_path):
+        epub = make_epub()
+        store, gutenberg = self.store_with(tmp_path, catalog=lambda book_id: True,
+                                           books={1: epub, 65: epub, 129: epub})   # 1, 65 and 129 are 1 mod 64
+        for book_id in (1, 65, 129):
+            store.manifest(book_id)
+        assert gutenberg.downloads == 3
+
+
+class TestGutendexCatalog:
+    def catalog(self, respond):
+        seen = []
+
+        def handle(request):
+            seen.append(request.url.path)
+            result = respond(request)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        client = httpx.Client(transport=httpx.MockTransport(handle))
+        return GutendexCatalog(client, "http://localhost:8001/"), seen
+
+    def test_a_book_with_an_epub_exists(self):
+        catalog, seen = self.catalog(lambda r: httpx.Response(
+            200, json={"id": 1342, "formats": {"application/epub+zip": "https://g/1342.epub3.images"}}))
+        assert catalog(1342) is True
+        assert seen == ["/books/1342/"]
+
+    def test_a_book_without_an_epub_does_not(self):
+        catalog, _ = self.catalog(lambda r: httpx.Response(200, json={"id": 7, "formats": {"text/html": "x"}}))
+        assert catalog(7) is False
+
+    def test_an_unknown_id_does_not(self):
+        catalog, _ = self.catalog(lambda r: httpx.Response(404, json={"detail": "Not found."}))
+        assert catalog(99999999) is False
+
+    @pytest.mark.parametrize("respond", [
+        lambda r: httpx.Response(500),
+        lambda r: httpx.Response(503),
+        lambda r: httpx.ConnectError("refused"),
+        lambda r: httpx.ReadTimeout("slow"),
+        lambda r: httpx.Response(200, text="<html>not json</html>"),
+        lambda r: httpx.Response(200, json=["not", "a", "book"]),
+        lambda r: httpx.Response(200, json={"formats": "oops"}),
+    ])
+    def test_when_gutendex_cannot_say_the_answer_is_unknown(self, respond):
+        catalog, _ = self.catalog(respond)
+        assert catalog(1342) is None
+
+
+def test_the_configured_store_checks_the_local_gutendex(tmp_path):
+    settings = Settings.from_env({"FBR_GUTENDEX_URL": "http://gutendex.invalid", "FBR_EPUB_CACHE_DIR": str(tmp_path)})
+    store = build_publication_store(settings, httpx.Client())
+    assert isinstance(store._catalog, GutendexCatalog)
 
 
 @pytest.mark.parametrize("error, status", [

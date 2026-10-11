@@ -134,6 +134,85 @@ void main() {
     });
   });
 
+  group('verse in the page-turner view', () {
+    testWidgets('keeps the line breaks of a stanza', (tester) async {
+      final env = await textEnv(tester);
+      env.loader.content = const TextContent(['Line one,\nline two,\nline three']);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(pageText(tester), 'Line one,\nline two,\nline three');
+    });
+  });
+
+  group('a long book', () {
+    // Review 2026-10-11, #11: the whole book was paginated inside one build (1.3 s for 120,000 words).
+    TextContent novel() => TextContent(List.generate(
+        3000,
+        (i) => 'Paragraph $i. It is a truth universally acknowledged, that a single man in possession of a '
+            'good fortune, must be in want of a wife. ${'word ' * 25}'));
+
+    /// Pumps frames until the page count is known; returns the slowest frame, in milliseconds.
+    Future<int> pumpUntilPaginated(WidgetTester tester) async {
+      var slowest = 0;
+      for (var i = 0; i < 2000 && find.byKey(const Key('reader-page-text')).evaluate().isEmpty; i++) {
+        final watch = Stopwatch()..start();
+        await tester.pump(const Duration(milliseconds: 16));
+        slowest = watch.elapsedMilliseconds > slowest ? watch.elapsedMilliseconds : slowest;
+      }
+      return slowest;
+    }
+
+    testWidgets('opens with text on screen at once, and no frame is held up by the pagination', (tester) async {
+      final env = await textEnv(tester);
+      env.loader.content = novel();
+      await openDetails(tester, 'w-pride');
+      await tester.ensureVisible(find.byKey(const Key('open-gutenberg:1342')));
+      await tester.tap(find.byKey(const Key('open-gutenberg:1342')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byKey(const Key('reader-page-pending')), findsOneWidget);
+      expect(find.textContaining('Paragraph 0.'), findsOneWidget);
+      final slowest = await pumpUntilPaginated(tester);
+      expect(slowest, lessThan(250), reason: 'a frame took $slowest ms');   // was over 1,000 ms
+      expect(find.byKey(const Key('reader-page-pending')), findsNothing);
+      expect(pageNumber(tester), 1);
+      expect(pageCount(tester), greaterThan(1000));
+    });
+
+    testWidgets('a font size change keeps the text on screen while the pages are counted again', (tester) async {
+      final env = await textEnv(tester);
+      env.loader.content = novel();
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 20);
+      final opening = pageText(tester).split(RegExp(r'\s+')).take(4).join(' ');
+      final before = pageCount(tester);
+      await openSettings(tester);
+      await tester.tap(find.byKey(const Key('font-increase')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 16));
+      expect(find.byKey(const Key('reader-page-pending')), findsOneWidget);
+      expect(find.textContaining(opening, findRichText: true), findsWidgets);
+      await tester.pumpAndSettle();
+      await closeSettings(tester);
+      expect(find.byKey(const Key('reader-page-pending')), findsNothing);
+      expect(pageCount(tester), greaterThan(before));
+    });
+
+    testWidgets('turning the page before the pages are counted does nothing', (tester) async {
+      final env = await textEnv(tester);
+      env.loader.content = novel();
+      await openDetails(tester, 'w-pride');
+      await tester.ensureVisible(find.byKey(const Key('open-gutenberg:1342')));
+      await tester.tap(find.byKey(const Key('open-gutenberg:1342')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));   // the page slides in
+      expect(find.byKey(const Key('reader-page-pending')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('next-page')));
+      await pumpUntilPaginated(tester);
+      expect(pageNumber(tester), 1);
+    });
+  });
+
   group('scroll view', () {
     testWidgets('shows every paragraph in one list', (tester) async {
       final env = await textEnv(tester);
@@ -141,6 +220,16 @@ void main() {
       await chooseView(tester, 'scroll');
       expect(find.byKey(const Key('reader-scroll')), findsOneWidget);
       expect(find.byKey(const Key('reader-paragraph-0')), findsOneWidget);
+    });
+
+    testWidgets('a line break inside a paragraph shows as a new line', (tester) async {
+      final env = await textEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
+      env.loader.content = const TextContent(['Once upon a midnight dreary,\nwhile I pondered, weak and weary', 'Next']);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      final lines = tester.getSize(find.byKey(const Key('reader-paragraph-0'))).height;
+      final oneLine = tester.getSize(find.byKey(const Key('reader-paragraph-1'))).height;
+      expect(lines, greaterThanOrEqualTo(oneLine * 2));
+      expect(find.text('Once upon a midnight dreary,\nwhile I pondered, weak and weary'), findsOneWidget);
     });
 
     testWidgets('switching views keeps your place', (tester) async {

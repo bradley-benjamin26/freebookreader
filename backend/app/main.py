@@ -4,6 +4,8 @@ Run: uvicorn app.main:create_app --factory --port 8000
 """
 from typing import Optional
 
+import anyio
+from anyio import to_thread
 from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
@@ -42,8 +44,12 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
     def health() -> dict:
         return {"status": "ok"}
 
+    # Created on first use, inside the running event loop. Searches wait here (as cheap coroutines) when
+    # max_concurrent_searches are running, instead of each holding a worker thread of the default pool.
+    search_limiter: list[anyio.CapacityLimiter] = []
+
     @app.get("/search", response_model=SearchResponse)
-    def search(
+    async def search(
         q: Optional[str] = None,
         title: Optional[str] = None,
         author: Optional[str] = None,
@@ -62,7 +68,9 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
             )
         except ValidationError as error:
             raise RequestValidationError(error.errors(include_url=False)) from error
-        return search_service.search(query)
+        if not search_limiter:
+            search_limiter.append(anyio.CapacityLimiter(max(1, settings.max_concurrent_searches)))
+        return await to_thread.run_sync(search_service.search, query, limiter=search_limiter[0])
 
     @app.get("/sources", response_model=list[SourceInfo])
     def list_sources() -> list[SourceInfo]:
