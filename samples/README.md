@@ -10,6 +10,8 @@ Captured 2026-10-10 with curl. Real responses, unedited.
 | openlibrary-search-title-author.json | `search.json?title=...&author=austen&limit=3&fields=...` (the `fields` filter was applied; the file is large because the response includes much more per doc than listed) |
 | openlibrary-work.json | `works/OL66554W.json` |
 | openlibrary-isbn.json | `isbn/9780140430721.json` (edition record) |
+| openlibrary-search-borrowable.json | `search.json?q=dean koontz frankenstein ebook_access:[borrowable TO *]&limit=3&fields=...,editions,editions.key,editions.ebook_access` (2026-10-10) |
+| openlibrary-availability-v2.json | `availability/v2?type=openlibrary_edition&ids=OL23273427M,OL25968798M,OL22173091M,OL50444320M,OL3311782M` (2026-10-10; live loan status) |
 | openlibrary-availability.json | `api/volumes/brief/isbn/9780140430721.json` (large; `items` holds lending/access status) |
 | gutendex-search.json | Self-hosted Gutendex: `books/?search=dickens great` |
 | gutendex-book.json | `books/11/` |
@@ -20,5 +22,5 @@ Captured 2026-10-10 with curl. Real responses, unedited.
 | doab-xoai/`<n>`.xml | DOAB OAI-PMH `verb=GetRecord&metadataPrefix=xoai&identifier=oai:directory.doabooks.org:20.500.12854/<n>`, one file per hit in doab-opensearch.xml (the stale ones answer `idDoesNotExist`), plus 133576 (a German book from `query=kinder`) |
 
 ## Not captured
-- **Gutendex** (gutendex.com): returned a Cloudflare bot challenge (HTTP 403) to curl. The `gutendex-*.json` files were captured from the self-hosted instance on 2026-10-10 and pretty-printed.
+- **Gutendex** (gutendex.com): returned a Cloudflare bot challenge (HTTP 403) to curl. The `gutendex-*.json` files were captured from the self-hosted instance on 2026-10-10 and pretty-printed. They were captured again the same day, with the same requests, after our Gutendex gained `release_date`, `last_updated`, `credits` and `original_publication` (see api_gutendex.documentation.md); gutendex.com does not have these fields.
 - **DOAB REST search** (directory.doabooks.org/rest/search): returned "You address is not allowed to access this API." (HTTP 403). It is restricted by IP address, like OAPEN's.

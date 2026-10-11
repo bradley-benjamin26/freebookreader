@@ -4,7 +4,7 @@ Open Library is the Internet Archive's book catalog. Some of its books can be re
 
 Base URL: `https://openlibrary.org`.
 
-We use four parts of it: **search** (`/search.json`), **work and edition records** (`/works/...`, `/isbn/...`), **lending availability** (`/api/volumes/brief/...`), and **covers** (`covers.openlibrary.org`).
+We use five parts of it: **search** (`/search.json`), **live loan status** (`/availability/v2`), **work and edition records** (`/works/...`, `/isbn/...`), **lending availability** (`/api/volumes/brief/...`), and **covers** (`covers.openlibrary.org`).
 
 ## General behavior
 
@@ -32,6 +32,9 @@ Results are **works** (a work groups all its editions), not editions.
 | `sort` | `new`, `old`, `random`, `key`, ... | Default is relevance. |
 | `page` + `limit` | integers | Page-based paging (`page` starts at 1). |
 | `offset` + `limit` | integers | Offset-based paging. |
+
+| `q=... ebook_access:[borrowable TO *]` | Solr range | **Only free or borrowable works.** `ebook_access` is ordered `no_ebook` < `printdisabled` < `borrowable` < `public`. Works alone as `q` next to `title`/`author`/`isbn`, and with `language`. It also filters the `editions` sub-query (below). Tested 2026-10-10. |
+| `fields=editions,editions.key,editions.ebook_access` | | Adds `editions.docs`: the **one edition** of the work that best matches the query, including its filters (an `ebook_access` filter, `language`, `isbn`). Other edition fields work the same way (`editions.title`, `editions.language`, `editions.ia`). |
 
 Tested on 2026-10-10: `title` + `author` together are ANDed (`q` is then `""` in the response); `isbn=0140430725` and `isbn=9780140430721` both return `/works/OL66554W`; a search with no matches returns `200` with `"docs": []`.
 
@@ -71,6 +74,50 @@ Real response, captured 2026-10-10. Abridged: `isbn` (6,117 values) and `languag
 ```
 
 Unabridged captures: [samples/openlibrary-search.json](samples/openlibrary-search.json) (`q=pride+and+prejudice&limit=3`, no `fields`) and [samples/openlibrary-search-title-author.json](samples/openlibrary-search-title-author.json).
+
+### Example: only books that can be read or borrowed, with the edition to link
+
+Without the filter, `/works/OL497167W` ("Dean Koontz's Frankenstein") is `borrowable` and its `lending_edition_s` is `OL32667096M`, a Polish translation. Its `editions` sub-query returns `OL3311782M`, a hardcover with no ebook, and the work page on openlibrary.org also features an edition that cannot be borrowed. With the filter, the sub-query returns `OL23273427M` ("Book One"), which can be borrowed.
+
+```bash
+curl -G -A "FreeBookReader (contact@example.org)" "https://openlibrary.org/search.json" \
+  --data-urlencode "q=dean koontz frankenstein ebook_access:[borrowable TO *]" \
+  --data-urlencode "fields=key,title,author_name,ebook_access,editions,editions.key,editions.ebook_access" \
+  --data-urlencode "limit=3"
+```
+
+Real response, captured 2026-10-10 (first doc only; full capture with all our fields: [samples/openlibrary-search-borrowable.json](samples/openlibrary-search-borrowable.json)):
+
+```json
+{
+  "numFound": 6,
+  "start": 0,
+  "docs": [
+    {
+      "key": "/works/OL497167W",
+      "title": "Dean Koontz's Frankenstein",
+      "author_name": [
+        "Dean Koontz",
+        "Kevin J. Anderson"
+      ],
+      "ebook_access": "borrowable",
+      "editions": {
+        "numFound": 2,
+        "start": 0,
+        "numFoundExact": true,
+        "docs": [
+          {
+            "ebook_access": "borrowable",
+            "key": "/books/OL23273427M"
+          }
+        ]
+      }
+    }
+  ]
+}
+```
+
+Without the filter the same query finds 19 works, including print-disabled-only ones such as `/works/OL15443537W`. With the filter it finds 6.
 
 ### Other example calls
 
@@ -115,7 +162,73 @@ HTTP `422`:
 | `number_of_pages_median` | number | Median across editions. |
 | `id_project_gutenberg` | array of strings | Gutenberg IDs. |
 | `id_librivox` | array of strings | LibriVox project IDs, mixed with some LibriVox URL slugs. |
+| `editions` | object | With `editions.key` and `editions.ebook_access` in `fields`: `{"numFound", "start", "numFoundExact", "docs": [one edition]}`. The edition we link. |
 | `has_fulltext`, `public_scan_b`, `ia`, `lending_edition_s`, `edition_count`, `first_publish_year`, `author_key` | | Also available; we do not map them. |
+
+## Endpoint: live loan status
+
+`GET /availability/v2?type=<type>&ids=<id>,<id>,...`
+
+**Not in the developer docs.** openlibrary.org's own pages use it (the source is `core.models.lending.get_availability`). `type` is `openlibrary_edition` (`OL…M`), `openlibrary_work` (`OL…W`, answers for one edition the server picks, which can be a translation) or `identifier` (archive.org item ID). Several IDs go in one call. The answer is an object keyed by the IDs asked for; with no IDs it is `[]`. archive.org's own `/services/availability` answers "Current user does not have access to scope" to us.
+
+```bash
+curl -A "FreeBookReader (contact@example.org)" \
+  "https://openlibrary.org/availability/v2?type=openlibrary_edition&ids=OL23273427M,OL25968798M,OL22173091M,OL50444320M,OL3311782M"
+```
+
+Real response, captured 2026-10-10. Abridged: 2 of 5 records are shown. Full capture: [samples/openlibrary-availability-v2.json](samples/openlibrary-availability-v2.json).
+
+```json
+{
+  "OL23273427M": {
+    "status": "borrow_available",
+    "available_to_browse": true,
+    "available_to_borrow": true,
+    "available_to_waitlist": false,
+    "is_printdisabled": true,
+    "is_readable": false,
+    "is_lendable": true,
+    "is_previewable": true,
+    "is_restricted": true,
+    "is_browseable": true,
+    "identifier": "deankoontzsfrank0000koon_k0s4",
+    "isbn": "0553587889",
+    "oclc": null,
+    "openlibrary_work": "OL497167W",
+    "openlibrary_edition": "OL23273427M",
+    "last_loan_date": null,
+    "num_waitlist": null,
+    "last_waitlist_date": null,
+    "__src__": "core.models.lending.get_availability"
+  },
+  "OL3311782M": {
+    "status": "error",
+    "available_to_browse": null,
+    "available_to_borrow": null,
+    "available_to_waitlist": null,
+    "is_printdisabled": null,
+    "is_readable": null,
+    "is_lendable": null,
+    "is_previewable": false,
+    "is_restricted": true,
+    "is_browseable": false,
+    "identifier": null,
+    "isbn": null,
+    "oclc": null,
+    "openlibrary_work": null,
+    "openlibrary_edition": null,
+    "last_loan_date": null,
+    "num_waitlist": null,
+    "last_waitlist_date": null,
+    "error_message": "not found",
+    "__src__": "core.models.lending.get_availability"
+  }
+}
+```
+
+* `status`: `open` (free to read), `borrow_available` (can be borrowed now), `borrow_unavailable` (every copy is on loan; join the waitlist), `private`, or `error` (with `error_message`, e.g. `"not found"` for an edition with no scan). In OL's code these are the only values. No `borrow_unavailable` turned up in about 60 borrowable editions of popular books checked on 2026-10-10.
+* `available_to_borrow: false` with `available_to_browse: true` and status `borrow_available` is normal. It means the book can be borrowed for 1 hour (browse) but not for the 14-day loan. It is still borrowable.
+* We send the editions from one page of search results (20 at most) in one call.
 
 ## Endpoint: work record
 
@@ -250,11 +363,12 @@ curl -I "https://covers.openlibrary.org/b/id/14348537-M.jpg"   # 302 to the imag
 
 Mapping onto the data model in [spec.md](spec.md):
 
-* **Book fields:** work ID from `key` (source ID), `title`, `author_name`, format `text`, URL `https://openlibrary.org/works/<id>`, cover `https://covers.openlibrary.org/b/id/<cover_i>-M.jpg`, pages from `number_of_pages_median`. No audio length.
-* **Access:** `ebook_access` maps to `public` → open, `borrowable` → borrow, `printdisabled` → print-disabled, anything else or missing → none. This covers the user story "a copyrighted book I can borrow from Open Library". Borrowing happens on openlibrary.org with the user's own account; the app links out.
+* **Only books a user can read or borrow now** (user request 2026-10-10). Every search adds `ebook_access:[borrowable TO *]` to `q` (alone, when the search uses only `title`/`author`/`isbn`). Results whose edition is not `public` or `borrowable` are dropped. The edition IDs then go to `/availability/v2` in one call, and editions whose status is not `open` or `borrow_available` are dropped. That endpoint is undocumented, so if it fails (any error, including a timeout or 4xx) the results are kept as the search returned them, and the failure does not count as an outage. Trade-off: an ISBN search finds the work only if that ISBN's edition can be read or borrowed.
+* **Book fields:** work ID from `key` (source ID), `title`, `author_name`, format `text`, URL `https://openlibrary.org/books/<edition id>` from `editions.docs[0].key` (`https://openlibrary.org/works/<id>` when there is none), cover `https://covers.openlibrary.org/b/id/<cover_i>-M.jpg`, pages from `number_of_pages_median`. No audio length.
+* **Access:** the edition's `ebook_access` (the work's when the edition has none) maps to `public` → open, `borrowable` → borrow. Anything else is dropped (the app still knows print-disabled and none, which no longer occur). This covers the user story "a copyrighted book I can borrow from Open Library". Borrowing happens on openlibrary.org with the user's own account; the app links out.
 * **Language:** a work lists every language of every edition, so a work with more than one language has an unknown language for merging. When the user picks a language, the backend sends `language=<MARC code>` (the filter) and `lang=<2-letter code>` (so the edition shown is in that language). The results can then be labeled with the requested language.
 * **Identifiers:** `isbn` (convert to ISBN-13, drop duplicates and bad check digits) for the first merge pass. `id_project_gutenberg` and `id_librivox` link the work directly to Gutenberg and LibriVox records.
-* **Search mapping:** free text and keyword use `q`; title and author use `title` and `author`; ISBN uses `isbn`. A `q` shorter than 3 characters must not be sent (HTTP `422`). Audio-only searches skip Open Library.
+* **Search mapping:** free text and keyword use `q`; title and author use `title` and `author`; ISBN uses `isbn`. A `q` shorter than 3 characters answers HTTP `422`; with the access filter appended, `q` is never that short. Audio-only searches skip Open Library.
 * **Availability:** the brief Read API gives the read or borrow link for a specific ISBN. `full access` wins over `lendable`.
 * **Offline:** Open Library books open at the source and cannot be saved (spec).
 * **Outage rule:** `5xx` and non-JSON bodies count as an outage. A timeout leaves Open Library out of that search only. `422` is our bug, not an outage. Send the `User-Agent` to get the higher rate limit.

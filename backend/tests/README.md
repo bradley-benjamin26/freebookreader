@@ -94,8 +94,14 @@ queried in parallel threads, on one executor shared by all searches.
   the search said. A download link ending in `.pdf` (usually in the OAPEN Library) is the book's PDF; any other
   link is left to the DOAB record page. DOAB's `open-access-no-cover.png` placeholder is not a cover.
 - **Invalid ISBNs are dropped.** OAPEN/DOAB data contained one with a bad check digit.
-- **Open Library always links out** (its `ebook_access` is recorded as `open`, `borrow`,
-  `print_disabled` or `none` so the UI can say how to get the book).
+- **Open Library always links out**, and only to books a user can read or borrow now (user request 2026-10-10).
+  `q` always ends with `ebook_access:[borrowable TO *]` (with `title`/`author`/`isbn` alone, `q` is just that
+  filter), which also makes the `editions` sub-query return a free or borrowable edition. The link is that edition
+  (`/books/OL…M`), because the work page can feature one with no ebook (`/works/OL497167W` did). Access comes from
+  the edition (`open` or `borrow`); anything else is dropped. Then one `/availability/v2?type=openlibrary_edition`
+  call drops editions whose status is not `open` or `borrow_available` (`borrow_unavailable` = all copies on loan,
+  `error` = no scan); an edition missing from the answer is kept. That endpoint is undocumented, so if it fails
+  in any way (including a timeout or a 4xx) the search's results are kept and it is not an outage.
 - **A known-item search** (title, author or ISBN) returns only works with a matching title/author/ISBN.
   `q` and `keyword` are exploratory and are not narrowed.
 - **A title matches with or without its subtitle** (`title_matches`; user chose option B for review #5, 2026-10-10).
@@ -139,7 +145,12 @@ queried in parallel threads, on one executor shared by all searches.
 - **A Gutenberg book in several languages** (`["en", "fr"]`) is labelled with the requested language when it is one of
   them, otherwise with its first language.
 - **A LibriVox author with no name left after normalization** (`(anon)`, `(1812-1870)`) makes no request.
-- **Open Library answering `422`** (for example a `q` shorter than 3 characters) means zero results, not an outage.
+- **Open Library answering `422`** means zero results, not an outage. (A short `q` no longer causes one, because
+  the access filter is appended to it.)
+- **Gutenberg books carry edition details** (added 2026-10-10): `release_date`, `last_updated` (ISO dates),
+  `credits` (one credit per line) and `original_publication`, so several Gutenberg eBooks of one work can be told
+  apart. Other sources leave them `null`. A missing or unreadable value is `null`, never an error. Gutendex computes
+  them (see `gutendex/books/utils.py` and api_gutendex.documentation.md).
 - **Gutenberg titles lose MARC subfield markers** (`"Black Beauty : $b The autobiography of a horse"` becomes
   `"Black Beauty: The autobiography of a horse"`), seen in live results 2026-10-10.
 - **LibriVox titles are sent without a leading article** (`The`, `A`, `Les`, `L'`, `Die`, ...). LibriVox catalogs

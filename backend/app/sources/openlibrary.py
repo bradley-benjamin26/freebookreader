@@ -1,7 +1,8 @@
 """Open Library search and lending availability (see api_openlibrary.documentation.md).
 
-Open Library books always open at openlibrary.org (read, borrow or print-disabled access),
-so the app links out; `access` records which of those applies.
+Open Library books always open at openlibrary.org, so the app links out. Only books a user can
+read or borrow now are returned: the search asks for free or borrowable works, each links to the
+edition that can be read, and editions on loan or otherwise unavailable are then dropped.
 """
 import httpx
 from pydantic import BaseModel
@@ -16,10 +17,15 @@ PAGE_SIZE = 20
 FIELDS = ",".join([
     "key", "title", "author_name", "cover_i", "ebook_access", "isbn", "oclc", "language",
     "number_of_pages_median", "id_project_gutenberg", "id_librivox",
+    "editions", "editions.key", "editions.ebook_access",
 ])
-_ACCESS: dict[str, Access] = {
-    "public": "open", "borrowable": "borrow", "printdisabled": "print_disabled",
-}
+# ebook_access is ordered no_ebook < printdisabled < borrowable < public. In `q`, this filter also
+# makes the `editions` sub-query return a free or borrowable edition of each work.
+READABLE = "ebook_access:[borrowable TO *]"
+_ACCESS: dict[str, Access] = {"public": "open", "borrowable": "borrow"}
+# availability/v2 statuses meaning "can be read or borrowed now"; others include borrow_unavailable
+# (every copy on loan), private and error (no scan).
+_AVAILABLE = {"open", "borrow_available"}
 
 
 class Availability(BaseModel):
@@ -50,10 +56,31 @@ class OpenLibrarySource:
         if not isinstance(data, dict) or not isinstance(data.get("docs"), list):
             raise SourceError("openlibrary: unexpected response")
         books = [self._book(d) for d in data["docs"] if d.get("key") and d.get("title")]
+        books = self._available([b for b in books if b.access in ("open", "borrow")])
         if query.language:   # the `language` filter guarantees an edition in that language
             for book in books:
                 book.language = query.language
         return books
+
+    def _available(self, books: list[Book]) -> list[Book]:
+        """Drop editions that cannot be read or borrowed right now (e.g. every copy on loan).
+
+        availability/v2 is undocumented (Open Library's own pages use it), so if it fails, the
+        books are kept as the search returned them.
+        """
+        editions = [_edition_id(b) for b in books]
+        wanted = [e for e in editions if e]
+        if not wanted:
+            return books
+        try:
+            data = get_json(self.client, f"{self.base_url}/availability/v2",
+                            {"type": "openlibrary_edition", "ids": ",".join(wanted)})
+        except SourceError:
+            return books
+        if not isinstance(data, dict):
+            return books
+        statuses = {e: r.get("status") for e, r in data.items() if isinstance(r, dict)}
+        return [b for b, e in zip(books, editions) if e not in statuses or statuses[e] in _AVAILABLE]
 
     def availability(self, isbn: str) -> Availability | None:
         """How the edition with this ISBN can be read on Open Library, or None."""
@@ -86,6 +113,7 @@ class OpenLibrarySource:
                 params["isbn"] = isbn
         if not ({"q", "title", "author", "isbn"} & params.keys()):
             return None   # only an invalid ISBN was given
+        params["q"] = f"{params['q']} {READABLE}" if "q" in params else READABLE
         if query.language:
             marc = to_marc_language(query.language)
             if marc:
@@ -111,6 +139,8 @@ class OpenLibrarySource:
             if values:
                 identifiers[name] = values
         cover = doc.get("cover_i")
+        edition = _edition(doc)
+        access = (edition or {}).get("ebook_access") or doc.get("ebook_access")
         return Book(
             source="openlibrary",
             source_id=work_id,
@@ -121,10 +151,27 @@ class OpenLibrarySource:
             format="text",
             pages=doc.get("number_of_pages_median"),
             identifiers=identifiers,
-            url=f"https://openlibrary.org/works/{work_id}",
+            # The work page can feature an edition with no ebook; link the one that can be read.
+            url=(f"https://openlibrary.org/books/{edition['key'].rsplit('/', 1)[-1]}" if edition
+                 else f"https://openlibrary.org/works/{work_id}"),
             cover_url=f"https://covers.openlibrary.org/b/id/{cover}-M.jpg" if cover else None,
-            access=_ACCESS.get(doc.get("ebook_access"), "none"),
+            access=_ACCESS.get(access, "none"),
         )
+
+
+def _edition(doc: dict) -> dict | None:
+    """The edition the `editions` sub-query picked for this work, or None."""
+    editions = doc.get("editions")
+    docs = editions.get("docs") if isinstance(editions, dict) else None
+    first = docs[0] if isinstance(docs, list) and docs else None
+    if isinstance(first, dict) and isinstance(first.get("key"), str) and first["key"].startswith("/books/"):
+        return first
+    return None
+
+
+def _edition_id(book: Book) -> str | None:
+    prefix = "https://openlibrary.org/books/"
+    return book.url.removeprefix(prefix) if book.url.startswith(prefix) else None
 
 
 def _unique(values) -> list[str]:

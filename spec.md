@@ -38,6 +38,7 @@ Because this includes public-domain and open access publications, it serves both
     * Search across select targets or just 1
     * View the results of the search
     * When a user performs a known-item search using a title and/or author and/or an identifier (i.e., ISBN), the user sees results only for that specific title
+    * Open Library results include only books that can be read or borrowed right now (not print-disabled-only books, books with no ebook, or books whose copies are all on loan). Each links to the edition that can be read or borrowed, not the work page.
         * A title is found with or without its subtitle ("Moby Dick" finds "Moby-Dick; or, The Whale"), and a volume of the work counts as the work ("Les Misérables" finds "Les misérables Tome I: Fantine"). Study guides, summaries, notes and other books about the book are not returned unless the user searches for their full title (user decision 2026-10-10).
     * Select format (text/audio)
     * Provide title, author, and keyword searching
@@ -75,6 +76,7 @@ Books are modeled into a simple hierarchy. There are "books" which are the indiv
     * identifiers
     * URL
     * cover image
+    * release date, last update, credits, original publication (when the source gives them; today only Project Gutenberg does)
 
 ### Data Merging
 Records are merged to create a work. First pass for matching is on ID (ISBN or OCLC Number). Next pass is exact title and author match. Final pass is fuzzy title and author match.
@@ -127,8 +129,12 @@ The top of the page displays a search box with the user's query, enabling the us
 The left side of the screen has some filter options. On mobile they display under the search box but before the listing of results.
 The results are displayed in rows in a single column. Each listing has an image of the cover, author, title, source, and a way to access that book. Clicking on a record brings the user to a details page.
 
+When a source is left out of a search, a notice above the results says so. The notice must match the reason. A source in an outage is skipped for up to 24 hours. A source that was only too slow is asked again on the next search, so its notice must not mention the 24 hours. Today the app shows the outage wording for both (found 2026-10-10).
+
 ### Details
 The details page includes a full list of the book's metadata. Maybe this could include other information such as other books by the author or the following book in a series or something.
+
+Project Gutenberg often has several eBooks of one work (Pride and Prejudice has two text editions and three audiobooks), and they merge into one work. So that the user can tell them apart, each book's card shows its eBook number, release date, last update, credits and original publication when they are known, as gutenberg.org does. See api_gutendex.documentation.md.
 
 ### Source About Pages
 Each source has a page detailing what it is and how it works. Information about how to access it normally.
@@ -179,7 +185,14 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Open Library's work records span many languages, so they often cannot be merged with other sources' records.
 - Most DOAB books' PDFs are in the OAPEN Library, whose book pages and PDF files are behind a bot check that browsers pass but HTTP clients do not. The planned workaround is for the user's device to fetch the PDF through an in-app WebView. This is unverified until the reader spike. On web, these books open in an iframe or a new tab. Some publisher links that end in `.pdf` return a web page, so the reader must fall back to the DOAB page. See api_doab.documentation.md and decision_reader.md.
 - LibriVox has no keyword search. Free text is sent as a title-prefix search, so it finds only recordings whose title starts with the query. See api_librivox.documentation.md.
+- LibriVox's server can be slower than our 15-second search limit. On 2026-10-10 every API request took 14–16 s to answer (even `limit=1` without `extended`), and the librivox.org home page did not load within 40 s. Gutenberg and archive.org answered in under 0.4 s. LibriVox was therefore left out of most searches, and every search took the full 15 s. Not decided:
+    - wait and recheck, since this may be temporary on LibriVox's side;
+    - a separate timeout per source;
+    - return the sources that are ready and add slower ones' results when they arrive (changes the API and the app);
+    - archive.org's `librivoxaudio` collection as a fallback (a new source, to be documented like the others).
 - Open Library's language filter (`language=<MARC code>`) is not in its documentation and could change.
+- Open Library's live loan status (`/availability/v2`) is not in its documentation either. If it fails, Open Library results are shown without the loan check, so a book whose copies are all on loan can appear.
+- An Open Library ISBN search finds a book only if that ISBN's edition can be read or borrowed. If another edition of the same work can be borrowed, it is not found by that ISBN.
 
 ## Saving this for future use. Do not develop. Don't even bother reading, Claude
 
