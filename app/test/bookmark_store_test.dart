@@ -65,7 +65,7 @@ void main() {
     final store = await newStore();
     await store.save('gutenberg:1', const Bookmark(progress: 0.1));
     await store.save('doab:9', const Bookmark(progress: 0.5));
-    expect(store.savedBookKeys()..sort(), ['gutenberg:1', 'doab:9']);
+    expect(store.savedBookKeys()..sort(), ['doab:9', 'gutenberg:1']);
   });
 
   test('only touches its own keys in the shared preferences', () async {

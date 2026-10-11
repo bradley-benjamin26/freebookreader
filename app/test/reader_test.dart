@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
+import 'package:free_book_reader/storage/bookmark_store.dart';
 
+import 'helpers/fakes.dart';
 import 'helpers/test_app.dart';
 
 const gutenberg = 'gutenberg:1342';
@@ -26,6 +28,7 @@ Future<void> startLoading(WidgetTester tester, TestEnv env) async {
   final open = find.byKey(const Key('open-$gutenberg'));
   await tester.ensureVisible(open);
   await tester.tap(open);
+  await tester.pump(); // a pushed route is offstage for its first frame
   await tester.pump(const Duration(seconds: 1));
 }
 
@@ -506,7 +509,7 @@ void main() {
     testWidgets('a pdf receives the book url', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-kinder', 'doab:20.500.12854/95506');
-      expect(find.textContaining('9783847406334.pdf'), findsOneWidget);
+      expect(find.textContaining('9783847408130.pdf'), findsOneWidget);
     });
 
     testWidgets('a pdf does not go through the text loader', (tester) async {

@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-These **fail by default**: `app/lib/` does not exist yet, so every file fails to load.
+All 254 pass against `app/lib/` (2026-10-10).
 
 ```bash
 cd app
@@ -11,10 +11,14 @@ flutter test test/reader_test.dart
 
 **Provisional:** `reader_test.dart` assumes the app draws the book text itself. The reader package has not been chosen (see [decision_reader.md](../../decision_reader.md)), and about 40 of those tests will move to a fake `ReaderEngine` once it is. TTS and offline-saving tests do not exist yet.
 
-Pure-Dart suites (`models`, `search_api`, `bookmark_store`, `reader_settings`, `format`) were checked
-against a throwaway implementation and pass (78 tests). The widget and accessibility suites were
-**not** run against an implementation, so expect to adjust a test when it conflicts with a reasonable
-design. Change the test and this README together.
+Change a test and this README together.
+
+### Test changes made while building the app (2026-10-10)
+
+- `bookmark_store_test`: the sorted key list is `['doab:9', 'gutenberg:1']` (the test sorted, then expected the unsorted order).
+- `reader_test`: imports `helpers/fakes.dart` and `bookmark_store.dart` (it used `longText` and `Bookmark` without them). The PDF file name is `9783847408130.pdf`, as in the fixture (`9783847406334` is the print ISBN).
+- `helpers/test_app.dart` `openDetails`: scrolls a result into view before tapping it. On a phone the third result is below the fold.
+- `search_results_test` (progress indicator) and `reader_test` (`startLoading`): pump an extra frame after pushing a page. Flutter keeps a pushed route offstage for its first frame, and its semantics appear once the transition ends.
 
 ## Milestones to tests
 
@@ -48,6 +52,11 @@ app/lib/
   services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/dispose
   util/format.dart             formatDuration, formatAuthors, languageName, sourceName, actionLabel
 ```
+
+Also in `lib/` (not part of the test contract): `main.dart` (real services; backend address from
+`--dart-define=BACKEND_URL=...`, default `http://localhost:8000`), `ui/` (pages), `reader/pagination.dart`
+and `reader/settings_sheet.dart` (our own renderer), `ui/audio_player.dart` (player shared by the
+audiobook page and the reader).
 
 Everything outside the app (HTTP, shared preferences, audio, launching URLs, loading book text) is
 injected so tests can fake it.

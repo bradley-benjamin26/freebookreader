@@ -1,0 +1,72 @@
+// Text shown (and spoken by screen readers) for durations, names and actions.
+import '../models/models.dart';
+
+/// "13 hr 6 min", "1 hr", "18 min", "45 sec"; null when unknown.
+String? formatDuration(int? seconds) {
+  if (seconds == null || seconds <= 0) return null;
+  if (seconds < 60) return '$seconds sec';
+  final hours = seconds ~/ 3600;
+  final minutes = (seconds % 3600) ~/ 60;
+  return [if (hours > 0) '$hours hr', if (minutes > 0) '$minutes min'].join(' ');
+}
+
+/// "A", "A and B", "A, B and C".
+String formatAuthors(List<String> authors) => joinNames(authors) ?? 'Unknown author';
+
+String? joinNames(List<String> names) => switch (names) {
+      [] => null,
+      [final one] => one,
+      _ => '${names.sublist(0, names.length - 1).join(', ')} and ${names.last}',
+    };
+
+const languageNames = {
+  'en': 'English',
+  'fr': 'French',
+  'de': 'German',
+  'es': 'Spanish',
+  'it': 'Italian',
+  'pt': 'Portuguese',
+  'nl': 'Dutch',
+  'la': 'Latin',
+  'fi': 'Finnish',
+  'sv': 'Swedish',
+  'da': 'Danish',
+  'pl': 'Polish',
+  'ru': 'Russian',
+  'el': 'Greek',
+  'zh': 'Chinese',
+  'ja': 'Japanese',
+};
+
+String languageName(String? code) {
+  if (code == null || code.isEmpty) return 'Unknown language';
+  return languageNames[code] ?? code.toUpperCase();
+}
+
+const sourceIds = ['gutenberg', 'librivox', 'doab', 'openlibrary'];
+
+const _sourceNames = {
+  'gutenberg': 'Project Gutenberg',
+  'librivox': 'LibriVox',
+  'doab': 'DOAB',
+  'openlibrary': 'Open Library',
+};
+
+String sourceName(String id) => _sourceNames[id] ?? id;
+
+/// The verb on a book's button: "Read", "Listen", "Borrow" or "View".
+String actionVerb(Book book) {
+  if (book.inApp) return book.format == BookFormat.audio ? 'Listen' : 'Read';
+  return book.access == Access.borrow ? 'Borrow' : 'View';
+}
+
+/// The accessible name of a book's button. It starts with the visible verb
+/// and always names the book, so each button is unique to a screen reader.
+String actionLabel(Book book) {
+  final what = '${book.title} by ${formatAuthors(book.authors)}';
+  return switch (actionVerb(book)) {
+    'Read' => 'Read $what',
+    'Listen' => 'Listen to $what',
+    final verb => '$verb $what at ${sourceName(book.source)}',
+  };
+}

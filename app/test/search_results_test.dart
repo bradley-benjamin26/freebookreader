@@ -239,7 +239,10 @@ void main() {
       await pumpApp(tester, env);
       await tester.enterText(find.byKey(const Key('search-field')), 'pride');
       await tester.tap(find.byKey(const Key('search-submit')));
+      // A pushed route is offstage for its first frame (Flutter measures heroes
+      // then), and its semantics appear once the page transition ends.
       await tester.pump();
+      await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const Key('searching')), findsOneWidget);
       expect(tester.getSemantics(find.byKey(const Key('searching'))),
           containsSemantics(label: 'Searching', isLiveRegion: true));

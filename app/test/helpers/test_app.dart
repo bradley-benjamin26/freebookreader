@@ -100,6 +100,7 @@ Future<void> searchFor(WidgetTester tester, String text) async {
 /// Runs a search then opens a work's details page.
 Future<void> openDetails(WidgetTester tester, String workId) async {
   await searchFor(tester, 'pride');
+  await tester.ensureVisible(find.byKey(Key('result-$workId')));
   await tester.tap(find.byKey(Key('result-$workId')));
   await tester.pumpAndSettle();
 }
