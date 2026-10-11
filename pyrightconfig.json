@@ -1,0 +1,17 @@
+{
+  "include": ["backend", "gutendex", "spikes"],
+  "exclude": [
+    "**/venv",
+    "**/.venv",
+    "**/__pycache__",
+    "**/node_modules",
+    "**/build",
+    "**/.dart_tool",
+    "gutendex/catalog_files",
+    "gutendex/static",
+    "backend/cache",
+    "samples",
+    "app",
+    "spikes/reader"
+  ]
+}
