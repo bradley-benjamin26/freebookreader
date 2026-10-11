@@ -1,6 +1,6 @@
 # Free Book Reader
 
-The Free Book Reader is an application to find and read free books available through different sources: DOAB (the Directory of Open Access Books), Open Library, LibriVox, and Project Gutenberg. When possible, the material can be read within the app with a viewer, but when impossible, a user is directed to the resource at the target.
+The Free Book Reader is an application to find and read free books available through different sources: DOAB (the Directory of Open Access Books), Open Library, LibriVox, Project Gutenberg, and HathiTrust (planned, not built). When possible, the material can be read within the app with a viewer, but when impossible, a user is directed to the resource at the target.
 
 ## Statement on Accessibility
 The application must be accessibility forward and is expected to meet at least WCAG 2.2 AA. A blind or low vision user must be able to navigate the interface, access audiobooks, and have access to screen-reader support for print materials.
@@ -8,7 +8,7 @@ The application must be accessibility forward and is expected to meet at least W
 ## Data Sources
 See externalSources.md. API documentation for each source is in api_*name*.documentation.md (e.g., api_gutendex.documentation.md).
 
-HathiTrust is not part of this project for now because it has no search API. It will be handled as a separate project.
+HathiTrust (source id `hathitrust`) is planned, not built (decision 2026-10-11, see decision_hathitrust.md and api_hathitrust.documentation.md). It has no search API, so the backend searches a local index built from HathiTrust's Hathifiles (bulk files with one row per volume, public-domain and open-license volumes only). The Bibliographic API is used only for lookups by ID. A HathiTrust book opens in HathiTrust's own reader (`babel.hathitrust.org`) through a link; the app does not read these books itself. Showing that reader inside the app (a WebView, or an iframe on web) is a later step that depends on HathiTrust's framing headers and terms, which are not checked yet.
 
 ## Audience
 
@@ -42,6 +42,7 @@ Because this includes public-domain and open access publications, it serves both
         * A title is found with or without its subtitle ("Moby Dick" finds "Moby-Dick; or, The Whale"), and a volume of the work counts as the work ("Les Misérables" finds "Les misérables Tome I: Fantine"). Study guides, summaries, notes and other books about the book are not returned unless the user searches for their full title (user decision 2026-10-10).
     * Select format (text/audio)
     * Provide title, author, and keyword searching
+    * HathiTrust results (planned) include only volumes that anyone can read (`access = allow` in the Hathifiles: public domain and open licenses), found in a local index and not through a live search. Volumes that are public domain only in the United States are shown with a note that they may open only there. A catalog record can have many volumes (copies and volumes of a set); each shows its volume label and holding library. Each links to HathiTrust's reader.
 * Reading experience
     * Dark and Light mode
     * Font size can increase and font style can change to accommodate readers' needs. Spacing can be configured.
@@ -77,6 +78,7 @@ Books are modeled into a simple hierarchy. There are "books" which are the indiv
     * URL
     * cover image
     * release date, last update, credits, original publication (when the source gives them; today only Project Gutenberg does)
+    * volume label (HathiTrust's `description`, e.g. "v.2") and holding library (HathiTrust only)
 
 ### Data Merging
 Records are merged to create a work. First pass for matching is on ID (ISBN or OCLC Number). Next pass is exact title and author match. Final pass is fuzzy title and author match.
@@ -89,6 +91,8 @@ Rules:
 - A record with no author is never merged on title alone.
 - ISBN-10s are converted to ISBN-13. Identifiers with a bad check digit are ignored.
 - Chapters (DOAB lists them) are not books.
+- HathiTrust data contains placeholder ISBNs (`9780000000002` and strings like `000000000061rub` appear on unrelated books). The ID pass ignores any ISBN that is not valid, and `9780000000002` explicitly.
+- HathiTrust titles and authors are MARC strings ("Pride and prejudice / by Jane Austen", "Austen, Jane, 1775-1817.") and its languages are 3-letter MARC codes. They are normalized before matching (planned).
 
 ### Hierarchy
 Work
@@ -112,6 +116,9 @@ The reader is chosen by a spike, not yet by a decision. Plan: try `flutter_readi
 
 ### Project Gutenberg access (decision)
 Project Gutenberg is served by a self-hosted copy of [Gutendex](https://github.com/garethbjohnson/gutendex) (in `gutendex/`), a Django + Postgres app. It downloads Project Gutenberg's nightly catalog (metadata only, about 3 GB on disk) and exposes it as a JSON search API. Gutendex does not store book text; books are read from gutenberg.org through the links in each record. For the web reader, the backend downloads a book's EPUB from gutenberg.org the first time someone opens it, keeps it in a disk cache (2 GB by default; least recently used books are removed first) and serves it with a Readium manifest. Web needs this because gutenberg.org sends no CORS headers and the web reader cannot open an .epub file. The catalog must be refreshed on a schedule (nightly) with `manage.py updatecatalog`. Gutendex has no ISBN or other identifier search, so Gutenberg records can only be merged on title and author. See api_gutendex.documentation.md.
+
+### HathiTrust access (decision 2026-10-11, planned)
+HathiTrust has no search API, so it is searched through a local index of its Hathifiles: one row per volume, loaded only when `access = allow`, refreshed from the daily update files and rebuilt from the monthly full file (1.2 GB compressed). The Bibliographic API (`catalog.hathitrust.org/api/volumes/...`, works from our IP) is used only for lookups by ID; OAI-PMH is not used (a full harvest takes about 2 days and 10 GB). HathiTrust's reader and downloads (`babel.hathitrust.org`) are blocked for our IP, so books open in the user's browser at `https://babel.hathitrust.org/cgi/pt?id=<htid>`. Later, a WebView (mobile, desktop) or iframe (web, only if HathiTrust's headers allow it) could show that reader inside the app, as a third `ReaderEngine`; this waits for the checks listed in decision_hathitrust.md. Open: how to show volumes of one record, `pdus` (US-only) volumes, index size. See decision_hathitrust.md and api_hathitrust.documentation.md.
 
 ## UX
 
@@ -157,6 +164,8 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Search page passes accessibility test with search results displaying
 - The about pages for the different services are created and pass usability testing
 - The system that provides Project Gutenberg access is built and tested
+- HathiTrust (planned; no tests yet): the Hathifile index is built from `access = allow` rows and kept up to date with the daily files; HathiTrust is searched like the other sources; its books link to the HathiTrust reader; its records are merged into works (with placeholder ISBNs ignored). Tests are written first (decision_hathitrust.md, "Effect on the tests").
+- HathiTrust in-app reader (later, not scheduled): done only after the checks in decision_hathitrust.md pass
 - Records from the different targets are merged into works following the Data Merging rules
 - The viewer displays books from the sources that allow in-app reading, and other books link to the source
 - The screen to read the book passes accessibility testing
@@ -182,6 +191,9 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Fuzzy matching can wrongly merge or fail to merge records.
 - A source being down limits results for 24 hours, so search may look incomplete.
 - DOAB's REST search rejects our IP address, so DOAB is searched through OpenSearch plus one OAI-PMH lookup per result (about 1.5 s). DOAB cannot filter by language, so a search in another language may find few DOAB books. See api_doab.documentation.md.
+- HathiTrust (planned): its book reader, page text and PDFs (`babel.hathitrust.org`) return a Cloudflare challenge or "Blocked from HathiTrust" to our IP, so the backend cannot read HathiTrust books; users open them in HathiTrust's reader. Whether that reader can be shown in an iframe or WebView, and whether HathiTrust's terms allow it, is unverified. Its accessibility with a screen reader is outside our control. Some books can be downloaded only by a signed-in user (per the project owner; not verified). See api_hathitrust.documentation.md and decision_hathitrust.md.
+- HathiTrust's local index is a copy of its data: the full file is 1.2 GB compressed and its `allow` row count is not yet measured. It is only as fresh as our last import, and the way removed volumes appear in the daily files is unknown.
+- HathiTrust `pdus` volumes (public domain in the US only) may open only for users in the US; we cannot tell where a user is.
 - Open Library's work records span many languages, so they often cannot be merged with other sources' records.
 - Most DOAB books' PDFs are in the OAPEN Library, whose book pages and PDF files are behind a bot check that browsers pass but HTTP clients do not. The planned workaround is for the user's device to fetch the PDF through an in-app WebView. This is unverified until the reader spike. On web, these books open in an iframe or a new tab. Some publisher links that end in `.pdf` return a web page, so the reader must fall back to the DOAB page. See api_doab.documentation.md and decision_reader.md.
 - LibriVox has no keyword search. Free text is sent as a title-prefix search, so it finds only recordings whose title starts with the query. See api_librivox.documentation.md.

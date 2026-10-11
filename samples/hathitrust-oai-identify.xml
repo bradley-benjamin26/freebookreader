@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/ http://www.openarchives.org/OAI/2.0/OAI-PMH.xsd"><responseDate>2026-10-11T15:19:29Z</responseDate><request verb="Identify">https://oai.hathitrust.org/</request><Identify><repositoryName>HathiTrust</repositoryName><baseURL>https://oai.hathitrust.org/</baseURL><protocolVersion>2.0</protocolVersion><adminEmail>support@hathitrust.org</adminEmail><earliestDatestamp>2013-08-01T00:00:00Z</earliestDatestamp><deletedRecord>transient</deletedRecord><granularity>YYYY-MM-DD</granularity><description><oai-identifier xmlns="http://www.openarchives.org/OAI/2.0/oai-identifier" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.openarchives.org/OAI/2.0/oai-identifier http://www.openarchives.org/OAI/2.0/oai-identifier.xsd"><scheme>oai</scheme><repositoryIdentifier>hathitrust.org</repositoryIdentifier><delimiter>:</delimiter><sampleIdentifier>oai:hathitrust.org:012348511</sampleIdentifier></oai-identifier></description><description>
+  <eprints xmlns="http://www.openarchives.org/OAI/1.1/eprints" xsi:schemaLocation="http://www.openarchives.org/OAI/1.1/eprints http://www.openarchives.org/OAI/1.1/eprints.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <content>
+      <URL>https://www.hathitrust.org/member-libraries/resources-for-librarians/data-resources/oai-feed/</URL>
+      <text>The Open Archives Initiative Protocol for Metadata Harvesting (OAI-PMH) is a protocol used in libraries and archives for the automated delivery of structured bibliographic metadata. You can use this option to retrieve metadata in MARC21 or unqualified Dublin Core formats in XML structure. The OAI feed allows you to access new and updated records and (for the full set of records) discover if any have been deleted. For best practices related to OAI, and a list of potential harvesters, see https://www.ideals.illinois.edu/items/50369.</text>
+    </content>
+    <metadataPolicy>
+      <URL>https://www.hathitrust.org/the-collection/terms-conditions/metadata-sharing-and-use-policy/#bibliographic-metadata-sharing-policy</URL>
+      <text>Metadata is provided under the terms of the HathiTrust Bibliographic Metadata Sharing Policy. See details at the above URL.</text>
+    </metadataPolicy>
+    <dataPolicy>
+      <URL>https://www.hathitrust.org/the-collection/search-access/access-use-policy/</URL>
+        <text>HathiTrust is a collaborative library initiative. Users are encouraged to cite and link to digital content and are free to do so without asking for permission. Depending on the source of the digitized work, licenses or other contractual terms may restrict further distribution or other uses. For volume-specific information, please consult the &lt;dc:rights&gt; element (oai_dc) or 856$r (marc21). You need to make your own assessment of the copyright or other legal concerns related to uses beyond those provided by HathiTrust for particular works.
+
+The possible Access and Use statements that apply to each book are listed at the URL above.</text>
+    </dataPolicy>
+  </eprints>
+</description>
+</Identify></OAI-PMH>

@@ -16,6 +16,13 @@ api url: https://library.oapen.org/rest/search?query=[search query]
 
 Seems to only have PDF and a PDF viewer... so try to make that work
 
+## HathiTrust (planned, not built; see decision_hathitrust.md)
+Documentation: https://www.hathitrust.org/member-libraries/resources-for-librarians/data-resources/bibliographic-api/ (Bibliographic API), https://www.hathitrust.org/member-libraries/resources-for-librarians/data-resources/hathifiles/ (Hathifiles), https://www.hathitrust.org/member-libraries/resources-for-librarians/data-resources/oai-pmh-feed/ (OAI-PMH)
+
+Search: no API. Load the Hathifiles (`https://www.hathitrust.org/files/hathifiles/hathi_file_list.json` lists them) into a local index.
+Volume lookup: https://catalog.hathitrust.org/api/volumes/brief/<id type>/<id value>.json
+Reader (link out): https://babel.hathitrust.org/cgi/pt?id=<htid>
+
 ## LibriVox
 api url: https://librivox.org/api/feed/audiobooks
 documentation: https://librivox.org/api/info

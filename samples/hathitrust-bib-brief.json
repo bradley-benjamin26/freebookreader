@@ -1,0 +1,31 @@
+{
+    "records": {
+        "008586797": {
+            "recordURL": "https://catalog.hathitrust.org/Record/008586797",
+            "titles": [
+                "History of the United States, from their first settlement as colonies, to the close of Mr. Tyler's administration, in 1845 : to which are added questions, adapted to the use of schools"
+            ],
+            "isbns": [],
+            "issns": [],
+            "oclcs": [
+                "2686466"
+            ],
+            "lccns": [],
+            "publishDates": [
+                "1849"
+            ]
+        }
+    },
+    "items": [
+        {
+            "orig": "New York Public Library",
+            "fromRecord": "008586797",
+            "htid": "nyp.33433012110726",
+            "itemURL": "https://babel.hathitrust.org/cgi/pt?id=nyp.33433012110726",
+            "rightsCode": "pd",
+            "lastUpdate": "20260330",
+            "enumcron": false,
+            "usRightsString": "Full view"
+        }
+    ]
+}

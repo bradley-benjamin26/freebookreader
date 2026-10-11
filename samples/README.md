@@ -20,7 +20,12 @@ Captured 2026-10-10 with curl. Real responses, unedited.
 | doab-opensearch.xml | DOAB OpenSearch `open-search/discover?query=pride&rpp=10&start=0` (6 of the 10 entries are stale "Untitled" records) |
 | doab-opensearch-empty.xml | DOAB OpenSearch `open-search/discover?query=zzzzqqqxx&rpp=10` (no results) |
 | doab-xoai/`<n>`.xml | DOAB OAI-PMH `verb=GetRecord&metadataPrefix=xoai&identifier=oai:directory.doabooks.org:20.500.12854/<n>`, one file per hit in doab-opensearch.xml (the stale ones answer `idDoesNotExist`), plus 133576 (a German book from `query=kinder`) |
+| hathitrust-bib-brief.json | HathiTrust Bibliographic API `https://catalog.hathitrust.org/api/volumes/brief/oclc/2686466.json` (2026-10-11; a public-domain volume) |
+| hathitrust-bib-brief-not-viewable.json | `.../brief/oclc/424023.json` (2026-10-11; two search-only volumes) |
+| hathitrust-hathifile-rows.tsv | Line 1: the column names from `hathi_field_list.txt`. Then 2 `pd`/`allow` rows from `hathi_upd_20261010.txt.gz` (the real files have no header row) |
+| hathitrust-oai-identify.xml | `https://oai.hathitrust.org/?verb=Identify` (2026-10-11) |
 
 ## Not captured
 - **Gutendex** (gutendex.com): returned a Cloudflare bot challenge (HTTP 403) to curl. The `gutendex-*.json` files were captured from the self-hosted instance on 2026-10-10 and pretty-printed. They were captured again the same day, with the same requests, after our Gutendex gained `release_date`, `last_updated`, `credits` and `original_publication` (see api_gutendex.documentation.md); gutendex.com does not have these fields.
 - **DOAB REST search** (directory.doabooks.org/rest/search): returned "You address is not allowed to access this API." (HTTP 403). It is restricted by IP address, like OAPEN's.
+- **HathiTrust reader** (`babel.hathitrust.org`) and the HathiTrust website pages: Cloudflare challenge or "Blocked from HathiTrust" (HTTP 403) to curl; see api_hathitrust.documentation.md.
