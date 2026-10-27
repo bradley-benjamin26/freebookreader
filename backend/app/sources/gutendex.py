@@ -14,6 +14,7 @@ _KEEP = ("text/html", "application/epub+zip", "text/plain", "audio/")
 
 class GutendexSource:
     name = "gutenberg"
+    own = True   # our service: its failures are never an outage (restarts, updatecatalog)
 
     def __init__(self, client: httpx.Client, base_url: str):
         self.client = client

@@ -251,6 +251,25 @@ class TestOutages:
         service.search(SearchQuery(q="y"))
         assert len(bad.calls) == 2
 
+    def test_a_failure_of_our_own_source_is_not_an_outage(self, clock):
+        """Our own Gutendex restarts (deploys, updatecatalog) must not hide Gutenberg for 24 hours."""
+        own = FakeSource("gutenberg", error=SourceError("connection refused"))
+        own.own = True
+        service, outage = build([own], clock)
+        first = service.search(SearchQuery(q="x"))
+        service.search(SearchQuery(q="y"))
+        assert len(own.calls) == 2
+        assert reasons(first) == {"gutenberg": "error"}
+        assert outage.is_available("gutenberg")
+
+    def test_a_failure_of_an_outside_source_is_still_an_outage(self, clock):
+        outside = FakeSource("librivox", error=SourceError("500"))
+        service, outage = build([outside], clock)
+        service.search(SearchQuery(q="x"))
+        service.search(SearchQuery(q="y"))
+        assert len(outside.calls) == 1
+        assert not outage.is_available("librivox")
+
     def test_failed_source_is_not_called_again_for_24_hours(self, clock):
         bad = FakeSource("librivox", error=SourceError("500"))
         service, _ = build([bad, FakeSource("gutenberg")], clock)

@@ -23,6 +23,10 @@ def test_source_name():
     assert GutendexSource.name == "gutenberg"
 
 
+def test_gutendex_is_our_own_service():
+    assert GutendexSource.own is True
+
+
 class TestRequests:
     def test_free_text_query_uses_search_on_the_books_endpoint(self, source_for, sample_json):
         source, rec = source_for(json=sample_json("gutendex-search.json"))

@@ -173,7 +173,7 @@ queried in parallel threads, on one executor shared by all searches.
   It has no keyword search, so free text is a title-prefix search.
 - **A timeout is not an outage.** A source that misses the 12 s deadline (`FBR_SEARCH_TIMEOUT_SECONDS`, review 2026-10-11, #20: the spec's 15 s for results includes the merging and the network after it), or whose HTTP request times out
   (`SourceTimeout`), is listed in `unavailable_sources` for that search only and is asked again next time.
-  Errors (refused connections, `5xx`, unusable bodies) still start the 24-hour outage.
+  Errors (refused connections, `5xx`, unusable bodies) still start the 24-hour outage, except for a source with `own = True` (Gutendex, our own service): its errors leave it out of that search only, reason `error` (audit 2026-10-27, F2).
 - **`skipped` says why a source is missing** (review 2026-10-11, #13). `unavailable_sources` lists every selected
   source missing from the response; `skipped` is the same list as `{source, reason}`, reason one of `outage`
   (down, not asked for up to 24 hours), `timeout` (too slow, asked again next time), `busy` (4 searches already

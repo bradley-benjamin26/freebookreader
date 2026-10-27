@@ -22,7 +22,8 @@ MAX_IN_FLIGHT = 4
 class SkippedSource(BaseModel):
     source: str
     # outage: down, not asked for up to 24 hours. timeout: too slow, asked again next time.
-    # busy: it still has MAX_IN_FLIGHT searches running. rejected: it answered 4xx. error: our adapter crashed.
+    # busy: it still has MAX_IN_FLIGHT searches running. rejected: it answered 4xx. error: our adapter crashed,
+    # or our own Gutendex failed (never an outage).
     reason: Literal["outage", "timeout", "busy", "rejected", "error"]
 
 
@@ -97,6 +98,10 @@ class SearchService:
             elif isinstance(error, SourceRejected):
                 log.warning("source %s rejected the request: %s", source.name, error)
                 missing[source.name] = "rejected"
+            elif isinstance(error, SourceError) and getattr(source, "own", False):
+                # Our own service (Gutendex): a restart must not hide it for 24 hours.
+                log.warning("own source %s failed: %r", source.name, error)
+                missing[source.name] = "error"
             elif isinstance(error, SourceError):
                 log.warning("source %s failed: %r", source.name, error)
                 self.outage.record_failure(source.name)
