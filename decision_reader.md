@@ -177,3 +177,5 @@ This machine can only run web. No Android SDK, Xcode is incomplete and CocoaPods
 Web test source that works without a streamer: a sample Web Publication, `https://alice.dita.digital/manifest.json` (CORS open, checked). Tried 2026-10-10 in Chrome: it opens and shows the book (reported by the user; no timings or other checks recorded yet).
 
 Next: TTS in the `ReaderEngine` (web: pick a local voice for the book's language), then repeat on an iPhone and an Android phone for 1, 5, 7, 8, 10, 12. Before Readium can be used on mobile, do the native setup (Android desugaring and `FlutterFragmentActivity`, iOS Podfile). The app now depends on flutter_readium on every platform, and Android and iOS builds have not been tried since it was added.
+
+(The spikes were removed on 2026-10-27, audit F8; they are in git history at commit c156aba: `git show c156aba:spikes/reader/README.md`.)

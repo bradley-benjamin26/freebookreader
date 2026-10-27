@@ -1,5 +1,5 @@
 {
-  "include": ["backend", "gutendex", "spikes"],
+  "include": ["backend", "gutendex"],
   "exclude": [
     "**/venv",
     "**/.venv",
@@ -11,7 +11,6 @@
     "gutendex/static",
     "backend/cache",
     "samples",
-    "app",
-    "spikes/reader"
+    "app"
   ]
 }
