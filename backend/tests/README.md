@@ -266,5 +266,5 @@ queried in parallel threads, on one executor shared by all searches.
   tested in Gutendex: `UpdateCatalogTests` in `gutendex/books/tests.py`.)
 
 - **Source answers are cached** (audit 2026-10-27, F1): `TestCache` in `test_search_service.py`. `cache_seconds` (`FBR_SEARCH_CACHE_SECONDS`, default 300 in `Settings`, 0 in the bare `SearchService`) keeps each source's good answer to a query; the key leaves out `sources`, errors are never kept, at most `cache_entries` are held, and callers get copies.
-- **EPUB downloads are bounded** (audit 2026-10-27, F3): `TestDownloadLimits` in `test_publications.py`. `PublicationStore(max_parallel_downloads=4)` (a slot is given back when a download fails); `.part` files older than `STALE_PART_SECONDS` (1 h) are removed when a download finishes.
+- **EPUB downloads are bounded** (audit 2026-10-27, F3): `TestDownloadLimits` in `test_publications.py`. `PublicationStore(max_parallel_downloads=4)` (a slot is given back when a download fails; a request waits at most `download_wait_seconds`=10 for one, then `PublicationTimeout`/504); `.part` files older than `STALE_PART_SECONDS` (1 h) are removed when a download finishes.
 - **`/health` reports the index** (audit 2026-10-27, F5): `{"status": "ok", "hathitrust_index": bool}`, always 200 (`test_health_says_when_the_hathitrust_index_*` in `test_api.py`).

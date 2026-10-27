@@ -247,6 +247,20 @@ class TestDownloadLimits:
             store.manifest(1)
         assert store.manifest(2)["metadata"]["title"]
 
+    def test_a_request_does_not_wait_for_a_download_slot_without_limit(self, tmp_path):
+        """Final review: waiting for a slot held a worker thread and the book's lock for as long as it took."""
+        peak = [0]
+        gutenberg = self.slow_gutenberg(peak, seconds=0.5)
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path / "epub",
+                                 max_parallel_downloads=1, download_wait_seconds=0.05)
+        with ThreadPoolExecutor(1) as pool:
+            running = pool.submit(store.manifest, 2)
+            time.sleep(0.1)
+            with pytest.raises(PublicationTimeout):
+                store.manifest(1)
+            assert running.result()["metadata"]["title"]
+        assert list((tmp_path / "epub").glob("*.part")) == []
+
     def test_old_part_files_are_removed(self, tmp_path):
         cache = tmp_path / "epub"
         cache.mkdir()

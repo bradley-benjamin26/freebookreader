@@ -42,6 +42,8 @@ CATALOG_TIMEOUT_SECONDS = 3
 # Downloads running at once, whatever the books, and how long an unfinished download (.part) may lie around.
 MAX_PARALLEL_DOWNLOADS = 4
 STALE_PART_SECONDS = 3600
+# How long a request waits for a download slot before it answers 504 (it holds a worker thread meanwhile).
+DOWNLOAD_WAIT_SECONDS = 10
 
 _CONTAINER = "{urn:oasis:names:tc:opendocument:xmlns:container}"
 _OPF = "{http://www.idpf.org/2007/opf}"
@@ -246,7 +248,8 @@ class PublicationStore:
                  max_download_bytes: int = MAX_DOWNLOAD_BYTES, max_cache_bytes: int = MAX_CACHE_BYTES,
                  max_entry_bytes: int = MAX_ENTRY_BYTES,
                  catalog: Callable[[int], bool | None] | None = None,
-                 max_parallel_downloads: int = MAX_PARALLEL_DOWNLOADS):
+                 max_parallel_downloads: int = MAX_PARALLEL_DOWNLOADS,
+                 download_wait_seconds: float = DOWNLOAD_WAIT_SECONDS):
         self._client = client
         self._catalog = catalog
         self._base_url = gutenberg_url.rstrip("/")
@@ -259,6 +262,7 @@ class PublicationStore:
         self._lock = threading.Lock()
         self._locks = [threading.Lock() for _ in range(_BOOK_LOCKS)]
         self._downloads = threading.BoundedSemaphore(max_parallel_downloads)
+        self._download_wait = download_wait_seconds
         self._books: dict[int, _Book] = {}
         self._last_touch = 0
 
@@ -330,17 +334,22 @@ class PublicationStore:
             return book
 
     def _download(self, book_id: int, path: Path) -> _Book:
-        self._cache_dir.mkdir(parents=True, exist_ok=True)
-        fd, temp_name = tempfile.mkstemp(dir=self._cache_dir, suffix=".part")
-        temp = Path(temp_name)
+        if not self._downloads.acquire(timeout=self._download_wait):
+            raise PublicationTimeout("too many books are downloading; try again")
         try:
-            with self._downloads, os.fdopen(fd, "wb") as file:
-                self._fetch(f"{self._base_url}/ebooks/{book_id}.epub3.images", file)
-            book = _Book(path, _read_manifest(temp, self._package_limit))
-            os.replace(temp, path)
-            self._touch(path)
+            self._cache_dir.mkdir(parents=True, exist_ok=True)
+            fd, temp_name = tempfile.mkstemp(dir=self._cache_dir, suffix=".part")
+            temp = Path(temp_name)
+            try:
+                with os.fdopen(fd, "wb") as file:
+                    self._fetch(f"{self._base_url}/ebooks/{book_id}.epub3.images", file)
+                book = _Book(path, _read_manifest(temp, self._package_limit))
+                os.replace(temp, path)
+                self._touch(path)
+            finally:
+                temp.unlink(missing_ok=True)
         finally:
-            temp.unlink(missing_ok=True)
+            self._downloads.release()
         self._evict(keep=path)
         return book
 
