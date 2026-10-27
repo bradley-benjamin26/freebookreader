@@ -28,7 +28,18 @@ class ReadiumReaderEngine implements ReaderEngine {
   final _positions = StreamController<ReaderPosition>.broadcast();
   final _subscriptions = <StreamSubscription<Object?>>[];
 
+  // Readium has one publication for the whole app. Opening and closing go through this queue, so a book that
+  // finishes opening after its reader closed is closed before the next reader opens its own.
+  static Future<void> _plugin = Future.value();
+
+  static Future<T> _inTurn<T>(Future<T> Function() call) {
+    final result = _plugin.then((_) => call());
+    _plugin = result.then((_) {}, onError: (_) {});
+    return result;
+  }
+
   late final _ReadiumReadAloud _readAloud;
+  bool _disposed = false;
   Publication? _publication;
   Locator? _initial;
   double? _pendingProgress;
@@ -44,7 +55,13 @@ class ReadiumReaderEngine implements ReaderEngine {
     // On web these become the view's initial preferences when it mounts.
     await apply(settings);
     try {
-      _publication = await _readium.openPublication(manifest.toString());
+      final publication = await _inTurn(() async {
+        final opened = await _readium.openPublication(manifest.toString());
+        if (_disposed) await _readium.closePublication();
+        return opened;
+      });
+      if (_disposed) throw const ReaderOpenException('The reader was closed while the book opened.');
+      _publication = publication;
     } on ReadiumException catch (e) {
       throw ReaderOpenException(e.message);
     }
@@ -122,11 +139,12 @@ class ReadiumReaderEngine implements ReaderEngine {
 
   @override
   Future<void> dispose() async {
+    _disposed = true;
     for (final s in _subscriptions) {
       await s.cancel();
     }
     await _readAloud.dispose();
-    if (_publication != null) await _readium.closePublication();
+    if (_publication != null) await _inTurn(_readium.closePublication);
     await _positions.close();
   }
 }

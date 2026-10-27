@@ -3,10 +3,12 @@
 HathiTrust has no search API, so the Hathifiles are loaded here (app/hathitrust_update.py) and searched
 without calling HathiTrust. Only volumes anyone can read are in it (see app/hathifile.py).
 """
+import fcntl
 import os
 import re
 import sqlite3
-from contextlib import closing
+import unicodedata
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -73,9 +75,28 @@ class IndexState:
     updated_through: str      # "YYYYMMDD"
 
 
+class IndexBusy(Exception):
+    """Another process is writing the index."""
+
+
 class HathiIndex:
     def __init__(self, path: Path | str):
         self.path = Path(path)
+
+    @contextmanager
+    def writing(self):
+        """Hold this while reading the state, planning and writing, so that two updates (a nightly one and one
+        run by hand) cannot build over each other. Raises IndexBusy at once if another holds it."""
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        with open(self.path.with_name(self.path.name + ".lock"), "a") as lock:
+            try:
+                fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError as error:
+                raise IndexBusy(f"{self.path} is being updated by another process") from error
+            try:
+                yield
+            finally:
+                fcntl.flock(lock, fcntl.LOCK_UN)
 
     def exists(self) -> bool:
         return self.path.is_file()
@@ -204,6 +225,7 @@ class HathiIndex:
 
 def _search_words(text: str) -> list[str]:
     """The words to match, without stopwords. Empty when the text is only stopwords ("the of and")."""
+    text = unicodedata.normalize("NFC", text)   # "e" + combining accent is one letter, not a word break
     return [w for w in _WORD.findall(text) if w.lower() not in _STOPWORDS][:MAX_SEARCH_WORDS]
 
 

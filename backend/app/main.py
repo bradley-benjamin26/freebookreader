@@ -22,7 +22,8 @@ from app.sources_info import SOURCES, SourceInfo
 
 
 # Book files come from third parties: opened directly, they must not run scripts on the API's origin.
-# Readium builds its own documents from the fetched text, so this does not affect the reader.
+# Readium builds its own documents from the fetched text, where this header does not reach, so book pages are also
+# served without scripts (app/sanitize.py).
 GZIP_MINIMUM_BYTES = 1000
 GZIP_LEVEL = 6   # 9 costs twice the CPU for a few percent
 BOOK_FILE_HEADERS = {"Content-Security-Policy": "sandbox", "X-Content-Type-Options": "nosniff",

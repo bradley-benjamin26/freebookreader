@@ -5,6 +5,8 @@
 // How the book itself is drawn belongs to the engine: our own renderer is
 // tested in text_engine_test.dart; flutter_readium (web) is checked by hand
 // with the spike checklist in decision_reader.md.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -36,6 +38,36 @@ Future<void> startLoading(WidgetTester tester, TestEnv env) async {
   await tester.tap(open);
   await tester.pump(); // a pushed route is offstage for its first frame
   await tester.pump(const Duration(seconds: 1));
+}
+
+/// A bookmark store whose writes wait for [release], like a slow disk.
+class HeldBookmarkStore extends BookmarkStore {
+  HeldBookmarkStore(super.prefs);
+
+  final List<Completer<void>> _held = [];
+
+  /// Lets the oldest waiting write go ahead.
+  void release() {
+    if (_held.isNotEmpty) _held.removeAt(0).complete();
+  }
+
+  Future<void> _hold() {
+    final completer = Completer<void>();
+    _held.add(completer);
+    return completer.future;
+  }
+
+  @override
+  Future<void> save(String bookKey, Bookmark bookmark) async {
+    await _hold();
+    await super.save(bookKey, bookmark);
+  }
+
+  @override
+  Future<void> remove(String bookKey) async {
+    await _hold();
+    await super.remove(bookKey);
+  }
 }
 
 Future<TestEnv> readerEnv(WidgetTester tester, {Map<String, Object> prefs = const {}}) async {
@@ -439,6 +471,23 @@ void main() {
       expect(find.text('Bookmark saved'), findsOneWidget);
       expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
           containsSemantics(isButton: true, label: 'Remove bookmark'));
+    });
+
+    // Review 2026-10-11-main, #24: a second tap before the first is saved used to leave the button wrong.
+    testWidgets('two quick taps leave the button saying what is stored', (tester) async {
+      late HeldBookmarkStore store;
+      final env = await TestEnv.create(bookmarks: (prefs) => store = HeldBookmarkStore(prefs));
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await tester.tap(find.byKey(const Key('bookmark-button')));
+      await tester.tap(find.byKey(const Key('bookmark-button'))); // before the first save is done
+      store.release();
+      await tester.pumpAndSettle();
+      store.release();
+      await tester.pumpAndSettle();
+      final stored = env.bookmarks.load(gutenberg) != null;
+      expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
+          containsSemantics(label: stored ? 'Remove bookmark' : 'Add bookmark'));
     });
 
     testWidgets('is restored when the book is reopened', (tester) async {

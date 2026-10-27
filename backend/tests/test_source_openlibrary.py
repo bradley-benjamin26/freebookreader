@@ -332,6 +332,23 @@ class TestAvailability:
         assert rec.requests == []
 
 
+class TestMalformedRecords:
+    """Review 2026-10-11-main #31: one bad record in an answer used to crash the adapter, and the source was
+    left out of the search. Now the bad part is skipped and the rest is kept."""
+
+    def test_a_record_that_is_not_an_object_is_skipped(self, source_for):
+        source, _ = source_for(json=payload(None, doc(), "x", 3))
+        assert [b.source_id for b in source.search(SearchQuery(q="a book"))] == ["OL1W"]
+
+    def test_author_names_that_are_not_text_are_skipped(self, source_for):
+        source, _ = source_for(json=payload(doc(author_name=[{"name": "x"}, "Jane Austen", None])))
+        assert source.search(SearchQuery(q="a book"))[0].authors == ["Jane Austen"]
+
+    def test_an_author_list_that_is_not_a_list_is_no_authors(self, source_for):
+        source, _ = source_for(json=payload(doc(author_name={"name": "x"})))
+        assert source.search(SearchQuery(q="a book"))[0].authors == []
+
+
 class TestErrors:
     @pytest.mark.parametrize("status", [500, 503])
     def test_server_errors_raise_source_error(self, source_for, status):

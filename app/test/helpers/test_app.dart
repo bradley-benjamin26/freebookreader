@@ -49,6 +49,7 @@ class TestEnv {
     Map<String, Object> prefsValues = const {},
     bool textEngine = false,
     bool speech = true,
+    BookmarkStore Function(SharedPreferences prefs)? bookmarks,
   }) async {
     SharedPreferences.setMockInitialValues(prefsValues);
     final prefs = await SharedPreferences.getInstance();
@@ -60,7 +61,7 @@ class TestEnv {
             .toList(),
       ),
       prefs: prefs,
-      bookmarks: BookmarkStore(prefs),
+      bookmarks: bookmarks?.call(prefs) ?? BookmarkStore(prefs),
       settingsStore: ReaderSettingsStore(prefs),
       loader: FakeContentLoader(),
       engines: FakeReaderEngines(),

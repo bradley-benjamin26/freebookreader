@@ -58,8 +58,13 @@ class DoabSource:
                   "identifier": f"oai:doabooks.org:{hit.source_id}"}   # the documented form
         try:
             response = get(self.client, f"{self.base_url}/oai/request", params)
-            if _oai_error(response.text) == "idDoesNotExist":
+            error = _oai_error(response.text)
+            if error == "idDoesNotExist":
                 return None
+            if error is not None:
+                raise SourceError(f"doab: OAI lookup failed: {error}")
+            if _parse(response.text).tag != f"{_OAI}OAI-PMH":
+                raise SourceError("doab: OAI lookup did not answer with OAI-PMH")
             books = self.parse_xoai(response.text)
         except SourceError:
             return hit   # the search worked; show what it said rather than nothing

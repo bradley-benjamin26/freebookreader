@@ -370,3 +370,142 @@ images)</pgterms:marc508>
 
     def test_no_original_publication_is_none(self):
         self.assertIsNone(self.parse()['original_publication'])
+
+
+class UpdateCatalogTests(TestCase):
+    """The refresh job's failure handling (REVIEW-2026-10-11-main.md #6, #7, #9). The download, tar, rsync and
+    the import are faked; the paths are temporary directories, never the real catalog."""
+
+    def setUp(self):
+        from subprocess import CalledProcessError
+        from unittest import mock
+        from books.management.commands import updatecatalog
+
+        self.CalledProcessError = CalledProcessError
+        self.command = updatecatalog
+        self.root = tempfile.mkdtemp()
+        self.addCleanup(__import__('shutil').rmtree, self.root, True)
+        temp = os.path.join(self.root, 'tmp')
+        self.target = os.path.join(self.root, 'rdf')
+        for book_id in ('100', '202'):
+            os.makedirs(os.path.join(self.target, book_id))
+        paths = {
+            'TEMP_PATH': temp,
+            'DOWNLOAD_PATH': os.path.join(temp, 'catalog.tar.bz2'),
+            'MOVE_SOURCE_PATH': os.path.join(temp, 'cache/epub'),
+            'MOVE_TARGET_PATH': self.target,
+            'LOG_DIRECTORY': os.path.join(self.root, 'log'),
+            'LOG_PATH': os.path.join(self.root, 'log', 'run.txt'),
+        }
+        for name, value in paths.items():
+            patcher = mock.patch.object(updatecatalog, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        self.temp = temp
+        Book.objects.create(gutenberg_id=100, title='Kept', media_type='Text')
+        Book.objects.create(gutenberg_id=202, title='Left the catalog', media_type='Text')
+
+        self.extracted = ['100']          # what the fake tar puts in the archive
+        self.tar_status = 0
+        self.rsync_status = 0
+        self.import_error = None
+        self.imported = False
+
+        def check_call(args, **kwargs):
+            if args[0] == 'tar':
+                for book_id in self.extracted:
+                    os.makedirs(os.path.join(paths['MOVE_SOURCE_PATH'], book_id))
+                status = self.tar_status
+            else:
+                status = self.rsync_status
+                if not status:
+                    for name in os.listdir(self.target):
+                        if name not in self.extracted:
+                            __import__('shutil').rmtree(os.path.join(self.target, name))
+            if status:
+                raise CalledProcessError(status, args)
+
+        def put_catalog_in_db():
+            if self.import_error:
+                raise self.import_error
+            self.imported = True
+
+        for name, fake in {
+            'check_call': check_call,
+            'put_catalog_in_db': put_catalog_in_db,
+            'send_log_email': lambda: None,
+        }.items():
+            patcher = mock.patch.object(updatecatalog, name, fake)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        patcher = mock.patch.object(updatecatalog.urllib.request, 'urlretrieve',
+                                    lambda url, path: open(path, 'wb').close())
+        self.download = patcher.start()
+        self.addCleanup(patcher.stop)
+
+    def run_command(self):
+        from django.core.management import call_command
+        call_command('updatecatalog')
+
+    def ids(self):
+        return sorted(Book.objects.values_list('gutenberg_id', flat=True))
+
+    def test_a_good_run_imports_then_removes_books_that_left(self):
+        self.run_command()
+        self.assertTrue(self.imported)
+        self.assertEqual(self.ids(), [100])
+        self.assertFalse(os.path.exists(self.temp))
+
+    def test_a_failed_extraction_deletes_nothing_and_fails(self):
+        from django.core.management.base import CommandError
+        self.tar_status = 2
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertEqual(self.ids(), [100, 202])
+        self.assertFalse(self.imported)
+        self.assertEqual(sorted(os.listdir(self.target)), ['100', '202'])
+
+    def test_an_archive_with_no_books_deletes_nothing_and_fails(self):
+        from django.core.management.base import CommandError
+        self.extracted = []
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertEqual(self.ids(), [100, 202])
+        self.assertFalse(self.imported)
+
+    def test_a_failed_copy_deletes_nothing_and_fails(self):
+        from django.core.management.base import CommandError
+        self.rsync_status = 23
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertEqual(self.ids(), [100, 202])
+        self.assertFalse(self.imported)
+
+    def test_a_failed_import_deletes_no_book_and_fails(self):
+        from django.core.management.base import CommandError
+        self.import_error = ValueError('bad RDF')
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertIn(202, self.ids())
+        self.assertFalse(os.path.exists(self.temp))
+
+    def test_a_failed_download_fails(self):
+        from unittest import mock
+        from django.core.management.base import CommandError
+
+        def fail(url, path):
+            raise OSError('network down')
+        with mock.patch.object(self.command.urllib.request, 'urlretrieve', fail):
+            with self.assertRaises(CommandError):
+                self.run_command()
+        self.assertEqual(self.ids(), [100, 202])
+
+    def test_a_second_run_leaves_the_first_runs_files_alone(self):
+        from django.core.management.base import CommandError
+        os.makedirs(self.temp)
+        marker = os.path.join(self.temp, 'catalog.tar.bz2')
+        open(marker, 'w').close()
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertTrue(os.path.exists(marker))
+        self.assertFalse(self.imported)

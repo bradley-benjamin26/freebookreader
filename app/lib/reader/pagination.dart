@@ -1,4 +1,5 @@
 import 'package:flutter/painting.dart';
+import 'package:flutter/widgets.dart' show StringCharacters;
 
 /// A book as a run of words, so a place in it (a word index) survives a
 /// change of font, size or view.
@@ -14,10 +15,11 @@ class BookText {
         // A line break inside a paragraph (verse) starts the word after it: "a\nb" is "a" and "\nb".
         var at = offset;
         for (final (i, part) in piece.split('\n').indexed) {
-          if (part.isNotEmpty) {
-            words.add(i == 0 ? part : '\n$part');
-            wordOffsets.add(at);
+          for (final (j, (start, unit)) in _units(part).indexed) {
+            words.add(i > 0 && j == 0 ? '\n$unit' : unit);
+            wordOffsets.add(at + start);
             paragraphOfWord.add(p);
+            spaceBefore.add(i == 0 && j == 0);
           }
           at += part.length + 1;
         }
@@ -25,6 +27,40 @@ class BookText {
       }
     }
   }
+
+  /// A run longer than this with no space in it is split between its letters (Thai, or a long web address),
+  /// so that a page can end inside it.
+  static const _longestRun = 40;
+
+  /// The words of a piece of text with no spaces or line breaks, with where each starts in it. Chinese and
+  /// Japanese are written without spaces, so each of their characters is a word, and a page can end after it.
+  static List<(int, String)> _units(String part) {
+    if (part.isEmpty) return const [];
+    final split = part.length > _longestRun;
+    if (!split && !part.runes.any(_isCjk)) return [(0, part)];
+    final units = <(int, String)>[];
+    var at = 0, runStart = -1;
+    for (final letter in part.characters) {
+      if (split || _isCjk(letter.runes.first)) {
+        if (runStart >= 0) units.add((runStart, part.substring(runStart, at)));
+        runStart = -1;
+        units.add((at, letter));
+      } else if (runStart < 0) {
+        runStart = at;
+      }
+      at += letter.length;
+    }
+    if (runStart >= 0) units.add((runStart, part.substring(runStart)));
+    return units;
+  }
+
+  static bool _isCjk(int rune) =>
+      (rune >= 0x3000 && rune <= 0x30FF) || // CJK punctuation, hiragana, katakana
+      (rune >= 0x3400 && rune <= 0x4DBF) || // CJK extension A
+      (rune >= 0x4E00 && rune <= 0x9FFF) || // CJK ideographs
+      (rune >= 0xF900 && rune <= 0xFAFF) || // compatibility ideographs
+      (rune >= 0xFF00 && rune <= 0xFFEF) || // full-width forms
+      (rune >= 0x20000 && rune <= 0x2FA1F); // extensions B and later
 
   final List<String> paragraphs;
   final List<String> words = [];
@@ -36,17 +72,22 @@ class BookText {
   /// The index of each paragraph's first word.
   final List<int> paragraphStarts = [];
 
+  /// Whether a space comes before each word in its paragraph (not between Chinese characters, say).
+  final List<bool> spaceBefore = [];
+
   int get length => words.length;
 
   /// Words [start, end) as text, with [paragraphBreak] between paragraphs and a '\n' where a line breaks.
-  String text(int start, int end, String paragraphBreak) {
+  /// [breaks], when given, gets where each paragraph break starts in the text.
+  String text(int start, int end, String paragraphBreak, {List<int>? breaks}) {
     final out = StringBuffer();
     for (var i = start; i < end; i++) {
       final word = words[i];
       if (i > start) {
         if (paragraphOfWord[i] != paragraphOfWord[i - 1]) {
+          breaks?.add(out.length);
           out.write(paragraphBreak);
-        } else if (!word.startsWith('\n')) {
+        } else if (!word.startsWith('\n') && spaceBefore[i]) {
           out.write(' ');
         }
       }
@@ -62,7 +103,7 @@ class BookText {
       start = text(first, word, paragraphBreak).length;
       if (paragraphOfWord[word] != paragraphOfWord[word - 1]) {
         start += paragraphBreak.length;
-      } else if (!words[word].startsWith('\n')) {
+      } else if (!words[word].startsWith('\n') && spaceBefore[word]) {
         start += 1;
       }
     }
@@ -88,10 +129,10 @@ List<int> paginate(
   required TextScaler textScaler,
   required double width,
   required double height,
-  required String paragraphBreak,
+  required double paragraphGap,
 }) {
   final paginator = Paginator(book,
-      style: style, textScaler: textScaler, width: width, height: height, paragraphBreak: paragraphBreak);
+      style: style, textScaler: textScaler, width: width, height: height, paragraphGap: paragraphGap);
   while (paginator.step()) {}
   return paginator.finish();
 }
@@ -104,15 +145,15 @@ class Paginator {
     required this.textScaler,
     required this.width,
     required this.height,
-    required String paragraphBreak,
+    required double paragraphGap,
   }) : _painter = TextPainter(textDirection: TextDirection.ltr, textScaler: textScaler) {
-    // The blank line between paragraphs is as tall as a line of text.
-    _gap = paragraphBreak == '\n\n'
-        ? (_painter
-              ..text = TextSpan(text: 'A', style: style)
-              ..layout(maxWidth: width))
-            .preferredLineHeight
-        : 0;
+    // The gap is measured as pageSpan draws it: an empty line between the paragraphs.
+    double heightOf(InlineSpan span) => (_painter
+          ..text = TextSpan(style: style, children: [span])
+          ..layout(maxWidth: width))
+        .height;
+    final two = BookText(const ['A', 'A']);
+    _gap = heightOf(pageSpan(two, 0, 2, paragraphGap: paragraphGap)) - heightOf(pageSpan(two, 0, 2, paragraphGap: 0));
   }
 
   final BookText book;
@@ -194,6 +235,40 @@ class Paginator {
 
   /// Gives up the text painter of a pagination that is not wanted any more.
   void cancel() => _painter.dispose();
+}
+
+/// What goes between paragraphs in [BookText.text] for a gap of [paragraphGap] pixels: an empty line, or just a
+/// new line when there is no gap.
+String paragraphBreakFor(double paragraphGap) => paragraphGap > 0 ? '\n\n' : '\n';
+
+/// Words [start, end) of [book] as the reader draws them: the empty line between paragraphs is [paragraphGap]
+/// pixels tall (before text scaling), and the word [mark], if given, is drawn in [markStyle]. Draw it under the
+/// page's own style (`Text.rich(span, style: ...)`).
+TextSpan pageSpan(BookText book, int start, int end,
+    {required double paragraphGap, int? mark, TextStyle? markStyle}) {
+  final paragraphBreak = paragraphBreakFor(paragraphGap);
+  final breaks = <int>[];
+  final text = book.text(start, end, paragraphBreak, breaks: breaks);
+  // (from, to, style) of each part that is not in the page's style, in order; none of them overlap.
+  final styled = <(int, int, TextStyle)>[
+    if (paragraphGap > 0)
+      for (final at in breaks) (at + 1, at + 2, TextStyle(fontSize: paragraphGap, height: 1)),
+  ];
+  if (mark != null && markStyle != null && mark >= start && mark < end) {
+    final (from, to) = book.wordRange(start, mark, paragraphBreak);
+    styled.add((from, to, markStyle));
+    styled.sort((a, b) => a.$1.compareTo(b.$1));
+  }
+  if (styled.isEmpty) return TextSpan(text: text);
+  final children = <TextSpan>[];
+  var at = 0;
+  for (final (from, to, partStyle) in styled) {
+    if (from > at) children.add(TextSpan(text: text.substring(at, from)));
+    children.add(TextSpan(text: text.substring(from, to), style: partStyle));
+    at = to;
+  }
+  if (at < text.length) children.add(TextSpan(text: text.substring(at)));
+  return TextSpan(children: children);
 }
 
 /// The page that holds [word], given each page's first word.

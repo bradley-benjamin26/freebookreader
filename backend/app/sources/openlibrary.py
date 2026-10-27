@@ -55,7 +55,8 @@ class OpenLibrarySource:
             raise SourceError("openlibrary: response is not JSON") from error
         if not isinstance(data, dict) or not isinstance(data.get("docs"), list):
             raise SourceError("openlibrary: unexpected response")
-        books = [self._book(d) for d in data["docs"] if d.get("key") and d.get("title")]
+        # A record that is not an object is skipped; the rest of the answer is still good.
+        books = [self._book(d) for d in data["docs"] if isinstance(d, dict) and d.get("key") and d.get("title")]
         books = self._available([b for b in books if b.access in ("open", "borrow")])
         if query.language:   # the `language` filter guarantees an edition in that language
             for book in books:
@@ -145,7 +146,7 @@ class OpenLibrarySource:
             source="openlibrary",
             source_id=work_id,
             title=doc["title"],
-            authors=_unique(normalize_author_name(a) for a in doc.get("author_name") or []),
+            authors=_unique(normalize_author_name(a) for a in _strings(doc.get("author_name"))),
             # A work lists the languages of all its editions; only a single one is usable.
             language=next(iter(languages)) if len(languages) == 1 else None,
             format="text",
@@ -180,3 +181,8 @@ def _unique(values) -> list[str]:
         if value and value not in seen:
             seen.append(value)
     return seen
+
+
+def _strings(values) -> list[str]:
+    """The text values of a list from the API, leaving out nulls and anything else."""
+    return [v for v in values if isinstance(v, str)] if isinstance(values, list) else []

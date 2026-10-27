@@ -27,6 +27,9 @@ class _ResultsPageState extends State<ResultsPage> {
   Set<String> _sources = {...sourceIds};
   Future<SearchResponse>? _results;
 
+  // The search box moves between the wide and narrow layouts; the key keeps what is typed in it.
+  final _searchBarKey = GlobalKey();
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -53,6 +56,7 @@ class _ResultsPageState extends State<ResultsPage> {
   @override
   Widget build(BuildContext context) {
     final searchBar = BookSearchBar(
+      key: _searchBarKey,
       initialText: widget.initialText,
       initialField: widget.initialField,
       onSearch: (field, text) => _search(_query.withTerm(field, text)),

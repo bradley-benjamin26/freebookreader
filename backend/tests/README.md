@@ -65,8 +65,8 @@ backend/app/
     doab.py        DoabSource(client, base_url); .parse_opensearch(xml), .parse_xoai(xml) (static)  name "doab"
     hathitrust.py  HathiTrustSource(index: HathiIndex)   name "hathitrust"; HathiIndexMissing (not a SourceError)
   hathifile.py     Volume, parse_line(line) -> (htid, Volume|None)|None, iter_changes(lines), clean_title, clean_author, reader_url
-  hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state); IndexState
-  hathitrust_update.py  plan_update(file_list, state) -> Plan; update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
+  hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state), writing() (lock; IndexBusy); IndexState
+  hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
   outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=4): search(SearchQuery) -> SearchResponse
@@ -74,6 +74,7 @@ backend/app/
   publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
                    max_cache_bytes, max_entry_bytes, catalog): GutendexCatalog(client, gutendex_url)(id) -> True/False/None; manifest(id), resource(id, href) -> (bytes, type);
                    PublicationNotFound (404), PublicationUnavailable (502), PublicationTimeout (504)
+  sanitize.py      sanitize_markup(bytes) -> bytes (book pages without scripts)
   sources_info.py  SOURCES, get_source_info(id)
   config.py        Settings.from_env, build_search_service(settings, client)
   main.py          create_app(search_service, settings, publication_store) -> FastAPI:  GET /health, /search, /sources,
@@ -118,7 +119,11 @@ queried in parallel threads, on one executor shared by all searches.
   keep working); later runs apply only the daily files after the last one, each in one transaction, so a failed
   download leaves the index at the last good day. A volume whose row is now `deny` (or not a book) is removed. A new
   monthly file or a gap in the daily files (the list keeps about 70 days) means a rebuild, which is also how volumes
-  HathiTrust removed leave: the daily files do not say.
+  HathiTrust removed leave: the daily files do not say. A missing day between daily files (review 2026-10-11-main
+  #29) stops the run after the day before it, with an error; the next run goes on from there (`Plan.missing`).
+  A file that has lines but no Hathifile rows (a gzipped error page), or a monthly file with no open book, is an
+  error before anything is committed, so the old index and its date stay (#27). One update runs at a time: a lock
+  file beside the index (`HathiIndex.writing`), and a second run fails at once with "already running" (#28).
 - **HathiTrust books link out.** Each book is one volume with `url` `https://babel.hathitrust.org/cgi/pt?id=<htid>`,
   `volume` ("v.2"), `library` (name for the 40 most common library codes, else the code) and `us_only` (rights `pdus`).
   Copies and volumes of one catalog record merge into one work through `identifiers.hathitrust` (= `ht_bib_key`), a new
@@ -129,9 +134,14 @@ queried in parallel threads, on one executor shared by all searches.
 - **Chapters are not books** (DOAB also lists chapters); deleted OAI records are skipped.
 - **DOAB search is OpenSearch, then one OAI `GetRecord` (xoai) per hit**, because DOAB's REST API rejects our IP.
   Stale search entries (`Untitled`, or `idDoesNotExist`) are skipped. If a lookup fails, the hit is kept with what
-  the search said. A download link ending in `.pdf` (usually in the OAPEN Library) is the book's PDF; any other
+  the search said; so is a lookup that answers with another OAI error or with XML that is not OAI-PMH (#30). A download link ending in `.pdf` (usually in the OAPEN Library) is the book's PDF; any other
   link is left to the DOAB record page. DOAB's `open-access-no-cover.png` placeholder is not a cover.
 - **Invalid ISBNs are dropped.** OAPEN/DOAB data contained one with a bad check digit.
+- **A malformed record is skipped, not the source** (review 2026-10-11-main #31, `TestMalformedRecords`). A null or
+  non-object Open Library doc or LibriVox book, chapter or reader, and author names that are not text, are left
+  out; the rest of the answer is used. It is not an outage either: the source answered.
+- **Identifier merging tries every pair** (#2): when the first record holding an identifier is in another language,
+  the others still merge with each other.
 - **Open Library always links out**, and only to books a user can read or borrow now (user request 2026-10-10).
   `q` always ends with `ebook_access:[borrowable TO *]` (with `title`/`author`/`isbn` alone, `q` is just that
   filter), which also makes the `editions` sub-query return a free or borrowable edition. The link is that edition
@@ -227,9 +237,13 @@ queried in parallel threads, on one executor shared by all searches.
 - **Only files listed in the package's manifest are served**, by exact decoded path (`container.xml`, the OPF,
   `mimetype` and `..` paths are 404). Book files carry `Content-Security-Policy: sandbox` and `nosniff` so a book page
   opened directly cannot run scripts on the API's origin; Readium builds its own documents, so the reader is unaffected
-  (checked in Chromium 2026-10-10).
+  (checked in Chromium 2026-10-10). Because Readium's documents are on the app's origin, where that header does not
+  reach, XHTML, HTML and SVG files are also served without anything that runs code (review 2026-10-11-main #15,
+  `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like,
+  `on*` attributes, `srcdoc`, and `javascript:`/`vbscript:`/`data:` page links. Everything else is unchanged byte for
+  byte (all 78 pages of 5 cached Gutenberg books came back unchanged).
 - **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.
-  404 there is 404; any other failure is 502, a timeout 504. Downloads over 200 MB, files that are not a usable EPUB
+  404 there is 404; any other failure is 502 (also a `Content-Length` that is not a number, #5), a timeout 504. Downloads over 200 MB, files that are not a usable EPUB
   and zip entries over 100 MB (package files, i.e. container, OPF, nav and NCX, over 5 MB) are refused with 502, checked before and while reading (against zip bombs). A book is
   downloaded once even when several requests arrive together, and a failed download is not cached. The cache is a
   directory of `<id>.epub` files; when it is over its limit, the least recently used books are deleted. Book ids are
@@ -248,4 +262,5 @@ queried in parallel threads, on one executor shared by all searches.
 - **Whether a PDF link really serves a PDF.** OAPEN-hosted PDFs are behind a bot check, and some `.pdf` links return
   a web page; that is for the app's reader to handle.
 - Live network calls. All HTTP is mocked; run the curl examples in `api_*.documentation.md` to check the real APIs.
-- Gutendex nightly refresh scheduling (`updatecatalog`), deployment, and load.
+- Gutendex nightly refresh scheduling (`updatecatalog`), deployment, and load. (`updatecatalog`'s failure handling is
+  tested in Gutendex: `UpdateCatalogTests` in `gutendex/books/tests.py`.)

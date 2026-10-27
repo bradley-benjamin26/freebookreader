@@ -72,6 +72,23 @@ class TestPlan:
         state = IndexState("hathi_full_20261001.txt.gz", "20261001")
         assert plan_update(listing(*FULLS, *upd(2, 3)), state).full is None
 
+    def test_a_missing_day_between_updates_stops_the_plan_before_it(self):
+        """Review 2026-10-11-main #29: only the oldest listed day was checked, so a missing day in between was
+        skipped for good, with whatever rights changes it held."""
+        state = IndexState("hathi_full_20261001.txt.gz", "20261001")
+        plan = plan_update(listing(*FULLS, *upd(1, 2, 4, 5)), state)
+        assert [u["filename"] for u in plan.updates] == upd(2)
+        assert plan.missing == "20261003"
+
+    def test_a_missing_day_after_a_rebuild_stops_the_plan_too(self):
+        plan = plan_update(listing(*FULLS, *upd(1, 2, 4)), None)
+        assert [u["filename"] for u in plan.updates] == upd(1, 2)
+        assert plan.missing == "20261003"
+
+    def test_updates_that_follow_each_other_are_not_missing_anything(self):
+        assert plan_update(listing(*FULLS, *upd(1, 2, 3)), None).missing is None
+        assert plan_update(listing(*FULLS, *upd(2, 3)), None).missing is None   # none for the monthly file's day
+
     def test_no_updates_listed_and_no_news_is_not_a_gap(self):
         state = IndexState("hathi_full_20261001.txt.gz", "20261001")
         assert plan_update(listing(*FULLS), state).is_empty
@@ -231,6 +248,69 @@ class TestUpdateIndex:
             update_index(served(broken), index, LIST_URL)
         assert [v.htid for v in index.search(text="book")] == ["a.1"]
         assert index.state().full_file == "hathi_full_20261001.txt.gz"
+
+    def test_a_missing_day_applies_the_days_before_it_and_is_an_error(self, index):
+        files = {
+            "hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book")),
+            "hathi_upd_20261002.txt.gz": gz(book("a.2", "Beta book")),
+            "hathi_upd_20261004.txt.gz": gz(book("a.4", "Delta book")),
+        }
+        with pytest.raises(UpdateError, match="20261003"):
+            update_index(served(files), index, LIST_URL)
+        assert index.state().updated_through == "20261002"
+        assert sorted(v.htid for v in index.search(text="book")) == ["a.1", "a.2"]
+        # Once the day is published, the next run goes on from it.
+        files["hathi_upd_20261003.txt.gz"] = gz(book("a.3", "Gamma book"))
+        update_index(served(files), index, LIST_URL)
+        assert index.state().updated_through == "20261004"
+        assert sorted(v.htid for v in index.search(text="book")) == ["a.1", "a.2", "a.3", "a.4"]
+
+    # Review 2026-10-11-main #27: a file that is gzip but not a Hathifile used to replace the index with nothing.
+    def test_a_compressed_web_page_instead_of_the_monthly_file_keeps_the_old_index(self, index):
+        update_index(served({"hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book"))}), index, LIST_URL)
+        page = {"hathi_full_20261101.txt.gz": gz("<html>", "<body>Service unavailable</body>", "</html>")}
+        with pytest.raises(UpdateError):
+            update_index(served(page), index, LIST_URL)
+        assert [v.htid for v in index.search(text="book")] == ["a.1"]
+        assert index.state() == IndexState("hathi_full_20261001.txt.gz", "20261001")
+
+    def test_a_monthly_file_with_no_open_books_is_refused(self, index):
+        closed = {"hathi_full_20261001.txt.gz": gz(book("a.1", "Closed book", access="deny"))}
+        with pytest.raises(UpdateError):
+            update_index(served(closed), index, LIST_URL)
+        assert not index.exists()
+
+    def test_an_update_file_that_is_not_a_hathifile_is_not_recorded_as_applied(self, index):
+        files = {"hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book"))}
+        update_index(served(files), index, LIST_URL)
+        files["hathi_upd_20261002.txt.gz"] = gz("<html>", "Not found", "</html>")
+        with pytest.raises(UpdateError):
+            update_index(served(files), index, LIST_URL)
+        assert index.state().updated_through == "20261001"
+
+    def test_an_update_file_of_closed_books_only_is_applied(self, index):
+        """Rows that are recognised but not kept are normal: they close volumes that were open."""
+        files = {"hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book"))}
+        update_index(served(files), index, LIST_URL)
+        files["hathi_upd_20261002.txt.gz"] = gz(book("a.1", "Alpha book", access="deny"))
+        update_index(served(files), index, LIST_URL)
+        assert index.state().updated_through == "20261002"
+        assert index.search(text="book") == []
+
+    def test_an_empty_update_file_is_applied(self, index):
+        files = {"hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book")),
+                 "hathi_upd_20261002.txt.gz": gzip.compress(b"")}
+        update_index(served(files), index, LIST_URL)
+        assert index.state().updated_through == "20261002"
+
+    # Review 2026-10-11-main #28: two updates at once could put one's unfinished index in place.
+    def test_a_second_update_while_one_runs_is_refused(self, index):
+        files = {"hathi_full_20261001.txt.gz": gz(book("a.1", "Alpha book"))}
+        with index.writing():
+            with pytest.raises(UpdateError, match="already running"):
+                update_index(served(files), index, LIST_URL)
+        update_index(served(files), index, LIST_URL)
+        assert index.count() == 1
 
     def test_an_unreadable_file_list_is_an_update_error(self, index):
         client = httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(200, text="<html>challenge")))

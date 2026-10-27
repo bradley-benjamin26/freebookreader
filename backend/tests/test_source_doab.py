@@ -186,6 +186,21 @@ class TestMapping:
         assert hit.language is None and hit.content == {}
         assert hit.url == "https://directory.doabooks.org/handle/20.500.12854/159907"
 
+    @pytest.mark.parametrize("reply", [
+        "<html><body>Maintenance</body></html>",
+        '<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"><error code="badArgument">bad</error></OAI-PMH>',
+        '<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"><error code="cannotDisseminateFormat"/></OAI-PMH>',
+    ])
+    def test_a_lookup_that_is_well_formed_but_not_a_record_falls_back_too(self, source_for, reply):
+        """Review 2026-10-11-main #30: these used to read as "deleted", so the hit was dropped."""
+        feed = (SAMPLES / "doab-opensearch.xml").read_text(encoding="utf-8")
+        def respond(request):
+            if request.url.path == "/open-search/discover":
+                return httpx.Response(200, text=feed)
+            return httpx.Response(200, text=reply)
+        source, _ = source_for(respond=respond)
+        assert len(source.search(SearchQuery(q="pride"))) == 4
+
     def test_a_timed_out_lookup_also_falls_back(self, source_for):
         source, _ = source_for(lookup_error=httpx.ReadTimeout("slow"))
         assert len(source.search(SearchQuery(q="pride"))) == 4

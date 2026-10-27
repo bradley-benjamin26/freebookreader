@@ -108,8 +108,11 @@ def _merge_on_identifiers(entries: list[_Entry], groups: _Groups) -> None:
 
 
 def _union_all(groups: _Groups, indexes: list[int]) -> None:
-    for i in indexes[1:]:
-        groups.union(indexes[0], i)
+    # Every pair, not just the first record with the rest: when the first is in another language, the
+    # others can still join each other. A search returns at most a few hundred books, so pairs are cheap.
+    for position, i in enumerate(indexes):
+        for j in indexes[position + 1:]:
+            groups.union(i, j)
 
 
 def _held_twice_by_a_source(entries: list[_Entry], groups: _Groups, indexes: list[int]) -> bool:

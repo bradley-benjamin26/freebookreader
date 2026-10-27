@@ -1,4 +1,4 @@
-from subprocess import call
+from subprocess import check_call
 import json
 import os
 import shutil
@@ -35,6 +35,13 @@ def get_directory_set(path):
         if os.path.isdir(item_path):
             directory_set.add(directory_item)
     return directory_set
+
+
+# The names of the subdirectories that are book ID numbers.
+def get_book_directory_set(path):
+    if not os.path.isdir(path):
+        return set()
+    return {name for name in get_directory_set(path) if name.isdigit()}
 
 
 def log(*args):
@@ -303,54 +310,51 @@ class Command(BaseCommand):
     help = 'This replaces the catalog files with the latest ones.'
 
     def handle(self, *args, **options):
+        # Every step must succeed before anything is deleted, and a failure must reach cron or systemd as a
+        # failed run (REVIEW-2026-10-11-main.md #6, #7, #9).
+        owns_temp = False
+        failure = None
         try:
             date_and_time = strftime('%H:%M:%S on %B %d, %Y')
             log('Starting script at', date_and_time)
 
             log('  Making temporary directory...')
-            if os.path.exists(TEMP_PATH):
-                raise CommandError(
-                    'The temporary path, `' + TEMP_PATH + '`, already exists.'
-                )
-            else:
+            try:
+                # Creating it is also the claim to run: a second run stops here and leaves it alone.
                 os.makedirs(TEMP_PATH)
+            except FileExistsError:
+                raise CommandError(
+                    'The temporary path, `' + TEMP_PATH + '`, already exists. '
+                    'Another update may be running; if none is, delete it.'
+                )
+            owns_temp = True
 
             log('  Downloading compressed catalog...')
             urllib.request.urlretrieve(URL, DOWNLOAD_PATH)
 
             log('  Decompressing catalog...')
-            if not os.path.exists(DOWNLOAD_PATH):
-                os.makedirs(DOWNLOAD_PATH)
             with open(os.devnull, 'w') as null:
-                call(
-                    ['tar', 'fjvx', DOWNLOAD_PATH, '-C', TEMP_PATH],
-                    stdout=null,
-                    stderr=null
-                )
+                with open(LOG_PATH, 'a') as log_file:
+                    check_call(
+                        ['tar', 'fjvx', DOWNLOAD_PATH, '-C', TEMP_PATH],
+                        stdout=null,
+                        stderr=log_file
+                    )
 
             log('  Detecting stale directories...')
             if not os.path.exists(MOVE_TARGET_PATH):
                 os.makedirs(MOVE_TARGET_PATH)
-            new_directory_set = get_directory_set(MOVE_SOURCE_PATH)
-            old_directory_set = get_directory_set(MOVE_TARGET_PATH)
-            stale_directory_set = old_directory_set - new_directory_set
+            new_directory_set = get_book_directory_set(MOVE_SOURCE_PATH)
+            if not new_directory_set:
+                raise CommandError('The downloaded catalog has no books in it.')
+            old_directory_set = get_book_directory_set(MOVE_TARGET_PATH)
+            stale_ids = [int(d) for d in old_directory_set - new_directory_set]
 
-            log('  Removing stale directories and books...')
-            for directory in stale_directory_set:
-                try:
-                    book_id = int(directory)
-                except ValueError:
-                    # Ignore the directory if its name isn't a book ID number.
-                    continue
-                book = Book.objects.filter(gutenberg_id=book_id)
-                book.delete()
-                path = os.path.join(MOVE_TARGET_PATH, directory)
-                shutil.rmtree(path)
-
+            # rsync's --delete-after removes the stale directories once the copy is done.
             log('  Replacing old catalog files...')
             with open(os.devnull, 'w') as null:
                 with open(LOG_PATH, 'a') as log_file:
-                    call(
+                    check_call(
                         [
                             'rsync',
                             '-va',
@@ -365,14 +369,21 @@ class Command(BaseCommand):
             log('  Putting the catalog in the database...')
             put_catalog_in_db()
 
-            log('  Removing temporary files...')
-            shutil.rmtree(TEMP_PATH)
+            log('  Removing books that left the catalog...')
+            Book.objects.filter(gutenberg_id__in=stale_ids).delete()
 
             log('Done!\n')
         except Exception as error:
-            error_message = str(error)
-            log('Error:', error_message)
+            failure = error
+            log('Error:', str(error))
             log('')
-            shutil.rmtree(TEMP_PATH)
+        finally:
+            if owns_temp:
+                log('  Removing temporary files...')
+                shutil.rmtree(TEMP_PATH, ignore_errors=True)
 
         send_log_email()
+        if failure is not None:
+            if isinstance(failure, CommandError):
+                raise failure
+            raise CommandError(str(failure)) from failure

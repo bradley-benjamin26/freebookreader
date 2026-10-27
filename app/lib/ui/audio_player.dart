@@ -33,6 +33,11 @@ class AudioController extends ChangeNotifier {
   /// What went wrong when the recording could not be played; null otherwise.
   String? error;
 
+  bool _disposed = false;
+
+  // The last chapter played to the end: Play starts it again from the beginning.
+  bool _finished = false;
+
   List<Chapter> get chapters => book.chapters;
 
   Uri get _url => Uri.parse(chapters.isEmpty ? book.reading.url : chapters[chapter].url);
@@ -51,6 +56,7 @@ class AudioController extends ChangeNotifier {
       }
       playing = false;
       position = Duration.zero;
+      _finished = true;
     } else {
       playing = status.playing;
     }
@@ -60,10 +66,12 @@ class AudioController extends ChangeNotifier {
   Future<void> _start(Uri url, {Duration? from}) async {
     error = null;
     playing = true;
+    _finished = false;
     notifyListeners();
     try {
       await _engine.play(url, from: from);
     } on Object {
+      if (_disposed) return;
       playing = false;
       error = 'The recording could not be played. Check your connection and try again.';
       notifyListeners();
@@ -76,14 +84,14 @@ class AudioController extends ChangeNotifier {
       notifyListeners();
       await _engine.pause();
     } else {
-      await _start(_url, from: position == Duration.zero ? null : position);
+      await _start(_url, from: _finished ? Duration.zero : (position == Duration.zero ? null : position));
     }
   }
 
   Future<void> playChapter(int index) async {
     chapter = index;
     position = Duration.zero;
-    await _start(_url);
+    await _start(_url, from: Duration.zero); // from the beginning, even if it is the chapter already loaded
   }
 
   Future<void> seek(Duration to) async {
@@ -101,6 +109,7 @@ class AudioController extends ChangeNotifier {
   /// Stops playback when the page closes; the engine itself is shared.
   @override
   void dispose() {
+    _disposed = true;
     _positionSub.cancel();
     _statusSub.cancel();
     if (playing) _engine.pause();

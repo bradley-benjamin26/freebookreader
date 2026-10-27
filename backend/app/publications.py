@@ -18,6 +18,8 @@ from xml.etree import ElementTree as ET
 
 import httpx
 
+from app.sanitize import sanitize_markup
+
 EPUB_PROFILE = "https://readium.org/webpub-manifest/profiles/epub"
 CONTEXT = "https://readium.org/webpub-manifest/context.jsonld"
 
@@ -33,6 +35,8 @@ _MEMORY_SLOTS = 64
 # Locks that keep two requests from downloading one book. A fixed set (book id mod 64) instead of one per
 # id, which grew with every id ever asked for. Books that share a lock only wait for each other's download.
 _BOOK_LOCKS = 64
+# Files a browser runs as a page: they lose their scripts before they are served (app/sanitize.py).
+_PAGE_TYPES = {"application/xhtml+xml", "text/html", "image/svg+xml"}
 # How long the local catalog may take to answer before the book is simply asked for at Gutenberg.
 CATALOG_TIMEOUT_SECONDS = 3
 
@@ -275,6 +279,8 @@ class PublicationStore:
             raise PublicationUnavailable(str(error)) from error
         if len(data) > self._max_entry:
             raise PublicationUnavailable(f"{href} is larger than {self._max_entry} bytes")
+        if media_type in _PAGE_TYPES:
+            data = sanitize_markup(data)
         return data, media_type
 
     def _book(self, book_id: int) -> _Book:
@@ -328,7 +334,11 @@ class PublicationStore:
                         raise PublicationNotFound(url)
                     if response.status_code != 200:
                         raise PublicationUnavailable(f"{url} answered {response.status_code}")
-                    if int(response.headers.get("content-length") or 0) > self._max_download:
+                    try:
+                        length = int(response.headers.get("content-length") or 0)
+                    except ValueError as error:
+                        raise PublicationUnavailable(f"{url} sent a bad Content-Length") from error
+                    if length > self._max_download:
                         raise PublicationUnavailable(f"{url} is larger than {self._max_download} bytes")
                     size = 0
                     for chunk in response.iter_bytes():

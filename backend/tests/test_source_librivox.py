@@ -194,6 +194,26 @@ class TestMapping:
         assert source.search(SearchQuery(q="x"))[0].language is None
 
 
+class TestMalformedRecords:
+    """Review 2026-10-11-main #31: a null book, chapter or reader used to crash the adapter."""
+
+    def test_a_book_that_is_not_an_object_is_skipped(self, source_for, sample_json):
+        data = sample_json("librivox-title-search.json")
+        data["books"] = [None, *data["books"], "x"]
+        source, _ = source_for(json=data)
+        assert source.search(SearchQuery(title="pride and prejudice"))[0].source_id == "253"
+
+    def test_chapters_and_readers_that_are_not_objects_are_skipped(self, source_for, sample_json):
+        data = sample_json("librivox-title-search.json")
+        record = data["books"][0]
+        chapters = len(record["sections"])
+        record["sections"] = [None, *record["sections"]]
+        record["sections"][1]["readers"] = [None, *record["sections"][1]["readers"]]
+        source, _ = source_for(json=data)
+        book = source.search(SearchQuery(title="pride and prejudice"))[0]
+        assert len(book.chapters) == chapters
+
+
 class TestErrors:
     def test_not_found_message_means_no_results(self, source_for):
         source, _ = source_for(json={"error": "Audiobooks could not be found"})

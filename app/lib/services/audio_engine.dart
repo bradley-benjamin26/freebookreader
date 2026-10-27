@@ -43,11 +43,17 @@ abstract class AudioEngine {
 }
 
 class JustAudioEngine implements AudioEngine {
-  final AudioPlayer _player = AudioPlayer();
+  JustAudioEngine({AudioPlayer? player}) : _player = player ?? AudioPlayer();
+
+  final AudioPlayer _player;
   Uri? _current;
+
+  // A pause (or a newer play) while a file loads cancels the play that was waiting for it.
+  int _request = 0;
 
   @override
   Future<void> play(Uri url, {Duration? from}) async {
+    final request = ++_request;
     try {
       if (url != _current) {
         _current = url;
@@ -57,14 +63,19 @@ class JustAudioEngine implements AudioEngine {
       }
     } on Object catch (e) {
       _current = null; // load again next time
+      if (request != _request) return;
       throw AudioException('$e');
     }
+    if (request != _request) return;
     // just_audio's play() completes when playback stops, so don't wait for it.
     unawaited(_player.play());
   }
 
   @override
-  Future<void> pause() => _player.pause();
+  Future<void> pause() {
+    _request++;
+    return _player.pause();
+  }
 
   @override
   Future<void> seek(Duration position) => _player.seek(position);
@@ -81,5 +92,8 @@ class JustAudioEngine implements AudioEngine {
       });
 
   @override
-  Future<void> dispose() => _player.dispose();
+  Future<void> dispose() {
+    _request++;
+    return _player.dispose();
+  }
 }

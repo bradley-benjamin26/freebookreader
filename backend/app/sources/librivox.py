@@ -47,7 +47,8 @@ class LibriVoxSource:
             return []
         if not isinstance(data, dict) or not isinstance(data.get("books"), list):
             raise SourceError("librivox: unexpected response")
-        books = [self._book(record) for record in data["books"]]
+        # A record that is not an object, or has no id, is skipped; the rest of the answer is still good.
+        books = [self._book(record) for record in _objects(data["books"]) if record.get("id")]
         if query.author and "title" in params:
             wanted = author_key(query.author).split()
             books = [b for b in books if _has_author(b, wanted)]
@@ -77,10 +78,10 @@ class LibriVoxSource:
 
     @staticmethod
     def _book(record: dict) -> Book:
-        sections = record.get("sections") or []
+        sections = _objects(record.get("sections"))
         narrators: list[str] = []
         for section in sections:
-            for reader in section.get("readers") or []:
+            for reader in _objects(section.get("readers")):
                 name = normalize_author_name(reader.get("display_name", ""))
                 if name and name not in narrators:
                     narrators.append(name)
@@ -108,13 +109,18 @@ class LibriVoxSource:
         )
 
 
+def _objects(values) -> list[dict]:
+    """The objects in a list from the API, leaving out nulls and anything else."""
+    return [v for v in values if isinstance(v, dict)] if isinstance(values, list) else []
+
+
 def _is_not_found(data) -> bool:
     return isinstance(data, dict) and "could not be found" in str(data.get("error", ""))
 
 
 def _people(people) -> list[str]:
     names = (normalize_author_name(f"{p.get('first_name', '')} {p.get('last_name', '')}")
-             for p in people or [])
+             for p in _objects(people))
     return [n for n in names if n]
 
 

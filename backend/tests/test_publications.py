@@ -162,10 +162,25 @@ class TestEndpoints:
 
     def test_book_files_cannot_run_on_the_api_origin(self, api):
         # A book page opened directly must not run scripts on our origin. Readium builds its own blob
-        # documents from the fetched text, so the header does not affect the reader.
+        # documents from the fetched text, so the header does not protect the reader; see the next test.
         response = api.get("/publications/gutenberg/1342/OEBPS/text/ch1.xhtml")
         assert response.headers["content-security-policy"] == "sandbox"
         assert response.headers["x-content-type-options"] == "nosniff"
+
+    def test_book_pages_are_served_without_scripts(self, tmp_path):
+        """Review 2026-10-11-main #15: Readium rebuilds pages on the app's origin, where the header above does not
+        apply, so the pages themselves lose anything that runs code (app/sanitize.py, tests in test_sanitize.py)."""
+        page = b"<html><body><h1 id='c1' onclick='x()'>Chapter I.</h1><script>parent.localStorage.clear()</script></body></html>"
+        gutenberg = Gutenberg(books={1342: make_epub(extra={"OEBPS/text/ch1.xhtml": page})})
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path)
+        data, _ = store.resource(1342, "OEBPS/text/ch1.xhtml")
+        assert data == b"<html><body><h1 id='c1'>Chapter I.</h1></body></html>"
+
+    def test_other_files_are_served_as_they_are(self, tmp_path):
+        css = b"body { margin: 0 } /* <script>not a page</script> */"
+        gutenberg = Gutenberg(books={1342: make_epub(extra={"OEBPS/css/style.css": css})})
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path)
+        assert store.resource(1342, "OEBPS/css/style.css")[0] == css
 
     def test_responses_allow_any_origin_by_default(self, api):
         response = api.get("/publications/gutenberg/1342/manifest.json", headers={"Origin": "http://localhost:8080"})
@@ -239,6 +254,15 @@ class TestDownload:
     @pytest.mark.parametrize("status", [500, 503, 403])
     def test_gutenberg_error_is_unavailable(self, tmp_path, status):
         gutenberg = Gutenberg(respond=lambda r: httpx.Response(status))
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path)
+        with pytest.raises(PublicationUnavailable):
+            store.manifest(1342)
+
+    def test_a_content_length_that_is_not_a_number_is_unavailable(self, tmp_path):
+        """Review 2026-10-11-main #5: int() of the header raised, which became a 500."""
+        def respond(request):
+            return httpx.Response(200, content=make_epub(), headers={"Content-Length": "not-a-number"})
+        gutenberg = Gutenberg(respond=respond)
         store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path)
         with pytest.raises(PublicationUnavailable):
             store.manifest(1342)

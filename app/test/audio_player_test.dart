@@ -233,6 +233,50 @@ void main() {
       expect(find.byKey(const Key('audio-error')), findsNothing);
     });
 
+    // Review 2026-10-11-main, #17: the finished file is still loaded, at its end.
+    testWidgets('Play after the last chapter ended starts it again from the beginning', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('chapter-2')));
+      await tester.pumpAndSettle();
+      env.audio.emitStatus(playing: false, completed: true);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      expect(env.audio.calls.last, 'play $chapter3');
+      expect(env.audio.playedFrom.last, Duration.zero);
+    });
+
+    testWidgets('choosing the chapter that is already loaded starts it from the beginning', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      env.audio.emitPosition(Uri.parse(chapter1), const Duration(minutes: 5));
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('chapter-0')));
+      await tester.pumpAndSettle();
+      expect(env.audio.calls.last, 'play $chapter1');
+      expect(env.audio.playedFrom.last, Duration.zero);
+    });
+
+    testWidgets('Play after Pause goes on from where it stopped', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      env.audio.emitPosition(Uri.parse(chapter1), const Duration(minutes: 5));
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      expect(env.audio.playedFrom.last, const Duration(minutes: 5));
+    });
+
     testWidgets('playback stopped from outside (a headset button) shows as Play', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);

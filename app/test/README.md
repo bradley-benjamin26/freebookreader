@@ -1,6 +1,6 @@
 # Flutter app tests (written before the code)
 
-All 423 pass against `app/lib/` (2026-10-11).
+All 445 pass against `app/lib/` (2026-10-11).
 
 ```bash
 cd app
@@ -30,6 +30,17 @@ Change a test and this README together.
 - **Audio (#12, #18):** `AudioEngine.play` throws `AudioException`; `positionStream` carries the file (`AudioPosition`) and `statusStream` says playing/completed (`AudioStatus`). The controller ignores positions of other files, moves to the next chapter when one ends, and shows `audio-error` (live region) with `audio-retry` when playback fails. `FakeAudioEngine` has `failNext`, `emitStatus`, `emitPosition`, and replays its last position to new listeners, as just_audio does.
 - **Links (#22):** `LauncherUrlOpener` opens only `http`/`https` links with a host; others return false (`url_opener_test`). The pages do not yet tell the user.
 - **Headings and labels (#23):** the two Home section titles are headings; the language filter is named "Language" (`accessibility_test`).
+
+### Main review fixes (2026-10-11, `REVIEW-2026-10-11-main.md`)
+
+- **Audio (#16, #17):** `audio_engine_test` tests the real `JustAudioEngine` with a subclassed `AudioPlayer` whose load waits (`JustAudioEngine(player: ...)`): a pause, or closing the engine, while a file loads means it does not start. `audio_player_test`: Play after the last chapter ended, and choosing the chapter already loaded, start from 0:00 (`from: Duration.zero`); Play after Pause goes on from where it stopped.
+- **Read aloud (#18):** `FakeSpeechEngine.holdVoices` makes the voice lookup wait; a Stop or closing the book meanwhile means nothing is spoken (`read_aloud_test`).
+- **Bookmarks (#24):** `TestEnv.create(bookmarks: ...)` takes a store; `HeldBookmarkStore` (in `reader_test`) holds its writes. A second tap while a write is pending is ignored, and the button says what is stored.
+- **Search box (#22):** it keeps what is typed, and the field chosen, when the window crosses the 840 px layout width (`search_results_test`).
+- **Readium (#26):** `FakeReadium` (in `readium_engine_test`) holds `openPublication`. A book that opens after its reader closed is closed, and the next reader's book opens only after that (Readium has one publication for the app, so opening and closing go through one queue).
+- **Chinese and Japanese (#19):** `BookText` makes each CJK character a word and splits runs of more than 40 characters with no space (Thai, long links) between letters (grapheme clusters); `spaceBefore` says where the text had a space, so `text()` adds none between them (`pagination_test`, and `text_engine_test` "a long Chinese paragraph is split over pages").
+- **Paragraph spacing (#23):** the page-turner view uses the setting's real size (`paragraphSpacing × fontSize` pixels, as the scroll view does), not "blank line or none". `paginate`/`Paginator` take `paragraphGap`; `pageSpan(book, start, end, paragraphGap:, mark:, markStyle:)` draws a page, with the empty line between paragraphs in its own size. So `reader-page-text` is a `Text.rich` when it holds more than one paragraph or a highlighted word, and `pageText` in `text_engine_test` reads `data ?? textSpan.toPlainText()`.
+- **Scroll view (#20, #21):** the place is the first word of the line at the top, not of the paragraph; a font, size, spacing or width change reopens the list at that word (the list is keyed by its layout, since a list given a new controller keeps its pixel offset). In `read_aloud_test`, reading aloud in scroll view starts at that line ("speaks from the line at the top").
 
 ### HathiTrust (2026-10-11)
 
@@ -90,7 +101,7 @@ app/lib/
   reader/readium_engine.dart   ReadiumReaderEngine(manifest Uri), epubPreferences(settings), cssFontStack(font)
   reader/content.dart          BookContent (TextContent(paragraphs) | PdfContent(url)), ContentLoader, ContentLoadException
   services/url_opener.dart     UrlOpener.open(Uri); LauncherUrlOpener opens http(s) only
-  services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/statusStream/dispose; AudioException,
+  services/audio_engine.dart   AudioEngine.play/pause/seek/positionStream/statusStream/dispose; JustAudioEngine({player}); AudioException,
                                  AudioPosition(url, position), AudioStatus(url, playing, completed)
   util/isbn.dart               looksLikeIsbn(text)
   util/format.dart             formatDuration, formatAuthors, languageName, sourceName, actionLabel
@@ -111,7 +122,7 @@ injected so tests can fake it.
 - **Details:** `details-page`, `details-title`, `details-cover`, `details-metadata`, `identifiers-toggle`, `show-all-<identifierKind>`, `book-<source>:<id>`, `open-<source>:<id>`, `source-link-<source>:<id>`
 - **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"; not shown for HathiTrust, whose `donation_url` is null), `visit-website`, `about-error`
 - **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
-- **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
+- **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`, or a `Text.rich` with several paragraphs or a highlight), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
 - **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `view-page-turner|scroll`
 - **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `chapter-<i>`, `audio-error` (live region), `audio-retry`
 

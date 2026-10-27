@@ -2,6 +2,14 @@
 
 Reviewed baseline: `main`, commit `3e9d372`. No vulnerability fixes are included.
 
+**Status (2026-10-11): fixed in the backend** (also #15 in `REVIEW-2026-10-11-main.md`). Readium fetches every chapter
+from `/publications/...`, so the backend now serves XHTML, HTML and SVG files through `app/sanitize.py`: `<script>`,
+`<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and similar elements, `on*` attributes, `srcdoc`, and
+`javascript:`/`vbscript:`/`data:` page links are removed; every other byte is unchanged (checked on 78 pages of 5 cached
+Gutenberg books). The page is read as an XML parser reads it, so a script inside `<style>` is found too. Tests:
+`backend/tests/test_sanitize.py`, `test_publications.py`. The Readium bundle is not patched and no DOMPurify was added.
+Still to do: the browser check below (a scripted chapter in Chrome cannot reach the app's page or storage).
+
 | # | Severity | File | Lines | Vulnerability | Confidence |
 |---|----------|------|-------|---------------|------------|
 | 1 | Medium | [readiumReader.js](app/web/readiumReader.js#L1) | 1 (bundled code) | Book scripts can access application-origin parent DOM/storage | 9/10 |

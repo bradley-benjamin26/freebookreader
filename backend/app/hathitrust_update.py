@@ -15,8 +15,8 @@ from typing import Iterator
 
 import httpx
 
-from app.hathifile import iter_changes
-from app.hathitrust_index import HathiIndex, IndexState
+from app.hathifile import Volume, parse_line
+from app.hathitrust_index import HathiIndex, IndexBusy, IndexState
 
 _NAME = re.compile(r"^hathi_(full|upd)_(\d{8})\.txt\.gz$")
 
@@ -29,6 +29,7 @@ class UpdateError(Exception):
 class Plan:
     full: dict | None = None          # the monthly file to rebuild from, or None
     updates: list[dict] = field(default_factory=list)      # daily files to apply, oldest first
+    missing: str | None = None        # "YYYYMMDD" of a daily file not published: the updates stop before it
 
     @property
     def is_empty(self) -> bool:
@@ -65,28 +66,77 @@ def plan_update(file_list: list[dict], state: IndexState | None) -> Plan:
     if rebuild:
         if newest_full is None:
             raise UpdateError("the file list has no monthly (full) file to build the index from")
-        return Plan(full=newest_full[1], updates=[e for date, e in updates if date >= newest_full[0]])
-    return Plan(updates=[e for date, e in updates if date > state.updated_through])
+        applied, missing = _consecutive([(d, e) for d, e in updates if d >= newest_full[0]], newest_full[0])
+        return Plan(full=newest_full[1], updates=applied, missing=missing)
+    applied, missing = _consecutive([(d, e) for d, e in updates if d > state.updated_through],
+                                    state.updated_through)
+    return Plan(updates=applied, missing=missing)
+
+
+def _consecutive(updates: list[tuple[str, dict]], since: str) -> tuple[list[dict], str | None]:
+    """The updates up to the first day without one after `since` (that day's file may come late, and the
+    later ones must not be applied before it), and that day."""
+    applied, expected = [], _next_day(since)
+    for date, entry in updates:
+        if date < expected:            # the monthly file's own day
+            applied.append(entry)
+            continue
+        if date != expected:
+            return applied, expected
+        applied.append(entry)
+        expected = _next_day(date)
+    return applied, None
 
 
 def update_index(client: httpx.Client, index: HathiIndex, file_list_url: str, log=lambda message: None) -> UpdateResult:
+    try:
+        with index.writing():
+            return _update(client, index, file_list_url, log)
+    except IndexBusy as error:
+        raise UpdateError(f"an update is already running: {error}") from error
+
+
+def _update(client: httpx.Client, index: HathiIndex, file_list_url: str, log) -> UpdateResult:
     plan = plan_update(_fetch_file_list(client, file_list_url), index.state() if index.exists() else None)
     through = None
     if plan.full is not None:
         name = plan.full["filename"]
         through = _date_of(name)
         log(f"building the index from {name}")
-        lines = iter_gzip_lines(client, plan.full["url"])
-        index.replace_all((v for _, v in iter_changes(lines) if v is not None), IndexState(name, through))
+        changes = _checked(iter_gzip_lines(client, plan.full["url"]), name, full=True)
+        index.replace_all((v for _, v in changes if v is not None), IndexState(name, through))
     full_file = index.state().full_file
     for entry in plan.updates:
         through = _date_of(entry["filename"])
         log(f"applying {entry['filename']}")
-        index.apply(iter_changes(iter_gzip_lines(client, entry["url"])), IndexState(full_file, through))
+        changes = _checked(iter_gzip_lines(client, entry["url"]), entry["filename"], full=False)
+        index.apply(changes, IndexState(full_file, through))
+    if plan.missing is not None:
+        raise UpdateError(f"the daily file for {plan.missing} is not published yet; the index is up to date "
+                          f"through the day before, and the next run goes on from there")
     if plan.is_empty:
         log("the index is up to date")
     return UpdateResult(rebuilt=plan.full is not None, updates_applied=len(plan.updates),
                         volumes=index.count(), through=through)
+
+
+def _checked(lines: Iterator[str], name: str, full: bool) -> Iterator[tuple[str, Volume | None]]:
+    """The changes in a Hathifile, failing at the end (before the index commits) when it was not a Hathifile:
+    an error page that came gzipped, say. A monthly file must also have at least one open book."""
+    lines_seen = records = kept = 0
+    for line in lines:
+        if line.strip():
+            lines_seen += 1
+        parsed = parse_line(line)
+        if parsed is None:
+            continue
+        records += 1
+        kept += parsed[1] is not None
+        yield parsed
+    if lines_seen and not records:
+        raise UpdateError(f"{name}: no line in it is a Hathifile record")
+    if full and not kept:
+        raise UpdateError(f"{name}: it has no volume anyone can read; the index was not replaced")
 
 
 def _fetch_file_list(client: httpx.Client, url: str) -> list[dict]:

@@ -325,6 +325,18 @@ void main() {
       expect(filters.right, lessThanOrEqualTo(results.left));
     });
 
+    // Review 2026-10-11-main, #22: the search box moved between the two layouts and started over.
+    testWidgets('resizing between the layouts keeps what is in the search box', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: desktop);
+      await chooseSearchField(tester, 'title');
+      await searchFor(tester, 'Frankenstein');
+      await tester.enterText(find.byKey(const Key('search-field')), 'Franken');
+      tester.view.physicalSize = phone;
+      await tester.pumpAndSettle();
+      expect(tester.widget<TextField>(find.byKey(const Key('search-field'))).controller!.text, 'Franken');
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+    });
+
     testWidgets('on mobile the filters sit under the search box and above the results',
         (tester) async {
       await pumpApp(tester, await TestEnv.create(), size: phone);

@@ -4,6 +4,8 @@
 //
 // NOT covered: flutter_readium's TTS (web, and phones once set up) and the device's voices. They are checked by
 // hand with checks 5 and 9 of decision_reader.md.
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/models/models.dart';
@@ -269,6 +271,33 @@ void main() {
       expect(speech.speaking, isFalse);
     });
 
+    // Review 2026-10-11-main, #18: a Stop or a closed book while the voices are looked up wins.
+    test('stop while the voices are looked up means nothing is spoken', () async {
+      final speech = FakeSpeechEngine()..holdVoices = Completer();
+      final engine = TextReaderEngine(FakeContentLoader(), speech: speech);
+      await engine.open(const ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://x.org/b'),
+          settings: const ReaderSettings());
+      final starting = engine.readAloud!.start();
+      await engine.readAloud!.stop();
+      speech.holdVoices!.complete();
+      await starting;
+      expect(speech.spoken, isEmpty);
+      expect(engine.readAloud!.state.value.status, ReadAloudStatus.stopped);
+      await engine.dispose();
+    });
+
+    test('closing the book while the voices are looked up means nothing is spoken', () async {
+      final speech = FakeSpeechEngine()..holdVoices = Completer();
+      final engine = TextReaderEngine(FakeContentLoader(), speech: speech);
+      await engine.open(const ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://x.org/b'),
+          settings: const ReaderSettings());
+      final starting = engine.readAloud!.start();
+      await engine.dispose();
+      speech.holdVoices!.complete();
+      await starting;
+      expect(speech.spoken, isEmpty);
+    });
+
     testWidgets('has no read aloud without a speech service', (tester) async {
       final env = await TestEnv.create(textEngine: true, speech: false);
       await pumpApp(tester, env);
@@ -506,14 +535,24 @@ void main() {
         expect(box.bottom, lessThanOrEqualTo(800));
       });
 
-      testWidgets('speaks from the paragraph at the top, not from the start of the book', (tester) async {
+      // Review 2026-10-11-main #20: the place in the scroll view is the line at the top, not its paragraph's start.
+      testWidgets('speaks from the line at the top, not from the start of the book', (tester) async {
         final env = await textEnv(tester);
         await chooseScrollView(tester);
         await tester.drag(find.byKey(const Key('reader-scroll')), const Offset(0, -3000));
         await tester.pumpAndSettle();
         await tap(tester, 'read-aloud-toggle');
         expect(env.speech.text, isNot(startsWith('Paragraph 0.')));
-        expect(env.speech.text, startsWith('Paragraph '));
+        // The words spoken first are in the first paragraph that reaches below the top of the view.
+        final top = tester.getTopLeft(find.byKey(const Key('reader-scroll'))).dy;
+        final shownParagraphs = tester
+            .widgetList<Text>(find.byWidgetPredicate((w) =>
+                w is Text && w.key is ValueKey<String> && (w.key as ValueKey<String>).value.startsWith('reader-paragraph-')))
+            .toList()
+          ..sort((a, b) => tester.getRect(find.byWidget(a)).top.compareTo(tester.getRect(find.byWidget(b)).top));
+        final paragraph = shownParagraphs.firstWhere((t) => tester.getRect(find.byWidget(t)).bottom > top);
+        final opening = env.speech.text.split(' ').take(4).join(' ');
+        expect(paragraph.data ?? paragraph.textSpan!.toPlainText(), contains(opening));
       });
     });
   });

@@ -140,6 +140,15 @@ class TestPass1Identifiers:
         ])
         assert len(works) == 2
 
+    def test_a_record_in_another_language_does_not_stop_the_others_merging(self):
+        """Review 2026-10-11-main #2: the first record (here the French one) was the only one tried."""
+        works = merge_books([
+            book("doab", "A", "Un titre", ["Ann One"], language="fr", identifiers={"oclc": ["18103615"]}),
+            book("hathitrust", "B", "First title", ["Bob Two"], language="en", identifiers={"oclc": ["18103615"]}),
+            book("openlibrary", "C", "Second title", ["Cy Three"], language="en", identifiers={"oclc": ["18103615"]}),
+        ])
+        assert groups(works) == {merged(("doab", "A")), merged(("hathitrust", "B"), ("openlibrary", "C"))}
+
     def test_unknown_language_can_still_merge_on_identifier(self):
         works = merge_books([
             book("openlibrary", "A", "Pride and Prejudice", ["Jane Austen"], language=None,

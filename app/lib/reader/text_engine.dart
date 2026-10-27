@@ -220,36 +220,38 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
     final settings = _settings;
     final style = settings.textStyle;
     final scaler = MediaQuery.textScalerOf(context);
-    final paragraphBreak = settings.paragraphSpacing >= 0.5 ? '\n\n' : '\n';
+    final gap = settings.paragraphSpacing * settings.fontSize;
     return LayoutBuilder(builder: (context, constraints) {
       const padding = 16.0;
       final width = constraints.maxWidth - 2 * padding;
       if (settings.viewMode == ViewMode.scroll) {
-        final layout = _scroll = _ScrollLayout.update(
-            _scroll, book, style, scaler, width, settings.paragraphSpacing * settings.fontSize);
+        final layout = _scroll = _ScrollLayout.update(_scroll, book, style, scaler, width, gap);
         if (_pendingProgress != null) {
           _anchor = (_pendingProgress! * (book.length - 1)).round();
           _pendingProgress = null;
         }
         layout.attach(_anchor);
-        return ListView.builder(
-          key: const Key('reader-scroll'),
-          controller: layout.controller,
-          padding: const EdgeInsets.all(padding),
-          itemCount: book.paragraphs.length,
-          itemBuilder: (context, i) => Padding(
-            padding: EdgeInsets.only(bottom: layout.gap),
-            child: _paragraph(book, i, style),
+        // A new layout is a new list: given a new controller, a list keeps its old pixel offset instead.
+        return KeyedSubtree(
+          key: ObjectKey(layout),
+          child: ListView.builder(
+            key: const Key('reader-scroll'),
+            controller: layout.controller,
+            padding: const EdgeInsets.all(padding),
+            itemCount: book.paragraphs.length,
+            itemBuilder: (context, i) => Padding(
+              padding: EdgeInsets.only(bottom: layout.gap),
+              child: _paragraph(book, i, style),
+            ),
           ),
         );
       }
-      final layout = (book, style, scaler, width, constraints.maxHeight - 2 * padding, paragraphBreak);
+      final layout = (book, style, scaler, width, constraints.maxHeight - 2 * padding, gap);
       if (layout != _pagesFor) {
         _pagesFor = layout;
         _paginated = false;
         _emitted = null;
-        unawaited(_paginate(++_job, book, style, scaler, width, constraints.maxHeight - 2 * padding,
-            paragraphBreak));
+        unawaited(_paginate(++_job, book, style, scaler, width, constraints.maxHeight - 2 * padding, gap));
       }
       if (_pendingProgress != null) {
         _anchor = (_pendingProgress! * (book.length - 1)).round();
@@ -263,7 +265,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
             padding: const EdgeInsets.all(padding),
             child: Align(
               alignment: Alignment.topLeft,
-              child: _pageText(book, _anchor, end, paragraphBreak, style, const Key('reader-page-pending')),
+              child: _pageText(book, _anchor, end, gap, style, const Key('reader-page-pending')),
             ),
           ),
         );
@@ -277,7 +279,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
         padding: const EdgeInsets.all(padding),
         child: Align(
           alignment: Alignment.topLeft,
-          child: _pageText(book, _pageStarts[page], end, paragraphBreak, style, const Key('reader-page-text')),
+          child: _pageText(book, _pageStarts[page], end, gap, style, const Key('reader-page-text')),
         ),
       );
     });
@@ -304,22 +306,20 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
     return _marked(book.paragraphs[i], start, start + book.words[word].replaceFirst('\n', '').length, style, key);
   }
 
-  Widget _pageText(BookText book, int start, int end, String paragraphBreak, TextStyle style, Key key) {
-    final text = book.text(start, end, paragraphBreak);
-    final word = _spoken;
-    if (word == null || word < start || word >= end) return Text(text, key: key, style: style);
-    final (from, to) = book.wordRange(start, word, paragraphBreak);
-    return _marked(text, from, to, style, key);
+  Widget _pageText(BookText book, int start, int end, double gap, TextStyle style, Key key) {
+    final span = pageSpan(book, start, end, paragraphGap: gap, mark: _spoken, markStyle: _markStyle);
+    if (span.children == null) return Text(span.text!, key: key, style: style);
+    return Text.rich(span, key: key, style: style);
   }
 
   /// Counts the pages in slices, one per frame, so the screen keeps drawing. Stops if the layout changes
   /// meanwhile.
   Future<void> _paginate(int job, BookText book, TextStyle style, TextScaler scaler, double width,
-      double height, String paragraphBreak) async {
+      double height, double gap) async {
     await SchedulerBinding.instance.endOfFrame; // not inside the build that asked for it
     if (job != _job) return;
     final paginator = Paginator(book,
-        style: style, textScaler: scaler, width: width, height: height, paragraphBreak: paragraphBreak);
+        style: style, textScaler: scaler, width: width, height: height, paragraphGap: gap);
     final watch = Stopwatch()..start();
     while (paginator.step()) {
       if (watch.elapsedMilliseconds < _sliceMilliseconds) continue;
@@ -344,7 +344,8 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
 class _ScrollLayout {
   _ScrollLayout(this.book, this.style, this.scaler, this.width, this.gap);
 
-  /// Reuses [old] when nothing that affects layout changed.
+  /// Reuses [old] when nothing that affects layout changed. Otherwise the new layout opens at the word that was
+  /// at the top of the old one: the same pixel offset would be another place in the book.
   static _ScrollLayout update(_ScrollLayout? old, BookText book, TextStyle style, TextScaler scaler,
       double width, double gap) {
     if (old != null &&
@@ -356,7 +357,12 @@ class _ScrollLayout {
       return old;
     }
     final next = _ScrollLayout(book, style, scaler, width, gap);
-    if (old?._controller != null) next._controller = old!._controller;
+    final oldController = old?._controller;
+    if (oldController != null) {
+      next.attach(old!.anchor());
+      // The list lets go of the old controller in this frame.
+      SchedulerBinding.instance.addPostFrameCallback((_) => oldController.dispose());
+    }
     return next;
   }
 
@@ -370,12 +376,25 @@ class _ScrollLayout {
 
   ScrollController get controller => _controller!;
 
-  /// Creates the controller the first time, scrolled to [word].
+  /// Creates the controller the first time, scrolled so that the line holding [word] is at the top.
   void attach(int word) {
     if (_controller != null) return;
-    final paragraph = book.paragraphOfWord.isEmpty ? 0 : book.paragraphOfWord[word];
-    _controller = ScrollController(initialScrollOffset: _top(paragraph));
+    if (book.length == 0) {
+      _controller = ScrollController();
+      return;
+    }
+    final paragraph = book.paragraphOfWord[word];
+    final painter = _layout(paragraph);
+    final line = painter.getOffsetForCaret(TextPosition(offset: book.wordOffsets[word]), Rect.zero).dy;
+    painter.dispose();
+    _controller = ScrollController(initialScrollOffset: _top(paragraph) + line);
   }
+
+  TextPainter _layout(int paragraph) => TextPainter(
+      text: TextSpan(text: book.paragraphs[paragraph], style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: scaler)
+    ..layout(maxWidth: width);
 
   double _top(int paragraph) {
     if (paragraph < _tops.length) return _tops[paragraph];
@@ -402,11 +421,7 @@ class _ScrollLayout {
       if (top >= p.pixels && bottom <= p.pixels + p.viewportDimension) return;
       target = top;
     } else {
-      final painter = TextPainter(
-          text: TextSpan(text: book.paragraphs[paragraph], style: style),
-          textDirection: TextDirection.ltr,
-          textScaler: scaler)
-        ..layout(maxWidth: width);
+      final painter = _layout(paragraph);
       final y = top + painter.getOffsetForCaret(TextPosition(offset: offset), Rect.zero).dy;
       painter.dispose();
       if (y >= p.pixels && y <= p.pixels + p.viewportDimension * 0.75) return;
@@ -416,14 +431,38 @@ class _ScrollLayout {
         duration: const Duration(milliseconds: 200), curve: Curves.easeInOut);
   }
 
-  /// The first word of the paragraph at the top of the view.
+  /// The first word of the line at the top of the view (review 2026-10-11-main #20: it was the paragraph's
+  /// first word, which could be screens back in a long paragraph).
   int anchor() {
+    if (book.length == 0) return 0;
     final offset = _controller?.hasClients == true ? _controller!.offset : 0.0;
     var p = 0;
     while (p + 1 < book.paragraphs.length && _top(p + 1) <= offset) {
       p++;
     }
-    return book.paragraphStarts[p];
+    final first = book.paragraphStarts[p];
+    final end = p + 1 < book.paragraphs.length ? book.paragraphStarts[p + 1] : book.length;
+    final within = offset - _top(p);
+    if (within <= 0 || first == end) return first;
+    final painter = _layout(p);
+    final height = painter.height;
+    final line = painter.getLineBoundary(painter.getPositionForOffset(Offset(0, within)));
+    painter.dispose();
+    if (within >= height) return end < book.length ? end : first; // in the gap below the paragraph
+    // The first word that starts on that line; a line that starts inside a word belongs to that word.
+    var lo = first, hi = end;
+    while (lo < hi) {
+      final mid = (lo + hi) ~/ 2;
+      if (book.wordOffsets[mid] >= line.start) {
+        hi = mid;
+      } else {
+        lo = mid + 1;
+      }
+    }
+    if (lo == end || (lo > first && book.wordOffsets[lo] > line.start)) {
+      return lo == first ? first : lo - 1;
+    }
+    return lo;
   }
 }
 
@@ -452,8 +491,12 @@ class _TextReadAloud implements ReadAloud {
 
   @override
   Future<void> start({String? language}) async {
+    // A Stop, or the book closing, while the voices are looked up wins over this start.
+    final session = ++_session;
     _language = language ?? 'en';
-    if (!await _speech.hasVoice(_language)) {
+    final available = await _speech.hasVoice(_language);
+    if (_engine._disposed || session != _session) return;
+    if (!available) {
       state.value = _now.copyWith(
           status: ReadAloudStatus.stopped, error: 'This device has no voice for ${languageName(_language)}.');
       return;
@@ -538,7 +581,9 @@ class _TextReadAloud implements ReadAloud {
       final text = StringBuffer();
       final starts = <int>[];
       for (var i = word; i < end; i++) {
-        if (i > word) text.write(book.words[i].startsWith('\n') ? '\n' : ' ');
+        if (i > word && (book.words[i].startsWith('\n') || book.spaceBefore[i])) {
+          text.write(book.words[i].startsWith('\n') ? '\n' : ' ');
+        }
         starts.add(text.length);
         text.write(book.words[i].replaceFirst('\n', ''));
       }

@@ -94,6 +94,13 @@ class TestSearchText:
         assert htids(index.search(text="goethes SÄMTLICHE werke")) != []
         assert htids(index.search(text="samtliche")) == htids(index.search(text="sämtliche")) != []
 
+    def test_an_accent_typed_as_a_separate_mark_is_the_same_letter(self, index):
+        """Review 2026-10-11-main #32: 'e' + U+0301 split the word in two, so nothing was found."""
+        composed = htids(index.search(text="sämtliche"))
+        assert composed != []
+        assert htids(index.search(text="sa\u0308mtliche")) == composed
+        assert htids(index.search(title="sa\u0308mtliche")) == htids(index.search(title="sämtliche"))
+
     def test_punctuation_is_ignored(self, index):
         assert htids(index.search(text="Dickens, Charles!")) == htids(index.search(text="charles dickens"))
 

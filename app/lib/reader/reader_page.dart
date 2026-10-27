@@ -42,6 +42,7 @@ class _ReaderPageState extends State<ReaderPage> {
   ReaderPosition _position = ReaderPosition.start;
   ReaderPosition? _startAt;
   bool _bookmarked = false;
+  bool _bookmarkBusy = false;
 
   // On web the engine's view can be an iframe, which takes clicks meant for
   // Flutter widgets drawn over it; it is covered while the settings are open.
@@ -143,19 +144,27 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   Future<void> _toggleBookmark() async {
+    // A second tap while the first is being written would act on the same old state.
+    if (_bookmarkBusy) return;
+    _bookmarkBusy = true;
     final messenger = ScaffoldMessenger.of(context);
     final key = widget.book.key;
+    final target = !_bookmarked;
     final String message;
-    if (_bookmarked) {
-      await _services.bookmarks.remove(key);
-      message = 'Bookmark removed';
-    } else {
-      final at = _engine!.position;
-      await _services.bookmarks.save(key, Bookmark(progress: at.progress, locator: at.locator));
-      message = 'Bookmark saved';
+    try {
+      if (target) {
+        final at = _engine!.position;
+        await _services.bookmarks.save(key, Bookmark(progress: at.progress, locator: at.locator));
+        message = 'Bookmark saved';
+      } else {
+        await _services.bookmarks.remove(key);
+        message = 'Bookmark removed';
+      }
+    } finally {
+      _bookmarkBusy = false;
     }
     if (!mounted) return;
-    setState(() => _bookmarked = !_bookmarked);
+    setState(() => _bookmarked = target);
     messenger
       ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));

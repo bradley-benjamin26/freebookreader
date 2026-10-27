@@ -352,8 +352,14 @@ class FakeSpeechEngine implements SpeechEngine {
   bool get speaking => _pending != null && !_pending!.isCompleted;
   String get text => spoken.last.text;
 
+  /// When set, [hasVoice] answers only once this completes (a browser loading its voices).
+  Completer<void>? holdVoices;
+
   @override
-  Future<bool> hasVoice(String language) async => languages.contains(language);
+  Future<bool> hasVoice(String language) async {
+    await holdVoices?.future;
+    return languages.contains(language);
+  }
 
   @override
   Future<void> speak(String text,

@@ -32,8 +32,11 @@ Future<void> chooseView(WidgetTester tester, String view) async {
 TextStyle pageStyle(WidgetTester tester) =>
     tester.widget<Text>(find.byKey(const Key('reader-page-text'))).style!;
 
-String pageText(WidgetTester tester) =>
-    tester.widget<Text>(find.byKey(const Key('reader-page-text'))).data!;
+/// The page as text. A page with several paragraphs is a Text.rich (the gap between them has its own size).
+String pageText(WidgetTester tester) {
+  final text = tester.widget<Text>(find.byKey(const Key('reader-page-text')));
+  return text.data ?? text.textSpan!.toPlainText();
+}
 
 Future<TestEnv> textEnv(WidgetTester tester, {Map<String, Object> prefs = const {}}) async {
   final env = await TestEnv.create(prefsValues: prefs, textEngine: true);
@@ -132,6 +135,33 @@ void main() {
       await closeSettings(tester);
       expect(words(pageText(tester)), contains(opening));
     });
+  });
+
+  // Review 2026-10-11-main #19: a Chinese paragraph was one page, taller than the screen.
+  testWidgets('a long Chinese paragraph is split over pages', (tester) async {
+    final env = await textEnv(tester);
+    final text = List.generate(3000, (i) => '天下大勢分久必合合久必分'[i % 12]).join();
+    env.loader.content = TextContent([text]);
+    await openBook(tester, env, 'w-pride', gutenberg);
+    expect(pageCount(tester), greaterThan(3));
+    final first = pageText(tester);
+    expect(first, isNot(contains(' ')));
+    await nextPage(tester);
+    expect(pageText(tester), isNot(first));
+    expect(tester.takeException(), isNull);
+  });
+
+  // Review 2026-10-11-main #23: in the page-turner view the setting was only "gap or no gap".
+  testWidgets('every paragraph spacing changes the pages', (tester) async {
+    final counts = <int>[];
+    for (final spacing in [1, 2, 3]) {
+      final env = await textEnv(tester, prefs: {'reader_settings': '{"paragraphSpacing":$spacing}'});
+      await openBook(tester, env, 'w-pride', gutenberg);
+      counts.add(pageCount(tester));
+      await tester.pumpWidget(const SizedBox());
+    }
+    expect(counts[1], greaterThan(counts[0]));
+    expect(counts[2], greaterThan(counts[1]));
   });
 
   group('verse in the page-turner view', () {
@@ -240,6 +270,60 @@ void main() {
       expect(find.byKey(const Key('reader-paragraph-0')), findsNothing);
       await chooseView(tester, 'page-turner');
       expect(pageNumber(tester), closeTo(5, 1));
+    });
+
+    // Review 2026-10-11-main #20 and #21: the place in the scroll view was the start of the paragraph at the top,
+    // and a font change kept the pixel offset (another place in the book).
+    group('in a long paragraph', () {
+      final long = TextContent([List.generate(1500, (i) => 'w$i').join(' '), 'The end.']);
+
+      Future<int> bookmarkedWord(WidgetTester tester, TestEnv env) async {
+        await tester.tap(find.byKey(const Key('bookmark-button')));
+        await tester.pumpAndSettle();
+        final word = int.parse(env.bookmarks.load(gutenberg)!.locator!.replaceFirst('word:', ''));
+        await tester.tap(find.byKey(const Key('bookmark-button'))); // remove it again
+        await tester.pumpAndSettle();
+        return word;
+      }
+
+      testWidgets('a bookmark keeps the line, and reopening shows that line', (tester) async {
+        final env = await textEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
+        env.loader.content = long;
+        await openBook(tester, env, 'w-pride', gutenberg);
+        await tester.drag(find.byKey(const Key('reader-scroll')), const Offset(0, -1500));
+        await tester.pumpAndSettle();
+        final before = tester.getTopLeft(find.byKey(const Key('reader-paragraph-0'))).dy;
+        await tester.tap(find.byKey(const Key('bookmark-button')));
+        await tester.pumpAndSettle();
+        expect(env.bookmarks.load(gutenberg)!.locator, isNot('word:0'));
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        final open = find.byKey(const Key('open-$gutenberg'));
+        await tester.ensureVisible(open);
+        await tester.tap(open);
+        await tester.pumpAndSettle();
+        final after = tester.getTopLeft(find.byKey(const Key('reader-paragraph-0'))).dy;
+        expect(after, closeTo(before, 30), reason: 'within a line of where it was');
+      });
+
+      testWidgets('a font size change keeps the line at the top', (tester) async {
+        final env = await textEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
+        env.loader.content = long;
+        await openBook(tester, env, 'w-pride', gutenberg);
+        await tester.drag(find.byKey(const Key('reader-scroll')), const Offset(0, -2000));
+        await tester.pumpAndSettle();
+        final before = await bookmarkedWord(tester, env);
+        expect(before, greaterThan(100));
+        await openSettings(tester);
+        for (var i = 0; i < 4; i++) {
+          await tester.tap(find.byKey(const Key('font-increase')));
+          await tester.pumpAndSettle();
+        }
+        await closeSettings(tester);
+        final after = await bookmarkedWord(tester, env);
+        expect(after, lessThanOrEqualTo(before));
+        expect(before - after, lessThan(15), reason: 'the same line, or the start of it');
+      });
     });
 
     testWidgets('paragraph spacing applies', (tester) async {
