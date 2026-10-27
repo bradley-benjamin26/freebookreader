@@ -4,10 +4,12 @@
 // reader page's controls drive it as they would for a user.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/reader/content.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 
 import 'helpers/fakes.dart';
+import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
 
 const gutenberg = 'gutenberg:1342';
@@ -68,6 +70,24 @@ void main() {
       env.loader.content = const PdfContent('https://example.org/a.pdf');
       await openBook(tester, env, 'w-pride', gutenberg);
       expect(find.byKey(const Key('load-error')), findsOneWidget);
+    });
+
+    testWidgets("the text is marked with the book's language", (tester) async {
+      final json = loadJson('search_response.json');
+      json['works'][0]['books'][0]['language'] = 'es';
+      final env = await TestEnv.create(response: SearchResponse.fromJson(json), textEngine: true);
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(tester.widget<Text>(find.byKey(const Key('reader-page-text'))).locale, const Locale('es'));
+    });
+
+    testWidgets('a book with no language leaves the locale alone', (tester) async {
+      final json = loadJson('search_response.json');
+      json['works'][0]['books'][0]['language'] = null;
+      final env = await TestEnv.create(response: SearchResponse.fromJson(json), textEngine: true);
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(tester.widget<Text>(find.byKey(const Key('reader-page-text'))).locale, isNull);
     });
 
     testWidgets('the text is available to screen readers', (tester) async {

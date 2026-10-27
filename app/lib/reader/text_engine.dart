@@ -202,7 +202,10 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   }
 
   @override
-  Widget buildView(BuildContext context) => ListenableBuilder(listenable: this, builder: _build);
+  Widget buildView(BuildContext context, {Locale? locale}) {
+    _locale = locale;
+    return ListenableBuilder(listenable: this, builder: _build);
+  }
 
   @override
   Future<void> dispose() async {
@@ -288,6 +291,8 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   /// The word being read aloud, in the colours of the page swapped.
   TextStyle get _markStyle => TextStyle(color: _settings.backgroundColor, backgroundColor: _settings.textColor);
 
+  Locale? _locale;
+
   Widget _marked(String text, int start, int end, TextStyle style, Key key) => Text.rich(
         TextSpan(children: [
           TextSpan(text: text.substring(0, start)),
@@ -296,20 +301,21 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
         ]),
         key: key,
         style: style,
+        locale: _locale,
       );
 
   Widget _paragraph(BookText book, int i, TextStyle style) {
     final key = Key('reader-paragraph-$i');
     final word = _spoken;
-    if (word == null || book.paragraphOfWord[word] != i) return Text(book.paragraphs[i], key: key, style: style);
+    if (word == null || book.paragraphOfWord[word] != i) return Text(book.paragraphs[i], key: key, style: style, locale: _locale);
     final start = book.wordOffsets[word];
     return _marked(book.paragraphs[i], start, start + book.words[word].replaceFirst('\n', '').length, style, key);
   }
 
   Widget _pageText(BookText book, int start, int end, double gap, TextStyle style, Key key) {
     final span = pageSpan(book, start, end, paragraphGap: gap, mark: _spoken, markStyle: _markStyle);
-    if (span.children == null) return Text(span.text!, key: key, style: style);
-    return Text.rich(span, key: key, style: style);
+    if (span.children == null) return Text(span.text!, key: key, style: style, locale: _locale);
+    return Text.rich(span, key: key, style: style, locale: _locale);
   }
 
   /// Counts the pages in slices, one per frame, so the screen keeps drawing. Stops if the layout changes

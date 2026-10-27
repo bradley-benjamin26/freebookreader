@@ -94,7 +94,7 @@ app/lib/
   storage/bookmark_store.dart  Bookmark(progress 0..1, locator?, const); BookmarkStore(SharedPreferences)
   reader/reader_settings.dart  ReaderSettings (const, clamped), ReaderSettingsStore, ReaderTheme, ReaderFont, ViewMode
   reader/reader_engine.dart    ReaderEngine {open(book, settings, at), position, positions, next, previous, goTo,
-                                 apply, buildView, dispose}; ReaderPosition(progress, locator?, page?, pageCount?,
+                                 apply, buildView(context, {locale}), dispose}; ReaderPosition(progress, locator?, page?, pageCount?,
                                  atStart, atEnd); ReaderOpenException; ReaderEngineFactory
   reader/text_engine.dart      TextReaderEngine(ContentLoader): our own renderer; locator "word:<index>"
   reader/engines.dart          chooseReaderEngine(book, web, backend, loader), backendUrl(backend, path)

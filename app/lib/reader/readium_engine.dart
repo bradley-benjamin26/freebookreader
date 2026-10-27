@@ -129,7 +129,7 @@ class ReadiumReaderEngine implements ReaderEngine {
   Future<void> apply(ReaderSettings settings) => _readium.setEPUBPreferences(epubPreferences(settings));
 
   @override
-  Widget buildView(BuildContext context) => ReadiumReaderWidget(
+  Widget buildView(BuildContext context, {Locale? locale}) => ReadiumReaderWidget(
         publication: _publication!,
         initialLocator: _initial,
         loadingWidget: const Center(child: CircularProgressIndicator(semanticsLabel: 'Loading book')),

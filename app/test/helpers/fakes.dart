@@ -171,7 +171,7 @@ class FakeReaderEngine implements ReaderEngine {
   }
 
   @override
-  Widget buildView(BuildContext context) => Text('Text of page ${page + 1}',
+  Widget buildView(BuildContext context, {Locale? locale}) => Text('Text of page ${page + 1}',
       key: const Key('fake-reader-view'), style: TextStyle(color: settings!.textColor, fontSize: 18));
 
   @override

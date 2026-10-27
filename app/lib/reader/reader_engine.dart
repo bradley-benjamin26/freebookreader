@@ -71,8 +71,9 @@ abstract class ReaderEngine {
   /// Text-to-speech for this engine's book, or null when it cannot read aloud.
   ReadAloud? get readAloud;
 
-  /// The book itself, once [open] has completed.
-  Widget buildView(BuildContext context);
+  /// The book itself, once [open] has completed. [locale] is the book's language, so screen readers read
+  /// its text in that language (the UI around it stays in the app's).
+  Widget buildView(BuildContext context, {Locale? locale});
 
   Future<void> dispose();
 }

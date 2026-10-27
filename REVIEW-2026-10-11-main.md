@@ -47,8 +47,8 @@ and
 [source/index recovery](../../../.copilot/session-state/a3fced19-d49b-4f17-8dcf-1d1aa2c3ef85/files/sources-review-recovery.md).
 These are session-local supporting reports; the findings below are also consolidated here.
 
-**Status (2026-10-11):** 22 fixed (#2, #5–#7, #9, #15–#24, #26–#32), 10 open (#1, #3, #4, #8, #10–#14, #25). Each
-finding has a Status line. Test runs after the fixes: backend 969 passed, Flutter 445 passed, Gutendex 48 passed.
+**Status (2026-10-11):** 26 fixed (#1–#7, #9, #15–#32), 6 left open on purpose (#8, #10–#14). Each
+finding has a Status line. Test runs after the fixes: backend 969 passed, Flutter 445 passed, Gutendex 48 passed (after the 2026-10-27 fixes: backend 976, Flutter 447).
 
 **Consolidated findings:** 32 actionable findings: 4 High, 22 Medium, 6 Low. No Critical
 finding was verified. The Medium security finding has an explicit upstream-content-control
@@ -338,7 +338,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   instead create a whole-catalog transaction. This fix rolls back one failed book, not the
   entire refresh. The import already re-raises per-book errors; preserve that behavior.
 
-- **Status:** open (Low: never seen in the real catalog).
+- **Status:** left open on purpose (2026-10-27): never seen in the real catalog.
 
 ### 9. Refresh failures report successful command exit
 
@@ -376,7 +376,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
       )
   ```
 
-- **Status:** open. If fixed, raise the cap (to about 8) and split on any whitespace rather than removing it: with the 300-character limit, no cap means up to 150 joins.
+- **Status:** left open on purpose (2026-10-27): vendored Gutendex; our backend sends only `search=`, so it does not reach the app.
 
 ### 11. Author-year bounds can be satisfied by different authors
 
@@ -403,7 +403,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   confirmed that an author living 1700-2000 still matches 1800-1899; the fix preserves
   current partial-date semantics.
 
-- **Status:** open. Our backend only sends `search=`, so this does not reach the app.
+- **Status:** left open on purpose (2026-10-27): vendored Gutendex; does not reach the app.
 
 ### 12. ID sorting orders database rows rather than Gutenberg numbers
 
@@ -420,7 +420,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   queryset = queryset.order_by("-gutenberg_id")  # descending branch
   ```
 
-- **Status:** open. Does not reach the app; note that `api_gutendex.documentation.md` documents ID order.
+- **Status:** left open on purpose (2026-10-27): vendored Gutendex; does not reach the app.
 
 ### 13. The explorer rejects supported Opera and Safari versions
 
@@ -444,7 +444,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
     navigator.userAgent.match(/version\/(\d+(?:\.\d+)?)/i);
   ```
 
-- **Status:** open. The explorer page is not used by the app.
+- **Status:** left open on purpose (2026-10-27): the explorer page is not used by the app.
 
 ### 14. Explorer responses can overwrite a newer query
 
@@ -470,7 +470,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
     });
   ```
 
-- **Status:** open. The explorer page is not used by the app.
+- **Status:** left open on purpose (2026-10-27): the explorer page is not used by the app.
 
 ## Security boundary
 
@@ -787,7 +787,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   Set appropriate Text locale/direction for glyph layout as well, and validate real
   screen-reader language switching on devices.
 
-- **Status:** open.
+- **Status:** fixed 2026-10-27, differently: this Flutter has no `localeForSubtree` on `Semantics`, so the text engine gives its `Text` widgets the book's `locale` (`ReaderEngine.buildView(context, {locale})`), which Flutter puts in the semantics node. The Readium (web) view is an HTML page and is not changed here. Tests in `text_engine_test` ("marked with the book's language"). Real VoiceOver/TalkBack switching not checked.
 
 ### 26. Disposed Readium engines retain publications opened late
 

@@ -29,6 +29,12 @@ class ReaderPage extends StatefulWidget {
 }
 
 class _ReaderPageState extends State<ReaderPage> {
+  /// The book's language for screen readers; null when the book does not say.
+  Locale? get _bookLocale {
+    final language = widget.book.language;
+    return language == null || language.isEmpty ? null : Locale(language);
+  }
+
   static const loadLimit = Duration(minutes: 1);
 
   late Services _services;
@@ -238,7 +244,7 @@ class _ReaderPageState extends State<ReaderPage> {
                               ? Stack(children: [
                                   Positioned.fill(
                                     child: Focus(
-                                        autofocus: true, onKeyEvent: _onKey, child: _engine!.buildView(context)),
+                                        autofocus: true, onKeyEvent: _onKey, child: _engine!.buildView(context, locale: _bookLocale)),
                                   ),
                                   if (_settingsOpen)
                                     Positioned.fill(
