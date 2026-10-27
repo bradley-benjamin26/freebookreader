@@ -1,8 +1,9 @@
 """Search across sources: fan out in parallel, filter, merge into works, and survive outages."""
 import logging
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, wait
-from typing import Literal
+from typing import Callable, Literal
 
 from pydantic import BaseModel
 
@@ -16,7 +17,7 @@ log = logging.getLogger(__name__)
 
 # Searches one source may have running at once. A slow source is asked again on every search, and its
 # threads outlive the response, so without a limit a stuck source would pile up threads under load.
-MAX_IN_FLIGHT = 4
+MAX_IN_FLIGHT = 8
 
 
 class SkippedSource(BaseModel):
@@ -35,11 +36,19 @@ class SearchResponse(BaseModel):
 
 class SearchService:
     def __init__(self, sources: list[Source], outage: OutageTracker, timeout_seconds: float = 12,
-                 max_in_flight: int = MAX_IN_FLIGHT):
+                 max_in_flight: int = MAX_IN_FLIGHT, cache_seconds: float = 0, cache_entries: int = 500,
+                 now: Callable[[], float] = time.monotonic):
         self.sources = list(sources)
         self.outage = outage
         self.timeout_seconds = timeout_seconds
         self.max_in_flight = max_in_flight
+        # Each source's answer to a query, kept for cache_seconds (0 = no cache): one DOAB search is 21 requests,
+        # and Open Library allows 3 a second. Only good answers are kept. Oldest entries leave first.
+        self.cache_seconds = cache_seconds
+        self._cache_entries = cache_entries
+        self._now = now
+        self._cache: dict[tuple[str, str], tuple[float, list[Book]]] = {}
+        self._cache_lock = threading.Lock()
         self._slots = {s.name: threading.BoundedSemaphore(max_in_flight) for s in self.sources}
         # Every running search holds one of its source's slots, so a task never waits for a worker.
         self._executor = ThreadPoolExecutor(max_workers=max(1, len(self.sources) * max_in_flight),
@@ -72,19 +81,24 @@ class SearchService:
         earlier timeouts) is not asked, and is left out of this search only.
         """
         missing: dict[str, str] = {}    # source name -> reason
+        found: dict[str, list[Book]] = {}
         futures = {}
         for source in sources:
+            key = (source.name, query.model_dump_json(exclude={"sources"}))
+            cached = self._cache_get(key)
+            if cached is not None:
+                found[source.name] = cached
+                continue
             slot = self._slots[source.name]
             if not slot.acquire(blocking=False):
                 log.warning("source %s skipped: %s searches still running", source.name, self.max_in_flight)
                 missing[source.name] = "busy"
                 continue
-            futures[self._executor.submit(_run, source, query, slot)] = source
+            futures[self._executor.submit(self._run, source, query, slot, key)] = source
         if not futures:
-            return [], missing
+            return _in_source_order(sources, found), missing
         # Do not wait for slow sources; their searches finish in the background and then free their slot.
         done, not_done = wait(futures, timeout=self.timeout_seconds)
-        books: list[Book] = []
         for future in futures:          # in source order, so results keep a stable order
             source = futures[future]
             if future in not_done:
@@ -110,15 +124,40 @@ class SearchService:
                 log.error("source %s adapter crashed", source.name, exc_info=error)
                 missing[source.name] = "error"
             else:
-                books.extend(future.result())
-        return books, missing
+                found[source.name] = future.result()
+        return _in_source_order(sources, found), missing
 
 
-def _run(source: Source, query: SearchQuery, slot: threading.BoundedSemaphore) -> list[Book]:
-    try:
-        return source.search(query)
-    finally:
-        slot.release()
+    def _run(self, source: Source, query: SearchQuery, slot: threading.BoundedSemaphore, key) -> list[Book]:
+        try:
+            books = source.search(query)
+        finally:
+            slot.release()
+        self._cache_put(key, books)
+        return books
+
+    def _cache_get(self, key) -> list[Book] | None:
+        if not self.cache_seconds:
+            return None
+        with self._cache_lock:
+            entry = self._cache.get(key)
+            if entry is None or self._now() >= entry[0]:
+                self._cache.pop(key, None)
+                return None
+            return [b.model_copy(deep=True) for b in entry[1]]    # callers may change what they get
+
+    def _cache_put(self, key, books: list[Book]) -> None:
+        if not self.cache_seconds:
+            return
+        with self._cache_lock:
+            self._cache.pop(key, None)
+            self._cache[key] = (self._now() + self.cache_seconds, [b.model_copy(deep=True) for b in books])
+            while len(self._cache) > self._cache_entries:
+                del self._cache[next(iter(self._cache))]
+
+
+def _in_source_order(sources: list[Source], found: dict[str, list[Book]]) -> list[Book]:
+    return [book for source in sources for book in found.get(source.name, [])]
 
 
 def _passes_filters(book: Book, query: SearchQuery) -> bool:

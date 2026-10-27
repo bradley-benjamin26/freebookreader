@@ -57,6 +57,8 @@ class Settings:
     # (review 2026-10-11, #3: waiting without a limit took a search past the 15 s the spec allows).
     search_admission_seconds: float = 3
     outage_cooldown_hours: float = 24
+    # How long a source's answer to a query is reused (audit 2026-10-27, F1). 0 turns the cache off.
+    search_cache_seconds: float = 300
     cors_origins: tuple[str, ...] = ("*",)
     # Open Library allows 3 requests/second instead of 1 when the User-Agent names the app and a contact.
     project_name: str | None = None
@@ -89,6 +91,7 @@ class Settings:
             max_concurrent_searches=int(_number(get("MAX_CONCURRENT_SEARCHES", cls.max_concurrent_searches))),
             search_admission_seconds=_number(get("SEARCH_ADMISSION_SECONDS", cls.search_admission_seconds)),
             outage_cooldown_hours=_number(get("OUTAGE_COOLDOWN_HOURS", cls.outage_cooldown_hours)),
+            search_cache_seconds=_number(get("SEARCH_CACHE_SECONDS", cls.search_cache_seconds)),
             cors_origins=tuple(o.strip() for o in origins.split(",")) if origins else cls.cors_origins,
             project_name=file.get("projectName") or None,
             contact=get("CONTACT", None) or file.get("email") or None,
@@ -124,7 +127,8 @@ def build_search_service(settings: Settings, client: httpx.Client) -> SearchServ
         HathiTrustSource(HathiIndex(settings.hathitrust_index)),
     ]
     outage = OutageTracker(cooldown=timedelta(hours=settings.outage_cooldown_hours))
-    return SearchService(sources=sources, outage=outage, timeout_seconds=settings.search_timeout_seconds)
+    return SearchService(sources=sources, outage=outage, timeout_seconds=settings.search_timeout_seconds,
+                         cache_seconds=settings.search_cache_seconds)
 
 
 def build_publication_store(settings: Settings, client: httpx.Client) -> PublicationStore:

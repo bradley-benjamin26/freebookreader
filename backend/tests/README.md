@@ -69,7 +69,7 @@ backend/app/
   hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
   outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
-  search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=4): search(SearchQuery) -> SearchResponse
+  search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=8, cache_seconds=0, cache_entries=500, now): search(SearchQuery) -> SearchResponse
   reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
   publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
                    max_cache_bytes, max_entry_bytes, catalog): GutendexCatalog(client, gutendex_url)(id) -> True/False/None; manifest(id), resource(id, href) -> (bytes, type);
@@ -186,9 +186,9 @@ queried in parallel threads, on one executor shared by all searches.
   20 identifiers of each kind (`MAX_SERIALIZED_IDENTIFIERS`); merging and the known-item ISBN check see them all.
 - **LibriVox keeps "Il" and "De"** (review 2026-10-11, #16): "Il Principe" and "De Profundis" are searched as
   titled. Dutch "De Kleine Johannes" is the price (LibriVox drops that one).
-- **At most 4 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
+- **At most 8 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
   its place until its thread finishes. A source with no free place is not asked: it is listed in
-  `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 4 threads.
+  `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 8 threads.
 - **Only the source's fault is an outage** (review 2026-10-10, #1). A `4xx` answer raises `SourceRejected`
   (a `SourceError` subclass), and an exception that is not a `SourceError` is a bug in our adapter. Both leave
   the source out of that search only (listed in `unavailable_sources`) without `record_failure`.
@@ -264,3 +264,5 @@ queried in parallel threads, on one executor shared by all searches.
 - Live network calls. All HTTP is mocked; run the curl examples in `api_*.documentation.md` to check the real APIs.
 - Gutendex nightly refresh scheduling (`updatecatalog`), deployment, and load. (`updatecatalog`'s failure handling is
   tested in Gutendex: `UpdateCatalogTests` in `gutendex/books/tests.py`.)
+
+- **Source answers are cached** (audit 2026-10-27, F1): `TestCache` in `test_search_service.py`. `cache_seconds` (`FBR_SEARCH_CACHE_SECONDS`, default 300 in `Settings`, 0 in the bare `SearchService`) keeps each source's good answer to a query; the key leaves out `sources`, errors are never kept, at most `cache_entries` are held, and callers get copies.

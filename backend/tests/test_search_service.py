@@ -348,9 +348,10 @@ class TestTimeout:
 class TestSearchesInFlight:
     """Review 2026-10-10, #6: a slow source must not pile up threads, since it is asked again every time."""
 
-    def test_default_limit_is_4_searches_per_source(self, clock):
+    def test_default_limit_is_8_searches_per_source(self, clock):
+        """Audit 2026-10-27, F1: 4 made the fifth simultaneous user lose a slow source (`busy`)."""
         service, _ = build([], clock)
-        assert service.max_in_flight == 4
+        assert service.max_in_flight == 8
 
     @pytest.mark.slow
     def test_a_slow_source_holds_at_most_its_limit_of_threads(self, clock):
@@ -399,3 +400,83 @@ class TestSearchesInFlight:
             responses = list(users.map(service.search, [SearchQuery(q="pride")] * 4))
         assert all(r.unavailable_sources == [] for r in responses)
         assert len(fast.calls) == 4
+
+
+class TestCache:
+    """Audit 2026-10-27, F1: the same search must not hit every outside site again (Open Library allows 3
+    requests a second, one DOAB search is 21 requests)."""
+
+    @staticmethod
+    def cached(sources, clock, seconds=300, entries=500):
+        ticks = [0.0]
+        service, _ = build(sources, clock, cache_seconds=seconds, cache_entries=entries, now=lambda: ticks[0])
+        return service, ticks
+
+    def test_the_same_search_asks_each_source_once(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, _ = self.cached([source], clock)
+        first = service.search(SearchQuery(q="dickens"))
+        second = service.search(SearchQuery(q="dickens"))
+        assert len(source.calls) == 1
+        assert first == second
+
+    def test_searches_for_other_sources_share_cached_results(self, clock):
+        text, audio = FakeSource("gutenberg", [austen_text()]), FakeSource("librivox", [austen_audio()])
+        service, _ = self.cached([text, audio], clock)
+        service.search(SearchQuery(q="austen"))
+        only_text = service.search(SearchQuery(q="austen", sources=["gutenberg"]))
+        assert len(text.calls) == 1
+        assert [w.sources for w in only_text.works] == [["gutenberg"]]
+
+    def test_a_different_page_is_a_different_search(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, _ = self.cached([source], clock)
+        service.search(SearchQuery(q="austen"))
+        service.search(SearchQuery(q="austen", page=2))
+        assert len(source.calls) == 2
+
+    def test_results_expire(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, ticks = self.cached([source], clock, seconds=300)
+        service.search(SearchQuery(q="austen"))
+        ticks[0] = 299
+        service.search(SearchQuery(q="austen"))
+        assert len(source.calls) == 1
+        ticks[0] = 301
+        service.search(SearchQuery(q="austen"))
+        assert len(source.calls) == 2
+
+    def test_failures_are_not_cached(self, clock):
+        class Flaky(FakeSource):
+            def search(self, query):
+                self.calls.append(query)
+                if len(self.calls) == 1:
+                    raise SourceRejected("HTTP 429")
+                return [austen_text()]
+
+        source = Flaky("openlibrary")
+        service, _ = self.cached([source], clock)
+        assert service.search(SearchQuery(q="austen")).works == []
+        assert len(service.search(SearchQuery(q="austen")).works) == 1
+
+    def test_the_cache_is_bounded(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, _ = self.cached([source], clock, entries=3)
+        for word in "abcdefghij":
+            service.search(SearchQuery(q=word))
+        before = len(source.calls)
+        service.search(SearchQuery(q="a"))      # the oldest entries are gone
+        assert len(source.calls) == before + 1
+
+    def test_changing_a_returned_book_does_not_change_the_cache(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, _ = self.cached([source], clock)
+        service.search(SearchQuery(q="austen")).works[0].books[0].title = "Changed"
+        assert service.search(SearchQuery(q="austen")).works[0].books[0].title == "Pride and Prejudice"
+
+    def test_no_cache_by_default(self, clock):
+        source = FakeSource("gutenberg", [austen_text()])
+        service, _ = build([source], clock)
+        service.search(SearchQuery(q="austen"))
+        service.search(SearchQuery(q="austen"))
+        assert len(source.calls) == 2
