@@ -334,3 +334,51 @@ class TestSearchAdmission:
         body = full.get("/search", params={"q": "x", "sources": "librivox,gutenberg"}).json()
         assert body["skipped"] == [{"source": "gutenberg", "reason": "busy"},
                                    {"source": "librivox", "reason": "busy"}]
+
+
+class TestShutdown:
+    """Review 2026-10-11 (main), #4: the HTTP client and search executor the factory builds were never closed."""
+
+    @pytest.fixture
+    def built(self, monkeypatch):
+        import app.main as main
+        made = {}
+
+        def build_service(settings, client):
+            made["service"] = real_service(settings, client)
+            return made["service"]
+
+        real_service = main.build_search_service
+        real_client = main.build_http_client
+
+        def build_client(settings):
+            made["client"] = real_client(settings)
+            return made["client"]
+
+        monkeypatch.setattr(main, "build_search_service", build_service)
+        monkeypatch.setattr(main, "build_http_client", build_client)
+        return made
+
+    def test_the_factory_closes_what_it_built(self, built, tmp_path):
+        settings = Settings.from_env({"FBR_EPUB_CACHE_DIR": str(tmp_path)})
+        with TestClient(create_app(settings=settings)):
+            assert not built["client"].is_closed
+        assert built["client"].is_closed
+        with pytest.raises(RuntimeError):
+            built["service"]._executor.submit(lambda: None)
+
+    def test_what_the_caller_passed_in_is_left_open(self, built, tmp_path, stub):
+        settings = Settings.from_env({"FBR_EPUB_CACHE_DIR": str(tmp_path)})
+        closed = []
+        stub.close = lambda: closed.append(True)
+        with TestClient(create_app(search_service=stub, settings=settings)):
+            pass
+        assert built["client"].is_closed          # the client was built for the publication store
+        assert closed == []
+
+    def test_the_search_service_can_be_closed_twice(self):
+        from app.outage import OutageTracker
+        from app.search import SearchService
+        service = SearchService([], OutageTracker())
+        service.close()
+        service.close()

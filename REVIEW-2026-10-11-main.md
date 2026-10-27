@@ -216,7 +216,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   Add lifespan tests asserting client closure and worker termination. Draining still depends
   on genuinely bounded source operations; an executor shutdown is not a hard task timeout.
 
-- **Status:** open (Low: one app per process).
+- **Status:** fixed 2026-10-27. A `lifespan` closes the HTTP client and, if the factory built it, the `SearchService` (`close()` waits for running source searches). Objects passed in are left to the caller. Tests: `TestShutdown` in `test_api`.
 
 ### 5. Malformed publication Content-Length becomes an internal server error
 

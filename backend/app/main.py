@@ -2,6 +2,7 @@
 
 Run: uvicorn app.main:create_app --factory --port 8000
 """
+from contextlib import asynccontextmanager
 from typing import Optional
 
 import anyio
@@ -35,12 +36,23 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
     client = None
     if search_service is None or publication_store is None:
         client = build_http_client(settings)
-    if search_service is None:
+    owns_search = search_service is None
+    if owns_search:
         search_service = build_search_service(settings, client)
     if publication_store is None:
         publication_store = build_publication_store(settings, client)
 
-    app = FastAPI(title="Free Book Reader API", version="0.1.0")
+    @asynccontextmanager
+    async def lifespan(_app):
+        try:
+            yield
+        finally:    # only what this factory built; objects passed in belong to the caller
+            if owns_search:
+                await to_thread.run_sync(search_service.close)
+            if client is not None:
+                client.close()
+
+    app = FastAPI(title="Free Book Reader API", version="0.1.0", lifespan=lifespan)
     app.add_middleware(CORSMiddleware, allow_origins=list(settings.cors_origins),
                        allow_methods=["GET"], allow_headers=["*"])
     # A search with a few audiobooks is 100 KB of repetitive JSON; gzip makes it about a tenth. Only for

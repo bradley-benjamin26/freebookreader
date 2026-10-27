@@ -44,6 +44,10 @@ class SearchService:
         self._executor = ThreadPoolExecutor(max_workers=max(1, len(self.sources) * max_in_flight),
                                             thread_name_prefix="source-search")
 
+    def close(self) -> None:
+        """Waits for running source searches, so the HTTP client they share can then be closed."""
+        self._executor.shutdown(wait=True, cancel_futures=True)
+
     def search(self, query: SearchQuery) -> SearchResponse:
         selected = [s for s in self.sources if query.sources is None or s.name in query.sources]
         to_query = [s for s in selected if self.outage.is_available(s.name)]
