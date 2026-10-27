@@ -56,15 +56,15 @@ Gutendex has its own regression tests (it is already built):
 ```
 backend/app/
   models.py        Book, Chapter, Work, SearchQuery (pydantic v2)
-  normalize.py     normalize_author_name, author_key, title_key, normalize_isbn, normalize_oclc, to_language_code, to_marc_language
+  normalize.py     normalize_author_name, author_key, title_key, normalize_isbn, normalize_oclc, unique, to_language_code, to_marc_language
   sources/
     base.py        SourceError;  a Source has .name and .search(SearchQuery) -> list[Book]
     gutendex.py    GutendexSource(client: httpx.Client, base_url)          name "gutenberg"
     librivox.py    LibriVoxSource(client, base_url)                        name "librivox"
-    openlibrary.py OpenLibrarySource(client, base_url); .availability(isbn) -> Availability|None   name "openlibrary"
+    openlibrary.py OpenLibrarySource(client, base_url)   name "openlibrary"
     doab.py        DoabSource(client, base_url); .parse_opensearch(xml), .parse_xoai(xml) (static)  name "doab"
     hathitrust.py  HathiTrustSource(index: HathiIndex)   name "hathitrust"; HathiIndexMissing (not a SourceError)
-  hathifile.py     Volume, parse_line(line) -> (htid, Volume|None)|None, iter_changes(lines), clean_title, clean_author, reader_url
+  hathifile.py     Volume, parse_line(line) -> (htid, Volume|None)|None, clean_title, clean_author, reader_url
   hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state), writing() (lock; IndexBusy); IndexState
   hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]

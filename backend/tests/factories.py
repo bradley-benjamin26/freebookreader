@@ -1,4 +1,7 @@
 """Builders for Book objects so tests only spell out what they care about."""
+from typing import Iterable, Iterator
+
+from app.hathifile import Volume, parse_line
 from app.models import Book
 
 
@@ -98,3 +101,11 @@ def make_epub(*, version: int = 3, extra: dict[str, bytes] | None = None) -> byt
         for name, data in files.items():
             archive.writestr(name, data)
     return buffer.getvalue()
+
+
+def iter_changes(lines: Iterable[str]) -> Iterator[tuple[str, Volume | None]]:
+    """parse_line over many lines, skipping the malformed ones."""
+    for line in lines:
+        parsed = parse_line(line)
+        if parsed is not None:
+            yield parsed

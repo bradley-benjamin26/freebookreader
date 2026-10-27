@@ -1,6 +1,12 @@
 """Pure helpers that make records from different sources comparable."""
 import re
 import unicodedata
+from typing import Iterable
+
+def unique(values: Iterable[str | None]) -> list[str]:
+    """The values without repeats and without empty ones, in the order first seen."""
+    return list(dict.fromkeys(v for v in values if v))
+
 
 # --- Authors -----------------------------------------------------------------
 

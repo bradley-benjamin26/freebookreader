@@ -5,11 +5,10 @@ read or borrow now are returned: the search asks for free or borrowable works, e
 edition that can be read, and editions on loan or otherwise unavailable are then dropped.
 """
 import httpx
-from pydantic import BaseModel
 
 from app.models import Access, Book, SearchQuery
 from app.normalize import (
-    normalize_author_name, normalize_isbn, normalize_oclc, to_language_code, to_marc_language,
+    normalize_author_name, normalize_isbn, normalize_oclc, to_language_code, to_marc_language, unique,
 )
 from app.sources.base import SourceError, get, get_json
 
@@ -26,11 +25,6 @@ _ACCESS: dict[str, Access] = {"public": "open", "borrowable": "borrow"}
 # availability/v2 statuses meaning "can be read or borrowed now"; others include borrow_unavailable
 # (every copy on loan), private and error (no scan).
 _AVAILABLE = {"open", "borrow_available"}
-
-
-class Availability(BaseModel):
-    status: Access
-    url: str
 
 
 class OpenLibrarySource:
@@ -83,21 +77,6 @@ class OpenLibrarySource:
         statuses = {e: r.get("status") for e, r in data.items() if isinstance(r, dict)}
         return [b for b, e in zip(books, editions) if e not in statuses or statuses[e] in _AVAILABLE]
 
-    def availability(self, isbn: str) -> Availability | None:
-        """How the edition with this ISBN can be read on Open Library, or None."""
-        isbn13 = normalize_isbn(isbn)
-        if isbn13 is None:
-            return None
-        data = get_json(self.client, f"{self.base_url}/api/volumes/brief/isbn/{isbn13}.json", None)
-        items = data.get("items") if isinstance(data, dict) else None
-        if not items:
-            return None
-        for status, wanted in (("open", {"full access"}), ("borrow", {"lendable", "checked out"})):
-            item = next((i for i in items if i.get("status") in wanted and i.get("itemURL")), None)
-            if item:
-                return Availability(status=status, url=item["itemURL"])
-        return None
-
     @staticmethod
     def _params(query: SearchQuery) -> dict | None:
         params = {"fields": FIELDS, "limit": str(PAGE_SIZE)}
@@ -129,14 +108,14 @@ class OpenLibrarySource:
         work_id = doc["key"].rsplit("/", 1)[-1]
         languages = {to_language_code(code) for code in doc.get("language") or []}
         identifiers = {}
-        isbns = _unique(normalize_isbn(i) for i in doc.get("isbn") or [])
+        isbns = unique(normalize_isbn(i) for i in doc.get("isbn") or [])
         if isbns:
             identifiers["isbn"] = isbns
-        oclcs = _unique(normalize_oclc(o) for o in doc.get("oclc") or [])
+        oclcs = unique(normalize_oclc(o) for o in doc.get("oclc") or [])
         if oclcs:
             identifiers["oclc"] = oclcs
         for field, name in (("id_project_gutenberg", "gutenberg"), ("id_librivox", "librivox")):
-            values = _unique(str(v) for v in doc.get(field) or [])
+            values = unique(str(v) for v in doc.get(field) or [])
             if values:
                 identifiers[name] = values
         cover = doc.get("cover_i")
@@ -146,7 +125,7 @@ class OpenLibrarySource:
             source="openlibrary",
             source_id=work_id,
             title=doc["title"],
-            authors=_unique(normalize_author_name(a) for a in _strings(doc.get("author_name"))),
+            authors=unique(normalize_author_name(a) for a in _strings(doc.get("author_name"))),
             # A work lists the languages of all its editions; only a single one is usable.
             language=next(iter(languages)) if len(languages) == 1 else None,
             format="text",
@@ -173,14 +152,6 @@ def _edition(doc: dict) -> dict | None:
 def _edition_id(book: Book) -> str | None:
     prefix = "https://openlibrary.org/books/"
     return book.url.removeprefix(prefix) if book.url.startswith(prefix) else None
-
-
-def _unique(values) -> list[str]:
-    seen: list[str] = []
-    for value in values:
-        if value and value not in seen:
-            seen.append(value)
-    return seen
 
 
 def _strings(values) -> list[str]:

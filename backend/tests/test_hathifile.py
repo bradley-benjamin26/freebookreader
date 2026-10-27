@@ -5,7 +5,8 @@ The real files have no header row; the column order is in api_hathitrust.documen
 """
 import pytest
 
-from app.hathifile import Volume, clean_author, clean_title, iter_changes, parse_line, reader_url
+from app.hathifile import Volume, clean_author, clean_title, parse_line, reader_url
+from tests.factories import iter_changes
 from tests.conftest import SAMPLES
 
 SAMPLE_LINES = (SAMPLES / "hathitrust-hathifile-sample.tsv").read_text(encoding="utf-8").splitlines()

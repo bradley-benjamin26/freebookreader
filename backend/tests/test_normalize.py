@@ -3,7 +3,7 @@ import pytest
 
 from app.normalize import (
     author_key, normalize_author_name, normalize_isbn, normalize_oclc,
-    title_key, title_matches, to_language_code, to_marc_language,
+    title_key, title_matches, to_language_code, to_marc_language, unique,
 )
 
 
@@ -205,3 +205,7 @@ class TestMarcLanguageCode:
     @pytest.mark.parametrize("raw", ["xx", "", None])
     def test_unknown_languages_are_none(self, raw):
         assert to_marc_language(raw) is None
+
+
+def test_unique_keeps_first_seen_order_and_drops_empty_values():
+    assert unique(["b", None, "a", "b", ""]) == ["b", "a"]

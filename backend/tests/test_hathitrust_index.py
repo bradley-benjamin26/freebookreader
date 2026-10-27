@@ -6,9 +6,10 @@ import sqlite3
 
 import pytest
 
-from app.hathifile import Volume, iter_changes
+from app.hathifile import Volume
 from app.hathitrust_index import HathiIndex, IndexState
 from tests.conftest import SAMPLES
+from tests.factories import iter_changes
 from tests.test_hathifile import SAMPLE_LINES
 
 DICKENS = ["mdp.39015063531084", "mdp.39015063531373"]      # v.1, v.2

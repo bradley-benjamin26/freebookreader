@@ -5,10 +5,9 @@ are kept. Titles and authors come as catalog (MARC) strings and are cleaned here
 """
 import re
 from dataclasses import dataclass
-from typing import Iterable, Iterator
 from urllib.parse import quote
 
-from app.normalize import normalize_author_name, normalize_isbn, normalize_oclc
+from app.normalize import normalize_author_name, normalize_isbn, normalize_oclc, unique
 
 READER_URL = "https://babel.hathitrust.org/cgi/pt?id="
 
@@ -66,24 +65,12 @@ def parse_line(line: str) -> tuple[str, Volume | None] | None:
         bib_key=fields[_BIB_KEY].strip(),
         volume=fields[_DESCRIPTION].strip() or None,
         source=fields[_SOURCE].strip(),
-        oclcs=_unique(normalize_oclc(v) for v in fields[_OCLC].split(",")),
-        isbns=_unique(normalize_isbn(v) for v in fields[_ISBN].split(",")),
+        oclcs=unique(normalize_oclc(v) for v in fields[_OCLC].split(",")),
+        isbns=unique(normalize_isbn(v) for v in fields[_ISBN].split(",")),
         title=title,
         author=clean_author(fields[_AUTHOR]),
         language=None if language in _NO_LANGUAGE else language,
     )
-
-
-def iter_changes(lines: Iterable[str]) -> Iterator[tuple[str, Volume | None]]:
-    """parse_line over many lines, skipping the malformed ones."""
-    for line in lines:
-        parsed = parse_line(line)
-        if parsed is not None:
-            yield parsed
-
-
-def _unique(values) -> list[str]:
-    return list(dict.fromkeys(v for v in values if v))
 
 
 # --- Titles and authors ------------------------------------------------------

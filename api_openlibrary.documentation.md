@@ -369,6 +369,6 @@ Mapping onto the data model in [spec.md](spec.md):
 * **Language:** a work lists every language of every edition, so a work with more than one language has an unknown language for merging. When the user picks a language, the backend sends `language=<MARC code>` (the filter) and `lang=<2-letter code>` (so the edition shown is in that language). The results can then be labeled with the requested language.
 * **Identifiers:** `isbn` (convert to ISBN-13, drop duplicates and bad check digits) for the first merge pass. `id_project_gutenberg` and `id_librivox` link the work directly to Gutenberg and LibriVox records.
 * **Search mapping:** free text and keyword use `q`; title and author use `title` and `author`; ISBN uses `isbn`. A `q` shorter than 3 characters answers HTTP `422`; with the access filter appended, `q` is never that short. Audio-only searches skip Open Library.
-* **Availability:** the brief Read API gives the read or borrow link for a specific ISBN. `full access` wins over `lendable`.
+* **Availability:** (the app does not call this since 2026-10-27, audit F6; the code was deleted) the brief Read API gives the read or borrow link for a specific ISBN. `full access` wins over `lendable`.
 * **Offline:** Open Library books open at the source and cannot be saved (spec).
 * **Outage rule:** `5xx` and non-JSON bodies count as an outage. A timeout leaves Open Library out of that search only. `422` is our bug, not an outage. Send the `User-Agent` to get the higher rate limit.

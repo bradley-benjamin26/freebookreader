@@ -4,7 +4,7 @@ import pytest
 
 from app.models import SearchQuery
 from app.sources.base import SourceError
-from app.sources.openlibrary import Availability, OpenLibrarySource
+from app.sources.openlibrary import OpenLibrarySource
 
 BASE = "https://openlibrary.test"
 READABLE = "ebook_access:[borrowable TO *]"
@@ -301,37 +301,6 @@ class TestLoanStatus:
         assert [b.source_id for b in source.search(SearchQuery(q="x"))] == ["OL1W"]
 
 
-class TestAvailability:
-    """Lending status for an ISBN (api/volumes/brief/isbn/<isbn>.json)."""
-
-    def test_requests_the_brief_volumes_endpoint_with_isbn13(self, source_for, sample_json):
-        source, rec = source_for(json=sample_json("openlibrary-availability.json"))
-        source.availability("0140430725")
-        assert rec.last.url.path == "/api/volumes/brief/isbn/9780140430721.json"
-
-    def test_full_access_wins_over_lendable(self, source_for, sample_json):
-        source, _ = source_for(json=sample_json("openlibrary-availability.json"))
-        result = source.availability("9780140430721")
-        assert isinstance(result, Availability)
-        assert result.status == "open"
-        assert result.url.startswith("http")
-
-    def test_lendable_only_means_borrow(self, source_for, sample_json):
-        data = sample_json("openlibrary-availability.json")
-        data["items"] = [i for i in data["items"] if i["status"] == "lendable"]
-        source, _ = source_for(json=data)
-        assert source.availability("9780140430721").status == "borrow"
-
-    def test_no_items_means_none(self, source_for):
-        source, _ = source_for(json={"records": {}, "items": []})
-        assert source.availability("9780140430721") is None
-
-    def test_invalid_isbn_makes_no_request(self, source_for):
-        source, rec = source_for(json={"records": {}, "items": []})
-        assert source.availability("123") is None
-        assert rec.requests == []
-
-
 class TestMalformedRecords:
     """Review 2026-10-11-main #31: one bad record in an answer used to crash the adapter, and the source was
     left out of the search. Now the bad part is skipped and the rest is kept."""
@@ -365,8 +334,3 @@ class TestErrors:
         source, _ = source_for(text="<html>oops</html>")
         with pytest.raises(SourceError):
             source.search(SearchQuery(q="x"))
-
-    def test_availability_errors_raise_source_error(self, source_for):
-        source, _ = source_for(text="down", status=500)
-        with pytest.raises(SourceError):
-            source.availability("9780140430721")

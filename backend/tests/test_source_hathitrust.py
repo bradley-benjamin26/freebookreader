@@ -4,7 +4,7 @@ Rows are real ones from the daily update file of 2026-10-11 (samples/hathitrust-
 """
 import pytest
 
-from app.hathifile import iter_changes
+from tests.factories import iter_changes
 from app.hathitrust_index import HathiIndex, IndexState
 from app.models import SearchQuery
 from app.reader import reading_options
