@@ -39,6 +39,9 @@ _BOOK_LOCKS = 64
 _PAGE_TYPES = {"application/xhtml+xml", "text/html", "image/svg+xml"}
 # How long the local catalog may take to answer before the book is simply asked for at Gutenberg.
 CATALOG_TIMEOUT_SECONDS = 3
+# Downloads running at once, whatever the books, and how long an unfinished download (.part) may lie around.
+MAX_PARALLEL_DOWNLOADS = 4
+STALE_PART_SECONDS = 3600
 
 _CONTAINER = "{urn:oasis:names:tc:opendocument:xmlns:container}"
 _OPF = "{http://www.idpf.org/2007/opf}"
@@ -242,7 +245,8 @@ class PublicationStore:
     def __init__(self, client: httpx.Client, gutenberg_url: str, cache_dir: Path | str,
                  max_download_bytes: int = MAX_DOWNLOAD_BYTES, max_cache_bytes: int = MAX_CACHE_BYTES,
                  max_entry_bytes: int = MAX_ENTRY_BYTES,
-                 catalog: Callable[[int], bool | None] | None = None):
+                 catalog: Callable[[int], bool | None] | None = None,
+                 max_parallel_downloads: int = MAX_PARALLEL_DOWNLOADS):
         self._client = client
         self._catalog = catalog
         self._base_url = gutenberg_url.rstrip("/")
@@ -254,6 +258,7 @@ class PublicationStore:
         self._package_limit = min(max_entry_bytes, MAX_PACKAGE_BYTES)
         self._lock = threading.Lock()
         self._locks = [threading.Lock() for _ in range(_BOOK_LOCKS)]
+        self._downloads = threading.BoundedSemaphore(max_parallel_downloads)
         self._books: dict[int, _Book] = {}
         self._last_touch = 0
 
@@ -329,7 +334,7 @@ class PublicationStore:
         fd, temp_name = tempfile.mkstemp(dir=self._cache_dir, suffix=".part")
         temp = Path(temp_name)
         try:
-            with os.fdopen(fd, "wb") as file:
+            with self._downloads, os.fdopen(fd, "wb") as file:
                 self._fetch(f"{self._base_url}/ebooks/{book_id}.epub3.images", file)
             book = _Book(path, _read_manifest(temp, self._package_limit))
             os.replace(temp, path)
@@ -380,6 +385,12 @@ class PublicationStore:
 
     def _evict(self, keep: Path) -> None:
         with self._lock:
+            for part in self._cache_dir.glob("*.part"):    # left by a process that was killed mid-download
+                try:
+                    if time.time() - part.stat().st_mtime > STALE_PART_SECONDS:
+                        part.unlink(missing_ok=True)
+                except FileNotFoundError:    # its download just finished
+                    pass
             files = sorted(self._cache_dir.glob("*.epub"), key=lambda p: p.stat().st_mtime_ns)
             total = sum(p.stat().st_size for p in files)
             for old in files:

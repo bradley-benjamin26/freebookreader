@@ -5,9 +5,11 @@ book's files next to it, all from one origin. The backend downloads the EPUB fro
 on disk and serves both.
 """
 import io
+import os
 import threading
 import time
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 import httpx
 import pytest
@@ -206,6 +208,57 @@ class TestEndpoints:
 
     def test_other_sources_are_404(self, api):
         assert api.get("/publications/librivox/1342/manifest.json").status_code == 404
+
+
+class TestDownloadLimits:
+    """Audit 2026-10-27, F3: a crawler walking book numbers must not start dozens of downloads at once."""
+
+    @staticmethod
+    def slow_gutenberg(peak, seconds=0.05):
+        lock, running = threading.Lock(), [0]
+
+        def respond(request):
+            with lock:
+                running[0] += 1
+                peak[0] = max(peak[0], running[0])
+            time.sleep(seconds)
+            with lock:
+                running[0] -= 1
+            return httpx.Response(200, content=make_epub())
+        return Gutenberg(respond=respond)
+
+    def test_at_most_four_books_download_at_once(self, tmp_path):
+        peak = [0]
+        gutenberg = self.slow_gutenberg(peak)
+        store = PublicationStore(client=gutenberg.client, gutenberg_url=GUTENBERG, cache_dir=tmp_path / "epub")
+        with ThreadPoolExecutor(12) as pool:
+            list(pool.map(store.manifest, range(1, 13)))
+        assert peak[0] <= 4
+        assert len(list((tmp_path / "epub").glob("*.epub"))) == 12
+
+    def test_a_failed_download_gives_its_slot_back(self, tmp_path):
+        def respond(request):
+            if "/ebooks/1." in request.url.path:
+                return httpx.Response(500)
+            return httpx.Response(200, content=make_epub())
+        store = PublicationStore(client=Gutenberg(respond=respond).client, gutenberg_url=GUTENBERG,
+                                 cache_dir=tmp_path / "epub", max_parallel_downloads=1)
+        with pytest.raises(PublicationUnavailable):
+            store.manifest(1)
+        assert store.manifest(2)["metadata"]["title"]
+
+    def test_old_part_files_are_removed(self, tmp_path):
+        cache = tmp_path / "epub"
+        cache.mkdir()
+        old, fresh = cache / "old.part", cache / "fresh.part"
+        old.write_bytes(b"x")
+        fresh.write_bytes(b"x")
+        two_hours_ago = time.time() - 7200
+        os.utime(old, (two_hours_ago, two_hours_ago))
+        store = PublicationStore(client=Gutenberg().client, gutenberg_url=GUTENBERG, cache_dir=cache)
+        store.manifest(1342)
+        assert not old.exists()
+        assert fresh.exists()
 
 
 class TestDownload:
