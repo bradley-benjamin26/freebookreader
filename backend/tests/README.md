@@ -16,7 +16,7 @@ uvicorn app.main:create_app --factory --port 8000
 ```
 
 Settings come from `FBR_*` environment variables: `FBR_GUTENDEX_URL`, `FBR_LIBRIVOX_URL`, `FBR_OPENLIBRARY_URL`,
-`FBR_DOAB_URL`, `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`), `FBR_HATHITRUST_FILE_LIST_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
+`FBR_DOAB_URL`, `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`), `FBR_HATHITRUST_FILE_LIST_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_SEARCH_ADMISSION_SECONDS` (default 3), `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
 default `*`) and `FBR_CONTACT`. The EPUB cache for the web reader uses `FBR_GUTENBERG_URL` (default
 `https://www.gutenberg.org`), `FBR_EPUB_CACHE_DIR` (default `backend/cache/epub`, ignored by git),
 `FBR_MAX_DOWNLOAD_MB` (200) and `FBR_EPUB_CACHE_MB` (2000). The `User-Agent` is built from the project's top-level `.env` (JSON:
@@ -195,7 +195,7 @@ queried in parallel threads, on one executor shared by all searches.
   `test_hostile_inputs.py` sends odd input (`(anon)`, punctuation, maximum-length text, the last page) to every
   adapter: each must return a list or raise `SourceError`.
 - **Unknown book ids are refused locally** (review 2026-10-11, #19). Before downloading an EPUB that is not cached, the store asks the local Gutendex (`GET /books/<id>/`, 3 s) through `GutendexCatalog`: no such book, or no EPUB format, is a 404 without any request to gutenberg.org. If Gutendex is down or answers oddly the answer is unknown and the book is asked for at Gutenberg as before. A book already on disk is never looked up. Per-book download locks are a fixed set of 64 (`id % 64`) instead of one per id. A book newer than the last `updatecatalog` is a 404 until the catalog is updated.
-- **Searches have their own thread limit** (review 2026-10-11, #24). `/search` is `async` and runs the search with `anyio.to_thread.run_sync` on a `CapacityLimiter` of `FBR_MAX_CONCURRENT_SEARCHES` (default 20). A search over the limit waits as a coroutine, without a thread, so `/health` and book files still answer when slow searches pile up (`TestSlowSearchesDoNotStarveTheRest`). A waiting search still counts against the app's 20 s timeout.
+- **Searches have their own thread limit** (review 2026-10-11, #24). `/search` is `async` and runs the search with `anyio.to_thread.run_sync` on a `CapacityLimiter` of `FBR_MAX_CONCURRENT_SEARCHES` (default 20). A search over the limit waits as a coroutine, without a thread, so `/health` and book files still answer when slow searches pile up (`TestSlowSearchesDoNotStarveTheRest`). A search that gets no slot within `FBR_SEARCH_ADMISSION_SECONDS` (default 3) answers 200 with no works and its sources skipped as `busy` (main review #3; `TestSearchAdmission`).
 - **Source ids are case-sensitive on purpose** (user decision 2026-10-11): `sources=DOAB` is a 422 that lists the valid ids. Only the app's source chips set `sources`, and they send the lowercase ids. (`language`, by contrast, is normalized.)
 - **A known-item author matches when every word of the wanted name is in the book's author** ("Mary Shelley" finds
   "Mary Wollstonecraft Shelley"; "Charles Dickens" finds "Charles Dickens Jr." on purpose, user decision 2026-10-11,

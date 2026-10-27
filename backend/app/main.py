@@ -17,7 +17,7 @@ from app.config import Settings, build_http_client, build_publication_store, bui
 from app.models import SearchQuery
 from app.publications import (MAX_GUTENBERG_ID, PublicationNotFound, PublicationTimeout,
                               PublicationUnavailable)
-from app.search import SearchResponse
+from app.search import SearchResponse, SkippedSource
 from app.sources_info import SOURCES, SourceInfo
 
 
@@ -53,6 +53,7 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
 
     # Created on first use, inside the running event loop. Searches wait here (as cheap coroutines) when
     # max_concurrent_searches are running, instead of each holding a worker thread of the default pool.
+    # Two limiters of one size: admission is waited for (briefly), the worker threads then never are.
     search_limiter: list[anyio.CapacityLimiter] = []
 
     @app.get("/search", response_model=SearchResponse)
@@ -76,8 +77,19 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
         except ValidationError as error:
             raise RequestValidationError(error.errors(include_url=False)) from error
         if not search_limiter:
-            search_limiter.append(anyio.CapacityLimiter(max(1, settings.max_concurrent_searches)))
-        return await to_thread.run_sync(search_service.search, query, limiter=search_limiter[0])
+            slots = max(1, settings.max_concurrent_searches)
+            search_limiter.extend([anyio.CapacityLimiter(slots), anyio.CapacityLimiter(slots)])
+        admission, workers = search_limiter
+        with anyio.move_on_after(settings.search_admission_seconds) as wait:
+            await admission.acquire()
+        if wait.cancelled_caught:
+            ids = sorted(query.sources if query.sources is not None else (s.id for s in SOURCES))
+            return SearchResponse(works=[], unavailable_sources=ids,
+                                  skipped=[SkippedSource(source=i, reason="busy") for i in ids])
+        try:
+            return await to_thread.run_sync(search_service.search, query, limiter=workers)
+        finally:
+            admission.release()
 
     @app.get("/sources", response_model=list[SourceInfo])
     def list_sources() -> list[SourceInfo]:

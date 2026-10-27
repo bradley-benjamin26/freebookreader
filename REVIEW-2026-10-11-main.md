@@ -176,7 +176,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   Wire these as shared per-app limiters, not fresh per-request objects. The API and Flutter
   error behavior must be updated together if 503 admission rejection is adopted.
 
-- **Status:** open. Suggested instead of a 503: after a short wait for a slot, answer as usual with every source skipped as `busy`, which the app already words.
+- **Status:** fixed 2026-10-27, as suggested instead of a 503: after `FBR_SEARCH_ADMISSION_SECONDS` (3) without a free slot, `/search` answers with every selected source skipped as `busy`. Two limiters of one size (admission, worker threads). Tests: `TestSearchAdmission` in `test_api`.
 
 ### 4. Factory-owned HTTP connections and the search executor have no shutdown owner
 

@@ -18,6 +18,7 @@ def test_defaults():
     assert settings.hathitrust_file_list_url == "https://www.hathitrust.org/files/hathifiles/hathi_file_list.json"
     assert settings.search_timeout_seconds == 12
     assert settings.max_concurrent_searches == 20
+    assert settings.search_admission_seconds == 3
     assert settings.outage_cooldown_hours == 24
 
 
@@ -26,11 +27,13 @@ def test_environment_overrides():
         "FBR_GUTENDEX_URL": "http://gutendex:8000",
         "FBR_SEARCH_TIMEOUT_SECONDS": "5",
         "FBR_MAX_CONCURRENT_SEARCHES": "3",
+        "FBR_SEARCH_ADMISSION_SECONDS": "1.5",
         "FBR_OUTAGE_COOLDOWN_HOURS": "1",
     })
     assert settings.gutendex_url == "http://gutendex:8000"
     assert settings.search_timeout_seconds == 5
     assert settings.max_concurrent_searches == 3
+    assert settings.search_admission_seconds == 1.5
     assert settings.outage_cooldown_hours == 1
 
 

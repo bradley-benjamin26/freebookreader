@@ -301,3 +301,36 @@ class TestSlowSearchesDoNotStarveTheRest:
         for user in users:
             user.join(timeout=10)
         assert service.most_running == self.LIMIT
+
+
+class TestSearchAdmission:
+    """Review 2026-10-11, #3: a search waiting for a free slot waited past the 15 s deadline. Now it waits
+    FBR_SEARCH_ADMISSION_SECONDS and then answers with its sources skipped as busy."""
+
+    @pytest.fixture
+    def full(self):
+        service = BlockingService()
+        settings = Settings.from_env({"FBR_MAX_CONCURRENT_SEARCHES": "1", "FBR_SEARCH_ADMISSION_SECONDS": "0.2"})
+        with TestClient(create_app(search_service=service, settings=settings)) as client:
+            holder = threading.Thread(target=lambda: client.get("/search", params={"q": "x"}), daemon=True)
+            holder.start()
+            assert service.started.acquire(timeout=5)
+            yield client
+            service.release.set()
+            holder.join(timeout=10)
+
+    def test_a_search_that_cannot_get_a_slot_answers_busy_for_every_source(self, full):
+        started = time.monotonic()
+        response = full.get("/search", params={"q": "x"})
+        assert time.monotonic() - started < 2
+        assert response.status_code == 200
+        body = response.json()
+        ids = sorted(s["id"] for s in full.get("/sources").json())
+        assert body["works"] == []
+        assert body["unavailable_sources"] == ids
+        assert body["skipped"] == [{"source": i, "reason": "busy"} for i in ids]
+
+    def test_the_busy_answer_lists_only_the_selected_sources(self, full):
+        body = full.get("/search", params={"q": "x", "sources": "librivox,gutenberg"}).json()
+        assert body["skipped"] == [{"source": "gutenberg", "reason": "busy"},
+                                   {"source": "librivox", "reason": "busy"}]
