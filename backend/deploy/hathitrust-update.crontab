@@ -1,6 +1,8 @@
 # Example only (nothing installs this). Nightly refresh of the HathiTrust index.
 # The time is arbitrary; the job takes whatever update files exist. Times are the server's local time.
 #
+# `GET /health` shows `"hathitrust_index": false` until the index exists: alert on that.
+#
 # Install with `crontab -e` as the user that runs the backend, and change /srv/freebookreader to the checkout.
 # `flock -n` skips the run if the previous one (a monthly rebuild takes about 4 minutes) is still going.
 # The log shows "the index is up to date" on a quiet night; a failure prints "HathiTrust update failed: ...".

@@ -48,10 +48,19 @@ def client(stub):
     return TestClient(create_app(search_service=stub))
 
 
-def test_health(client):
-    response = client.get("/health")
+def test_health_says_when_the_hathitrust_index_is_missing(stub, tmp_path):
+    """Audit 2026-10-27, F5: a deploy without the index silently loses a source; the monitor must see it."""
+    settings = Settings(hathitrust_index=tmp_path / "missing.sqlite")
+    response = TestClient(create_app(search_service=stub, settings=settings)).get("/health")
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {"status": "ok", "hathitrust_index": False}
+
+
+def test_health_says_when_the_hathitrust_index_exists(stub, tmp_path):
+    index = tmp_path / "hathitrust.sqlite"
+    index.touch()
+    response = TestClient(create_app(search_service=stub, settings=Settings(hathitrust_index=index))).get("/health")
+    assert response.json() == {"status": "ok", "hathitrust_index": True}
 
 
 class TestSearchEndpoint:

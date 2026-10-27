@@ -61,7 +61,8 @@ def create_app(search_service=None, settings: Settings | None = None, publicatio
 
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok"}
+        # A missing HathiTrust index silently removes a source (it is skipped as `error`), so a monitor can alert on it.
+        return {"status": "ok", "hathitrust_index": settings.hathitrust_index.is_file()}
 
     # Created on first use, inside the running event loop. Searches wait here (as cheap coroutines) when
     # max_concurrent_searches are running, instead of each holding a worker thread of the default pool.
