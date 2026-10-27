@@ -262,6 +262,18 @@ class PublicationStore:
 
     def resource(self, book_id: int, href: str) -> tuple[bytes, str]:
         """The bytes and media type of a file listed in the package. `href` is decoded."""
+        try:
+            return self._resource(book_id, href)
+        except FileNotFoundError:
+            # Evicted by another request after the lookup: _book finds the file gone and downloads it again.
+            with self._lock:
+                self._books.pop(book_id, None)
+            try:
+                return self._resource(book_id, href)
+            except FileNotFoundError as error:
+                raise PublicationUnavailable(str(error)) from error
+
+    def _resource(self, book_id: int, href: str) -> tuple[bytes, str]:
         book = self._book(book_id)
         media_type = book.types.get(href)
         if media_type is None:
@@ -275,6 +287,8 @@ class PublicationStore:
                     data = file.read(self._max_entry + 1)
         except KeyError as error:
             raise PublicationNotFound(href) from error
+        except FileNotFoundError:
+            raise
         except (zipfile.BadZipFile, OSError) as error:
             raise PublicationUnavailable(str(error)) from error
         if len(data) > self._max_entry:
@@ -292,13 +306,17 @@ class PublicationStore:
                 raise PublicationNotFound(f"{book_id} is not a book with an EPUB")
         with self._locks[book_id % _BOOK_LOCKS]:
             book = self._books.get(book_id)
-            if book is not None and path.exists():
-                self._touch(path)
-                return book
-            if path.exists():
-                self._touch(path)
-                book = _Book(path, _read_manifest(path, self._package_limit))
-            else:
+            try:
+                if book is not None and path.exists():
+                    self._touch(path)
+                    return book
+                if path.exists():
+                    self._touch(path)
+                    book = _Book(path, _read_manifest(path, self._package_limit))
+                else:
+                    book = self._download(book_id, path)
+            except FileNotFoundError:
+                # Evicted by another request since the check above.
                 book = self._download(book_id, path)
             with self._lock:
                 if len(self._books) >= _MEMORY_SLOTS:

@@ -116,7 +116,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
 
   Test simultaneous manifest/resource access and eviction; a sequential LRU test is insufficient.
 
-- **Status:** open. Not in this round (Medium rather than High: it needs a full cache and two requests at once). Simpler fix than pinning: catch `FileNotFoundError` in `_book` and load the book again.
+- **Status:** fixed 2026-10-27, with the simpler fix rather than pinning: a book that is gone when `_book` touches it, or when `resource` opens its ZIP, is downloaded again (once). Tests: `TestEvictedWhileInUse` in `test_publications`.
 
 ### 2. Identifier merging loses compatible-language records
 

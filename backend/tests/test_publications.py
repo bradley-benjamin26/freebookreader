@@ -469,3 +469,40 @@ def test_errors_map_to_http_statuses(error, status):
     api = TestClient(create_app(search_service=StubService(), publication_store=FailingStore()))
     assert api.get("/publications/gutenberg/1342/manifest.json").status_code == status
     assert api.get("/publications/gutenberg/1342/OEBPS/a.css").status_code == status
+
+
+class TestEvictedWhileInUse:
+    HREF = "OEBPS/css/style.css"
+
+    def test_a_book_evicted_between_the_check_and_the_touch_is_loaded_again(self, store, gutenberg):
+        store.manifest(1342)
+        original = store._touch
+        calls = []
+
+        def touch_after_eviction(path):
+            if not calls:
+                calls.append(path)
+                path.unlink()   # another request's eviction, just before this one touches the file
+            return original(path)
+
+        store._touch = touch_after_eviction
+        data, _ = store.resource(1342, self.HREF)
+        assert data
+        assert gutenberg.downloads == 2
+
+    def test_a_book_evicted_before_its_zip_is_opened_is_loaded_again(self, store, gutenberg):
+        store.manifest(1342)
+        original = store._book
+        calls = []
+
+        def book_then_eviction(book_id):
+            book = original(book_id)
+            if not calls:
+                calls.append(book_id)
+                book.path.unlink()   # evicted after the lookup, before the ZIP is opened
+            return book
+
+        store._book = book_then_eviction
+        data, _ = store.resource(1342, self.HREF)
+        assert data
+        assert gutenberg.downloads == 2
