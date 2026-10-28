@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,6 +25,8 @@ Future<void> main() async {
   final backend = Uri.parse(backendUrl);
   final loader = HttpContentLoader(client);
   final speech = FlutterSpeechEngine();
+  // Browser test runs: turns on the semantics tree without the "Enable accessibility" placeholder.
+  if (const bool.fromEnvironment('FBR_SEMANTICS')) SemanticsBinding.instance.ensureSemantics();
   runApp(FreeBookReaderApp(
     api: HttpSearchApi(client: client, baseUrl: backend),
     bookmarks: BookmarkStore(prefs),

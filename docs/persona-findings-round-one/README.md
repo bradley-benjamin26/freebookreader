@@ -58,3 +58,4 @@ ANALYSIS.md ends with a review of the analysis and links to the fix plan
 - Mobile-sized browser views are not native Android/iOS device tests.
   Accessibility inferences are not real screen-reader user testing.
 - No product changes or specification decisions are made by these reports.
+- For round two: rebuild the web app with `--dart-define=FBR_SEMANTICS=true`; seven round-one reviewers lost time to the accessibility placeholder.
