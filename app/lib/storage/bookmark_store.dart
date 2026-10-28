@@ -14,15 +14,25 @@ class Bookmark {
   double get progress => _progress.clamp(0.0, 1.0);
 }
 
-/// Bookmarks are kept on the device only (no accounts yet).
+/// Bookmarks, and the last place read in each book, are kept on the device only (no accounts yet).
 class BookmarkStore {
   BookmarkStore(this._prefs);
 
   final SharedPreferences _prefs;
   static const _prefix = 'bookmark:';
+  static const _lastPlacePrefix = 'lastplace:';
 
-  Bookmark? load(String bookKey) {
-    final raw = _prefs.getString('$_prefix$bookKey');
+  Bookmark? load(String bookKey) => _load('$_prefix$bookKey');
+
+  Future<void> save(String bookKey, Bookmark bookmark) => _save('$_prefix$bookKey', bookmark);
+
+  /// Where the reader last was in the book, saved as they read; apart from the bookmark.
+  Bookmark? loadLastPlace(String bookKey) => _load('$_lastPlacePrefix$bookKey');
+
+  Future<void> saveLastPlace(String bookKey, Bookmark place) => _save('$_lastPlacePrefix$bookKey', place);
+
+  Bookmark? _load(String key) {
+    final raw = _prefs.getString(key);
     if (raw == null) return null;
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
@@ -33,8 +43,8 @@ class BookmarkStore {
     }
   }
 
-  Future<void> save(String bookKey, Bookmark bookmark) =>
-      _prefs.setString('$_prefix$bookKey', jsonEncode({
+  Future<void> _save(String key, Bookmark bookmark) =>
+      _prefs.setString(key, jsonEncode({
         'progress': bookmark.progress,
         if (bookmark.locator != null) 'locator': bookmark.locator,
       }));

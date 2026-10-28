@@ -66,6 +66,7 @@ Change a test and this README together.
 
 - `models_test` audio choice: a recording with chapters or a length is chosen before a bare one (Gutenberg audio eBooks have neither), in `bestBook` and `recordingsFor`. `Book.hasAudioDetails` is new.
 - `audio_player_test` unknown lengths: a recording or chapter with no length shows "<time> played · length unknown" (`position-elapsed`, not a live region) instead of a slider whose total grew with the time played; a recording with no chapters has no Chapters heading. No existing test changed.
+- `reader_test` last place, `bookmark_store_test`: the reader saves the last place on every position (`lastplace:<book key>`, apart from the bookmark, not in `savedBookKeys`) and reopens there; else at the bookmark, else at the start. A damaged last place loads as none. The bookmark button still shows only the manual bookmark. No existing test changed: none read on and then reopened expecting the bookmark.
 
 ## Milestones to tests
 
@@ -77,7 +78,7 @@ Change a test and this README together.
 | About pages for the sources | `source_about_test.dart` (usability testing is manual) |
 | Viewer shows in-app sources, others link to the source | `details_page_test.dart`, `reader_test.dart` |
 | Reading screen passes accessibility testing | `reader_test.dart`, `accessibility_test.dart` |
-| Bookmarks saved on the device and restored | `bookmark_store_test.dart`, `reader_test.dart` (bookmarks) |
+| Bookmarks and the last place saved on the device and restored | `bookmark_store_test.dart`, `reader_test.dart` (bookmarks, last place) |
 | Read aloud (TTS) | `read_aloud_test.dart` |
 | Listen while reading | `audio_player_test.dart` (**no text/audio syncing yet**; see that file) |
 | Book displays in under a minute | `reader_test.dart` (one minute to display) |
@@ -96,7 +97,7 @@ app/lib/
                                  ReadingOptions.publication: backend path of a Gutenberg book's Readium manifest
                                  for the web reader, or null (also null when the field is missing).
   api/search_api.dart          abstract SearchApi {search, sources}; HttpSearchApi(client, baseUrl); SearchException(isTimeout, statusCode?; isRejected for a 4xx)
-  storage/bookmark_store.dart  Bookmark(progress 0..1, locator?, const); BookmarkStore(SharedPreferences)
+  storage/bookmark_store.dart  Bookmark(progress 0..1, locator?, const); BookmarkStore(SharedPreferences): load/save/remove/savedBookKeys (`bookmark:`), loadLastPlace/saveLastPlace (`lastplace:`)
   reader/reader_settings.dart  ReaderSettings (const, clamped), ReaderSettingsStore, ReaderTheme, ReaderFont, ViewMode
   reader/reader_engine.dart    ReaderEngine {open(book, settings, at), position, positions, next, previous, goTo,
                                  apply, buildView(context, {locale}), dispose}; ReaderPosition(progress, locator?, page?, pageCount?,

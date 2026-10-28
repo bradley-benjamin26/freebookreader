@@ -86,4 +86,20 @@ void main() {
     await store.save('gutenberg:1', const Bookmark(progress: 0.1));
     expect(store.savedBookKeys(), ['gutenberg:1']);
   });
+
+  // Persona round one: the reader reopens where it stopped, without a bookmark.
+  test('keeps a last place apart from the bookmark', () async {
+    final store = await newStore();
+    await store.saveLastPlace('gutenberg:1', const Bookmark(progress: 0.5, locator: 'x'));
+    final place = store.loadLastPlace('gutenberg:1')!;
+    expect(place.progress, closeTo(0.5, 1e-9));
+    expect(place.locator, 'x');
+    expect(store.load('gutenberg:1'), isNull);
+    expect(store.savedBookKeys(), isEmpty);
+  });
+
+  test('a damaged last place loads as none', () async {
+    final store = await newStore({'lastplace:gutenberg:1': 'not json'});
+    expect(store.loadLastPlace('gutenberg:1'), isNull);
+  });
 }

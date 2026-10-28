@@ -74,7 +74,8 @@ class _ReaderPageState extends State<ReaderPage> {
     if (recording != null && !_isPdf) _audio = AudioController(_services.audio, recording)..addListener(_audioChanged);
     final bookmark = _services.bookmarks.load(widget.book.key);
     _bookmarked = bookmark != null;
-    if (bookmark != null) _startAt = ReaderPosition(progress: bookmark.progress, locator: bookmark.locator);
+    final start = _services.bookmarks.loadLastPlace(widget.book.key) ?? bookmark;
+    if (start != null) _startAt = ReaderPosition(progress: start.progress, locator: start.locator);
     if (_isPdf) return;
     _engine = _services.readerEngine(widget.book.reading);
     if (_engine == null) {
@@ -83,6 +84,7 @@ class _ReaderPageState extends State<ReaderPage> {
     }
     _readAloud = _engine!.readAloud;
     _positionSub = _engine!.positions.listen((p) {
+      _services.bookmarks.saveLastPlace(widget.book.key, Bookmark(progress: p.progress, locator: p.locator));
       if (mounted) setState(() => _position = p);
     });
     _load();

@@ -46,7 +46,7 @@ Because this includes public-domain and open access publications, it serves both
 * Reading experience
     * Dark and Light mode
     * Font size can increase and font style can change to accommodate readers' needs. Spacing can be configured.
-    * Can bookmark in a book to mark where they left off. Until accounts exist, bookmarks are stored on the device only.
+    * Reopens each book where the reader stopped (saved automatically), and can bookmark a place. Until accounts exist, both are stored on the device only.
     * If a user is reading a book where there is a LibriVox recording, they can listen while reading (synced). If this becomes too hard, they could have the viewer and the player both display.
     * The default view is page-turner view but a user can choose to just have a plain, scroll view.
     * Read aloud: text-to-speech reads the book in the viewer, with the text highlighted as it is read. It uses a voice that matches the book's language. Speed can be changed. (Goal confirmed 2026-10-10.)
@@ -173,7 +173,7 @@ The goal is to limit data on the user. The first version has no accounts and col
 - Records from the different targets are merged into works following the Data Merging rules
 - The viewer displays books from the sources that allow in-app reading, and other books link to the source
 - The screen to read the book passes accessibility testing
-- Bookmarks are saved on the device and restored when a book is reopened
+- Bookmarks and the last place in each book are saved on the device and restored when a book is reopened
 - Listen while reading feature is constructed and passes accessibility testing
 - The reader spike is done and the reader package is chosen (decision_reader.md)
 - Read-aloud (TTS) is constructed and passes accessibility testing (built 2026-10-11: `read_aloud_test.dart`, tap target and label guidelines; real voices and screen readers are checked by hand)

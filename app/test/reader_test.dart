@@ -584,6 +584,48 @@ void main() {
     });
   });
 
+  group('last place', () {
+    testWidgets('reopens where the reader stopped, with no bookmark', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 3);
+      await reopen(tester);
+      expect(env.engines.last.opens.single.at!.locator, 'fake:3');
+      expect(pageNumber(tester), 4);
+      expect(env.bookmarks.load(gutenberg), isNull);
+    });
+
+    testWidgets('the last place wins over an older bookmark', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 2);
+      await tester.tap(find.byKey(const Key('bookmark-button')));
+      await tester.pumpAndSettle();
+      await nextPage(tester, 3);
+      await reopen(tester);
+      expect(env.engines.last.opens.single.at!.locator, 'fake:5');
+      expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
+          containsSemantics(isButton: true, label: 'Remove bookmark'));
+    });
+
+    testWidgets('a damaged last place falls back to the bookmark', (tester) async {
+      final env = await readerEnv(tester, prefs: {
+        'bookmark:$gutenberg': '{"progress":0.2,"locator":"fake:2"}',
+        'lastplace:$gutenberg': '{',
+      });
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.opens.single.at!.locator, 'fake:2');
+    });
+
+    testWidgets('reading one book does not move another', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 3);
+      expect(env.bookmarks.loadLastPlace(gutenberg), isNotNull);
+      expect(env.bookmarks.loadLastPlace('doab:20.500.12854/95506'), isNull);
+    });
+  });
+
   group('other kinds of content', () {
     testWidgets('a pdf is shown in the pdf viewer without text settings', (tester) async {
       final env = await readerEnv(tester);
