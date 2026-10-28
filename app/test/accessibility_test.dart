@@ -150,6 +150,19 @@ void main() {
       });
     }
 
+    testWidgets('reader settings with the preview: nothing overflows (persona round one)', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env, size: smallPhone, textScale: 2.0);
+      await openBook(tester, env, 'w-pride', 'gutenberg:1342');
+      await tester.tap(find.byKey(const Key('reader-settings-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('settings-preview')), findsOneWidget);
+      final slider = find.byKey(const Key('setting-paragraph-spacing'));
+      await tester.ensureVisible(slider);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('home: the search box and button stay on screen', (tester) async {
       await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
       final screen = Offset.zero & smallPhone;

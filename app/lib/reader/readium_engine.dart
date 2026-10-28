@@ -165,6 +165,9 @@ EPUBPreferences epubPreferences(ReaderSettings settings) => EPUBPreferences(
       scroll: settings.viewMode == ViewMode.scroll,
       // Otherwise the book's own CSS overrides spacing and line height.
       publisherStyles: false,
+      // Like our own renderer: justified, hyphenated text is harder to read (persona round one).
+      textAlign: TextAlign.start,
+      hyphens: false,
     );
 
 const _genericFamilies = {'serif', 'sans-serif', 'monospace'};

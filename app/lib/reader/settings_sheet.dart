@@ -4,8 +4,17 @@ import 'package:flutter/services.dart';
 import '../ui/common.dart';
 import 'reader_settings.dart';
 
-/// Display settings: theme, font size and style, spacing, page-turner or
-/// scroll. Changes apply at once; Escape or the close button closes it.
+// Public domain: Pride and Prejudice, chapter 1.
+const _previewParagraphs = [
+  'It is a truth universally acknowledged, that a single man in possession of a good fortune, '
+      'must be in want of a wife.',
+  'However little known the feelings or views of such a man may be on his first entering a '
+      'neighbourhood, this truth is so well fixed in the minds of the surrounding families, that he '
+      'is considered as the rightful property of some one or other of their daughters.',
+];
+
+/// Display settings: a preview, theme, font size and style, spacing, page-turner
+/// or scroll. Changes apply at once; Escape or the close button closes it.
 class ReaderSettingsSheet extends StatelessWidget {
   const ReaderSettingsSheet({super.key, required this.settings});
 
@@ -40,15 +49,28 @@ class ReaderSettingsSheet extends StatelessWidget {
                       onSelected: (_) => onSelect(value),
                     ),
                 ]);
-            Widget slider(Key key, String name, double value, double max, int divisions, double min,
-                    ValueChanged<double> onChanged) =>
+            // [shown] formats a value; the slider speaks the same text, so the visible copy is not read twice.
+            Widget slider(Key key, String name, String Function(double) shown, double value, double max,
+                    int divisions, double min, ValueChanged<double> onChanged) =>
                 MergeSemantics(
                   key: key,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      label(name),
-                      Slider(value: value, min: min, max: max, divisions: divisions, onChanged: onChanged),
+                      Row(children: [
+                        Expanded(child: label(name)),
+                        ExcludeSemantics(
+                          child: Text(shown(value),
+                              key: Key('${(key as ValueKey<String>).value}-value'), style: text.bodyMedium),
+                        ),
+                      ]),
+                      Slider(
+                          value: value,
+                          min: min,
+                          max: max,
+                          divisions: divisions,
+                          semanticFormatterCallback: shown,
+                          onChanged: onChanged),
                     ],
                   ),
                 );
@@ -68,6 +90,28 @@ class ReaderSettingsSheet extends StatelessWidget {
                         icon: const Icon(Icons.close, semanticLabel: 'Close settings'),
                       ),
                     ],
+                  ),
+                  label('Preview'),
+                  // A window onto the text, so the controls below stay in reach at any text size.
+                  ClipRect(
+                    child: Container(
+                    key: const Key('settings-preview'),
+                    color: s.backgroundColor,
+                    height: 150,
+                    padding: const EdgeInsets.all(12),
+                    child: OverflowBox(
+                      alignment: Alignment.topLeft,
+                      maxHeight: double.infinity,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(_previewParagraphs[0], style: s.textStyle),
+                          SizedBox(height: s.paragraphSpacing * s.fontSize),
+                          Text(_previewParagraphs[1], style: s.textStyle),
+                        ],
+                      ),
+                    ),
+                  ),
                   ),
                   label('Text size'),
                   Row(
@@ -113,14 +157,14 @@ class ReaderSettingsSheet extends StatelessWidget {
                     (const Key('view-page-turner'), 'Pages', ViewMode.pageTurner),
                     (const Key('view-scroll'), 'Scroll', ViewMode.scroll),
                   ], s.viewMode, (m) => _change((v) => v.copyWith(viewMode: m))),
-                  slider(const Key('setting-line-height'), 'Line spacing', s.lineHeight,
+                  slider(const Key('setting-line-height'), 'Line spacing', (x) => '${x.toStringAsFixed(1)}×', s.lineHeight,
                       ReaderSettings.maxLineHeight, 15, ReaderSettings.minLineHeight,
                       (x) => _change((v) => v.copyWith(lineHeight: x))),
-                  slider(const Key('setting-letter-spacing'), 'Letter spacing', s.letterSpacing,
+                  slider(const Key('setting-letter-spacing'), 'Letter spacing', (x) => '${x.toStringAsFixed(2)} em', s.letterSpacing,
                       ReaderSettings.maxLetterSpacing, 10, 0,
                       (x) => _change((v) => v.copyWith(letterSpacing: x))),
                   slider(const Key('setting-paragraph-spacing'), 'Paragraph spacing',
-                      s.paragraphSpacing, ReaderSettings.maxParagraphSpacing, 12, 0,
+                      (x) => '${x.toStringAsFixed(2)} em', s.paragraphSpacing, ReaderSettings.maxParagraphSpacing, 12, 0,
                       (x) => _change((v) => v.copyWith(paragraphSpacing: x))),
                 ],
               ),

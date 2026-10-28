@@ -289,6 +289,32 @@ void main() {
       expect(env.engines.last.settings, const ReaderSettings());
     });
 
+    // Persona round one (Ruth, Morgan): see the text before settling in; on web the sheet covers the book.
+    testWidgets('the settings show a preview in the chosen style', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      final previewText =
+          find.descendant(of: find.byKey(const Key('settings-preview')), matching: find.byType(Text)).first;
+      await tester.tap(find.byKey(const Key('font-increase')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(previewText).style!.fontSize, 20);
+      final dark = find.byKey(const Key('theme-dark'));
+      await tester.ensureVisible(dark);
+      await tester.tap(dark);
+      await tester.pumpAndSettle();
+      expect(tester.widget<Container>(find.byKey(const Key('settings-preview'))).color, const Color(0xFF121212));
+    });
+
+    testWidgets('spacing sliders show their values', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      expect(tester.widget<Text>(find.byKey(const Key('setting-line-height-value'))).data, '1.5×');
+      expect(tester.widget<Text>(find.byKey(const Key('setting-letter-spacing-value'))).data, '0.00 em');
+      expect(tester.widget<Text>(find.byKey(const Key('setting-paragraph-spacing-value'))).data, '1.00 em');
+    });
+
     testWidgets('font size can be increased and decreased', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);

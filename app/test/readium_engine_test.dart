@@ -2,6 +2,7 @@
 // preferences. Readium itself only runs in a browser or on a phone; check it
 // by hand with the spike checklist in decision_reader.md.
 import 'dart:async';
+import 'dart:ui' show TextAlign;
 
 import 'package:flutter_readium/flutter_readium.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -137,6 +138,13 @@ void main() {
       expect(p.textColor, const ReaderSettings().textColor);
       expect(p.scroll, isFalse);
       expect(p.publisherStyles, isFalse);
+    });
+
+    // Persona round one (Morgan): justified, hyphenated text on a phone. Our own renderer never does either.
+    test('text is start-aligned without hyphens', () {
+      final p = epubPreferences(const ReaderSettings());
+      expect(p.textAlign, TextAlign.start);
+      expect(p.hyphens, isFalse);
     });
 
     test('font size is a ratio of our default size', () {
