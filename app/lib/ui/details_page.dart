@@ -160,23 +160,6 @@ class _MetadataState extends State<_Metadata> {
   }
 }
 
-String _accessNote(Book book) {
-  final source = sourceName(book.source);
-  if (book.inApp) {
-    return book.format == BookFormat.audio
-        ? 'Listen in this app.'
-        : 'Read in this app.';
-  }
-  return switch (book.access) {
-    Access.borrow => 'Borrow it from $source. You need a free account there.',
-    Access.printDisabled => 'Available at $source to people with a print disability.',
-    Access.none => 'Listed at $source, which has no free copy to read.',
-    Access.open when book.source == 'hathitrust' =>
-      'Opens in the HathiTrust reader in your web browser.',
-    Access.open => 'Read it free at $source.',
-  };
-}
-
 class _BookCard extends StatelessWidget {
   const _BookCard({super.key, required this.work, required this.book});
 
@@ -218,7 +201,7 @@ class _BookCard extends StatelessWidget {
               Text('Original publication: ${book.originalPublication}', style: text.bodyMedium),
             if (book.credits != null) Text('Credits: ${book.credits}', style: text.bodySmall),
             const SizedBox(height: 4),
-            Text(_accessNote(book), style: text.bodyMedium),
+            Text(accessNote(book), style: text.bodyMedium),
             if (book.usOnly)
               Text(
                 'Public domain only in the United States: it may not open elsewhere.',

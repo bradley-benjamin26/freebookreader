@@ -105,3 +105,41 @@ String? matchNote(SearchQuery query, Work work) {
               : true; // subject or ISBN: the card cannot show the match, and that is expected
   return matched ? null : 'Matched other catalog details, not the title or author';
 }
+
+/// Where and how [book] opens, in a sentence.
+String accessNote(Book book) {
+  final source = sourceName(book.source);
+  if (book.inApp) {
+    return book.format == BookFormat.audio
+        ? 'Listen in this app.'
+        : 'Read in this app.';
+  }
+  return switch (book.access) {
+    Access.borrow => 'Borrow it from $source. You need a free account there.',
+    Access.printDisabled => 'Available at $source to people with a print disability.',
+    Access.none => 'Listed at $source, which has no free copy to read.',
+    Access.open when book.source == 'hathitrust' =>
+      'Opens in the HathiTrust reader in your web browser.',
+    Access.open => 'Read it free at $source.',
+  };
+}
+
+/// Which copy [book] is, for telling it apart from others of the work; null when there is nothing to say.
+String? bookSummary(Book book) {
+  final parts = switch (book.source) {
+    _ when book.format == BookFormat.audio => [
+        if (joinNames(book.narrators) case final names?) 'Read by $names',
+        ?formatDuration(book.audioSeconds),
+      ],
+    'gutenberg' => [
+        'eBook #${book.sourceId}',
+        if (book.originalPublication case final year?) 'Original publication: $year',
+      ],
+    'hathitrust' => [
+        if (book.volume case final volume?) 'Volume $volume',
+        ?book.library,
+      ],
+    _ => const <String>[],
+  };
+  return parts.isEmpty ? null : parts.join(' · ');
+}

@@ -418,8 +418,12 @@ class ResultRow extends StatelessWidget {
                     if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodySmall),
                     Text([if (formats.isNotEmpty) formats, languageName(work.language)].join(' · '),
                         style: text.bodySmall),
-                    if (best != null)
+                    if (best != null) ...[
                       BookActionButton(key: Key('open-${work.id}'), work: work, book: best),
+                      if (bookSummary(best) case final summary?)
+                        Text(summary, key: Key('result-edition-${work.id}'), style: text.bodySmall),
+                      Text(accessNote(best), key: Key('result-access-${work.id}'), style: text.bodySmall),
+                    ],
                   ],
                 ),
               ),

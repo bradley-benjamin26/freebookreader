@@ -259,6 +259,17 @@ void main() {
     });
   });
 
+  group('what a result opens (persona round one)', () {
+    testWidgets('a result says which copy its button opens and where it opens', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      expect(tester.widget<Text>(find.byKey(const Key('result-edition-w-pride'))).data, contains('eBook #'));
+      expect(tester.widget<Text>(find.byKey(const Key('result-access-w-pride'))).data, 'Read in this app.');
+      expect(tester.widget<Text>(find.byKey(const Key('result-access-w-quijote'))).data, contains('Open Library'));
+      expect(find.byKey(const Key('result-edition-w-quijote')), findsNothing);
+    });
+  });
+
   group('filters', () {
     testWidgets('offer every source, both formats and a language', (tester) async {
       await pumpApp(tester, await TestEnv.create());

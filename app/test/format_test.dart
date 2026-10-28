@@ -123,4 +123,33 @@ void main() {
       expect(matchNote(SearchQuery(keyword: 'democracy'), work('Anything')), isNull);
     });
   });
+
+  group('bookSummary (persona round one)', () {
+    Book book(String source, BookFormat format,
+            {String id = '1', List<String> narrators = const [], int? seconds, String? originalPublication}) =>
+        Book(
+          source: source,
+          sourceId: id,
+          title: 'T',
+          format: format,
+          url: 'https://example.org/1',
+          access: Access.open,
+          reading: const ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://example.org/1.html'),
+          narrators: narrators,
+          audioSeconds: seconds,
+          originalPublication: originalPublication,
+        );
+
+    test('a recording names its readers and length', () {
+      expect(bookSummary(book('librivox', BookFormat.audio, narrators: ['Cori Samuel'], seconds: 28740)),
+          'Read by Cori Samuel · ${formatDuration(28740)}');
+    });
+    test('a Gutenberg eBook gives its number and first publication', () {
+      expect(bookSummary(book('gutenberg', BookFormat.text, id: '41445', originalPublication: '1818')),
+          'eBook #41445 · Original publication: 1818');
+    });
+    test('other sources have nothing to add', () {
+      expect(bookSummary(book('openlibrary', BookFormat.text)), isNull);
+    });
+  });
 }
