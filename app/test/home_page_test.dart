@@ -12,6 +12,15 @@ void main() {
         containsSemantics(isHeader: true, label: 'Free Book Reader'));
   });
 
+  // Persona round one (Maya, Jordan, Sam, Priya): say what the catalogs hold, not only their names.
+  testWidgets('home says what kind of books the app finds', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    expect(tester.widget<Text>(find.byKey(const Key('home-intro'))).data,
+        'Find books that are out of copyright, openly licensed or free to borrow, plus free audiobooks.');
+    expect(find.text("Some open in this app; others open on the library's own website."), findsOneWidget);
+    expect(find.text('Sources: Project Gutenberg, LibriVox, DOAB, Open Library and HathiTrust.'), findsOneWidget);
+  });
+
   testWidgets('has a search box and a submit button with accessible names', (tester) async {
     await pumpApp(tester, await TestEnv.create());
     expect(find.byKey(const Key('search-field')), findsOneWidget);

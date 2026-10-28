@@ -310,6 +310,18 @@ class _ResultsBody extends StatelessWidget {
     final response = snapshot.data!;
     final searched = query.searchedText;
     final notice = _skippedNotice(response);
+    // Not a live region: the count or no-results already announces the search.
+    final collectionNote = _nothingMatches(query, response.works)
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Text(
+              "Nothing here matches by title or author. This app searches books that are out of copyright, "
+              "openly licensed or free to borrow, so many recent books aren't included.",
+              key: const Key('collection-note'),
+              style: text.bodyMedium,
+            ),
+          )
+        : null;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -335,8 +347,9 @@ class _ResultsBody extends StatelessWidget {
               child: Text('No results for "$searched". Try other words or fewer filters.',
                   style: text.bodyLarge),
             ),
-          )
-        else ...[
+          ),
+        ?collectionNote,
+        if (response.works.isNotEmpty) ...[
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: LiveRegion(
@@ -352,6 +365,13 @@ class _ResultsBody extends StatelessWidget {
       ],
     );
   }
+}
+
+/// True when no result shows the searched words in its title or author (or there are none), so the
+/// person may be looking for a book these catalogs do not have. Never for subject or ISBN searches.
+bool _nothingMatches(SearchQuery query, List<Work> works) {
+  if (query.q == null && query.title == null && query.author == null) return false;
+  return works.every((work) => matchNote(query, work) != null);
 }
 
 /// What to tell the user about the sources missing from a search, worded by the reason: a source in an

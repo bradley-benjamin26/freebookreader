@@ -270,6 +270,47 @@ void main() {
     });
   });
 
+  group('what the app holds (persona round one)', () {
+    const collectionNote = "Nothing here matches by title or author. This app searches books that are out of "
+        "copyright, openly licensed or free to borrow, so many recent books aren't included.";
+    SearchResponse response(void Function(List works) change) {
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      change(json['works'] as List);
+      return SearchResponse.fromJson(json);
+    }
+
+    testWidgets('a search where nothing matches by title or author explains the collection', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((works) => works.removeLast())));
+      await searchFor(tester, 'Heartstopper');
+      expect(tester.widget<Text>(find.byKey(const Key('collection-note'))).data, collectionNote);
+    });
+
+    testWidgets('no collection note when a result matches', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((works) {
+        works.removeLast();
+        (works.first as Map<String, dynamic>)['title'] = 'Heartstopper';
+      })));
+      await searchFor(tester, 'Heartstopper');
+      expect(find.byKey(const Key('collection-note')), findsNothing);
+    });
+
+    testWidgets('an empty search shows the collection note under no-results', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((works) => works.clear())));
+      await searchFor(tester, 'Heartstopper');
+      expect(find.byKey(const Key('no-results')), findsOneWidget);
+      expect(find.byKey(const Key('collection-note')), findsOneWidget);
+      expect(tester.getRect(find.byKey(const Key('collection-note'))).top,
+          greaterThanOrEqualTo(tester.getRect(find.byKey(const Key('no-results'))).bottom));
+    });
+
+    testWidgets('no collection note for a subject search', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((works) => works.removeLast())));
+      await chooseSearchField(tester, 'subject');
+      await searchFor(tester, 'heartstopper');
+      expect(find.byKey(const Key('collection-note')), findsNothing);
+    });
+  });
+
   group('filters', () {
     testWidgets('offer every source, both formats and a language', (tester) async {
       await pumpApp(tester, await TestEnv.create());
