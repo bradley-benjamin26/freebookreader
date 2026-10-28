@@ -21,6 +21,16 @@ void main() {
     expect(find.text('Sources: Project Gutenberg, LibriVox, DOAB, Open Library and HathiTrust.'), findsOneWidget);
   });
 
+  // The web build announced these as checkboxes: Flutter gives an ActionChip a selected state.
+  testWidgets('example books are plain buttons, not things to select', (tester) async {
+    final handle = tester.ensureSemantics();
+    await pumpApp(tester, await TestEnv.create());
+    final chip = find.descendant(of: find.byKey(const Key('example-books')), matching: find.byType(ActionChip)).first;
+    expect(tester.getSemantics(chip),
+        containsSemantics(label: 'Pride and Prejudice', isButton: true, hasSelectedState: false));
+    handle.dispose();
+  });
+
   testWidgets('has a search box and a submit button with accessible names', (tester) async {
     await pumpApp(tester, await TestEnv.create());
     expect(find.byKey(const Key('search-field')), findsOneWidget);

@@ -127,6 +127,11 @@ void main() {
       expect(matchNote(SearchQuery(title: 'Frankenstein'),
           work('Frankenstein', bookTitles: ['Frankenstein (1818)'])), isNull);
     });
+    test('Chinese and Japanese searches never get the note (words are not separated by spaces)', () {
+      expect(matchNote(SearchQuery(q: '红楼'), work('红楼梦')), isNull);
+      expect(matchNote(SearchQuery(title: 'こころ'), work('Kokoro')), isNull);
+    });
+
     test('ISBN and subject searches never get the note', () {
       expect(matchNote(SearchQuery(isbn: '9780141439471'), work('Anything')), isNull);
       expect(matchNote(SearchQuery(keyword: 'democracy'), work('Anything')), isNull);

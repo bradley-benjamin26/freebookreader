@@ -306,6 +306,15 @@ void main() {
       expect(tester.widget<Container>(find.byKey(const Key('settings-preview'))).color, const Color(0xFF121212));
     });
 
+    testWidgets('screen readers skip the preview text, which is mostly clipped', (tester) async {
+      final handle = tester.ensureSemantics();
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      expect(find.bySemanticsLabel(RegExp('truth universally')), findsNothing);
+      handle.dispose();
+    });
+
     testWidgets('spacing sliders show their values', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
@@ -652,6 +661,43 @@ void main() {
     });
   });
 
+  group('saving the last place (minor fixes)', () {
+    testWidgets('a failed save does not break reading', (tester) async {
+      final env = await TestEnv.create(bookmarks: (prefs) => _FailingPlaceStore(prefs));
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 2);
+      await tester.pump(const Duration(seconds: 2));
+      expect(tester.takeException(), isNull);
+      expect(pageNumber(tester), 3);
+    });
+
+    testWidgets('quick page turns are saved once, after a second', (tester) async {
+      late _CountingPlaceStore store;
+      final env = await TestEnv.create(bookmarks: (prefs) => store = _CountingPlaceStore(prefs));
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await tester.pump(const Duration(seconds: 2));
+      final before = store.saves;
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(const Key('next-page')));
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await tester.pump(const Duration(seconds: 2));
+      expect(store.saves - before, 1);
+      expect(env.bookmarks.loadLastPlace(gutenberg)!.locator, 'fake:3');
+    });
+
+    testWidgets('closing the book at once still saves the place', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await nextPage(tester, 2);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(env.bookmarks.loadLastPlace(gutenberg)!.locator, 'fake:2');
+    });
+  });
+
   group('other kinds of content', () {
     testWidgets('a pdf is shown in the pdf viewer without text settings', (tester) async {
       final env = await readerEnv(tester);
@@ -673,4 +719,23 @@ void main() {
       expect(env.engines.asked, isEmpty);
     });
   });
+}
+
+class _FailingPlaceStore extends BookmarkStore {
+  _FailingPlaceStore(super.prefs);
+
+  @override
+  Future<void> saveLastPlace(String bookKey, Bookmark place) async => throw StateError('storage is full');
+}
+
+class _CountingPlaceStore extends BookmarkStore {
+  _CountingPlaceStore(super.prefs);
+
+  int saves = 0;
+
+  @override
+  Future<void> saveLastPlace(String bookKey, Bookmark place) {
+    saves++;
+    return super.saveLastPlace(bookKey, place);
+  }
 }

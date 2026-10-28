@@ -311,6 +311,58 @@ void main() {
     });
   });
 
+  group('minor fixes', () {
+    SearchResponse response(void Function(Map<String, dynamic> json) change) {
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      change(json);
+      return SearchResponse.fromJson(json);
+    }
+
+    testWidgets('no collection note when a source was missing from the search', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((json) {
+        (json['works'] as List).clear();
+        json['unavailable_sources'] = ['openlibrary'];
+        json['skipped'] = [{'source': 'openlibrary', 'reason': 'timeout'}];
+      })));
+      await searchFor(tester, 'Heartstopper');
+      expect(find.byKey(const Key('unavailable-notice')), findsOneWidget);
+      expect(find.byKey(const Key('collection-note')), findsNothing);
+    });
+
+    testWidgets('no collection note for a search of only punctuation', (tester) async {
+      await pumpApp(tester, await TestEnv.create(response: response((json) => (json['works'] as List).clear())));
+      await searchFor(tester, '!!!');
+      expect(find.byKey(const Key('no-results')), findsOneWidget);
+      expect(find.byKey(const Key('collection-note')), findsNothing);
+    });
+
+    testWidgets('changes in the filters sheet search once, when it closes', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final before = env.api.queries.length;
+      await openFilters(tester);
+      await tester.tap(find.byKey(const Key('filter-source-doab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('filter-source-hathitrust')));
+      await tester.pumpAndSettle();
+      expect(env.api.queries.length, before);
+      await closeFilters(tester);
+      expect(env.api.queries.length, before + 1);
+      expect(env.api.queries.last.sources, unorderedEquals(['gutenberg', 'librivox', 'openlibrary']));
+    });
+
+    testWidgets('closing the sheet without a change does not search', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      final before = env.api.queries.length;
+      await openFilters(tester);
+      await closeFilters(tester);
+      expect(env.api.queries.length, before);
+    });
+  });
+
   group('filters', () {
     testWidgets('offer every source, both formats and a language', (tester) async {
       await pumpApp(tester, await TestEnv.create());
@@ -342,6 +394,7 @@ void main() {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
       }
+      await closeFilters(tester);
       expect(env.api.queries.last.sources, ['librivox']);
     });
 
@@ -354,6 +407,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('filter-source-doab')));
       await tester.pumpAndSettle();
+      await closeFilters(tester);
       expect(env.api.queries.last.sources, unorderedEquals(['gutenberg', 'openlibrary', 'hathitrust']));
     });
 
@@ -366,6 +420,7 @@ void main() {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
       }
+      await closeFilters(tester);
       expect(env.api.queries.last.sources, isNotEmpty);
     });
 
@@ -409,6 +464,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('French').last);
       await tester.pumpAndSettle();
+      await closeFilters(tester);
       expect(env.api.queries.last.language, 'fr');
     });
   });

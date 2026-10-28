@@ -43,17 +43,23 @@ class _ResultsPageState extends State<ResultsPage> {
         _results = _run();
       });
 
-  void _toggleSource(String id) {
+  /// Searches with [query] at once, or (in the filters sheet) only keeps it until the sheet closes.
+  void _apply(SearchQuery query, {required bool later}) =>
+      later ? setState(() => _query = query) : _search(query);
+
+  void _toggleSource(String id, {bool later = false}) {
     final next = {..._sources};
     if (!next.remove(id)) next.add(id);
     if (next.isEmpty) return; // at least one source stays selected
     _sources = next;
-    _search(next.length == sourceIds.length
-        ? _query.copyWith(clearSources: true)
-        : _query.copyWith(sources: sourceIds.where(next.contains).toList()));
+    _apply(
+        next.length == sourceIds.length
+            ? _query.copyWith(clearSources: true)
+            : _query.copyWith(sources: sourceIds.where(next.contains).toList()),
+        later: later);
   }
 
-  /// The filters; [changed] lets the sheet redraw after a change.
+  /// The filters; [changed] lets the sheet redraw after a change, and its changes are searched when it closes.
   _Filters _filters({Key? key, bool format = true, bool sourcesAndLanguage = true, VoidCallback? changed}) =>
       _Filters(
         key: key,
@@ -62,21 +68,28 @@ class _ResultsPageState extends State<ResultsPage> {
         format: format,
         sourcesAndLanguage: sourcesAndLanguage,
         onToggleSource: (id) {
-          _toggleSource(id);
+          _toggleSource(id, later: changed != null);
           changed?.call();
         },
         onFormat: (format) => _search(
             format == null ? _query.copyWith(clearFormat: true) : _query.copyWith(format: format)),
         onLanguage: (language) {
-          _search(language == null
-              ? _query.copyWith(clearLanguage: true)
-              : _query.copyWith(language: language));
+          _apply(
+              language == null ? _query.copyWith(clearLanguage: true) : _query.copyWith(language: language),
+              later: changed != null);
           changed?.call();
         },
       );
 
-  /// Phones: sources and language in a sheet. Changes apply at once, as on the page.
-  Future<void> _openFilters(BuildContext context) => showModalBottomSheet<void>(
+  /// Phones: sources and language in a sheet. Its changes are searched once, when it closes, so choosing
+  /// three sources is one search, not three.
+  Future<void> _openFilters(BuildContext context) async {
+    final opened = _query;
+    await _showFilters(context);
+    if (mounted && !identical(_query, opened)) _search(_query);
+  }
+
+  Future<void> _showFilters(BuildContext context) => showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
@@ -311,7 +324,7 @@ class _ResultsBody extends StatelessWidget {
     final searched = query.searchedText;
     final notice = _skippedNotice(response);
     // Not a live region: the count or no-results already announces the search.
-    final collectionNote = _nothingMatches(query, response.works)
+    final collectionNote = _nothingMatches(query, response)
         ? Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Text(
@@ -369,9 +382,13 @@ class _ResultsBody extends StatelessWidget {
 
 /// True when no result shows the searched words in its title or author (or there are none), so the
 /// person may be looking for a book these catalogs do not have. Never for subject or ISBN searches.
-bool _nothingMatches(SearchQuery query, List<Work> works) {
-  if (query.q == null && query.title == null && query.author == null) return false;
-  return works.every((work) => matchNote(query, work) != null);
+bool _nothingMatches(SearchQuery query, SearchResponse response) {
+  // A missing source is a likelier reason, and the skipped notice already says so.
+  if (response.unavailableSources.isNotEmpty) return false;
+  // A work with no title or author gets the note only when the search has words a card could show
+  // (not a subject or ISBN search, and not only punctuation).
+  if (matchNote(query, const Work(id: '', title: '')) == null) return false;
+  return response.works.every((work) => matchNote(query, work) != null);
 }
 
 /// What to tell the user about the sources missing from a search, worded by the reason: a source in an

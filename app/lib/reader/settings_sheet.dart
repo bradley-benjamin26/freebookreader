@@ -93,7 +93,9 @@ class ReaderSettingsSheet extends StatelessWidget {
                   ),
                   label('Preview'),
                   // A window onto the text, so the controls below stay in reach at any text size.
-                  ClipRect(
+                  // Mostly clipped, and only a sample: screen readers would read text that is not on screen.
+                  ExcludeSemantics(
+                    child: ClipRect(
                     child: Container(
                     key: const Key('settings-preview'),
                     color: s.backgroundColor,
@@ -111,6 +113,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                         ],
                       ),
                     ),
+                  ),
                   ),
                   ),
                   label('Text size'),

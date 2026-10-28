@@ -450,6 +450,7 @@ void main() {
       await openBook(tester, env, 'w-pride', gutenberg);
       await tester.drag(find.byKey(const Key('reader-scroll')), const Offset(0, -3000));
       await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1)); // the place is saved at most once a second
       final place = env.bookmarks.loadLastPlace(gutenberg);
       expect(place, isNotNull);
       expect(place!.progress, greaterThan(0));

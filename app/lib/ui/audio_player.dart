@@ -177,8 +177,8 @@ class AudioPlayerPanel extends StatelessWidget {
                   Expanded(
                     child: Text(
                       chapters.isEmpty
-                          ? 'LibriVox recording'
-                          : 'LibriVox: ${chapters[controller.chapter].title}',
+                          ? '${sourceName(controller.book.source)} recording'
+                          : '${sourceName(controller.book.source)}: ${chapters[controller.chapter].title}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
