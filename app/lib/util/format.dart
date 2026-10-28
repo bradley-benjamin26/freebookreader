@@ -109,19 +109,16 @@ String? matchNote(SearchQuery query, Work work) {
 /// Where and how [book] opens, in a sentence.
 String accessNote(Book book) {
   final source = sourceName(book.source);
-  if (book.inApp) {
-    return book.format == BookFormat.audio
-        ? 'Listen in this app.'
-        : 'Read in this app.';
-  }
-  return switch (book.access) {
-    Access.borrow => 'Borrow it from $source. You need a free account there.',
-    Access.printDisabled => 'Available at $source to people with a print disability.',
-    Access.none => 'Listed at $source, which has no free copy to read.',
-    Access.open when book.source == 'hathitrust' =>
-      'Opens in the HathiTrust reader in your web browser.',
-    Access.open => 'Read it free at $source.',
-  };
+  final where = book.inApp
+      ? (book.format == BookFormat.audio ? 'Listen in this app.' : 'Read in this app.')
+      : switch (book.access) {
+          Access.borrow => "Opens $source's website. You need a free account there to borrow it.",
+          Access.printDisabled => 'Available at $source to people with a print disability.',
+          Access.none => 'Listed at $source, which has no free copy to read.',
+          Access.open when book.source == 'hathitrust' => "Opens HathiTrust's reader in your web browser.",
+          Access.open => "Opens $source's website, where it is free to read.",
+        };
+  return book.usOnly ? '$where It may open only in the United States.' : where;
 }
 
 /// Which copy [book] is, for telling it apart from others of the work; null when there is nothing to say.

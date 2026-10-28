@@ -76,6 +76,8 @@ class _DetailsPageState extends State<DetailsPage> {
               ),
               const SizedBox(height: 16),
               Heading(work.title, key: const Key('details-title'), style: text.headlineSmall),
+              Text("You need an internet connection to read or listen. Books can't be saved for offline use yet.",
+                  key: const Key('offline-note'), style: text.bodyMedium),
               const SizedBox(height: 8),
               _Metadata(key: const Key('details-metadata'), work: work),
               const SizedBox(height: 24),
@@ -202,11 +204,6 @@ class _BookCard extends StatelessWidget {
             if (book.credits != null) Text('Credits: ${book.credits}', style: text.bodySmall),
             const SizedBox(height: 4),
             Text(accessNote(book), style: text.bodyMedium),
-            if (book.usOnly)
-              Text(
-                'Public domain only in the United States: it may not open elsewhere.',
-                style: text.bodyMedium,
-              ),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,

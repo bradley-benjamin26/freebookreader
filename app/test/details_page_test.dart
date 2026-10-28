@@ -227,7 +227,7 @@ void main() {
 
       testWidgets('say that the book opens in the HathiTrust reader in the browser', (tester) async {
         final book = await openHathiTrust(tester, {'library': 'Harvard University'});
-        expect(find.descendant(of: book, matching: find.textContaining('HathiTrust reader')), findsOneWidget);
+        expect(find.descendant(of: book, matching: find.textContaining("HathiTrust's reader")), findsOneWidget);
         expect(find.descendant(of: book, matching: find.textContaining('web browser')), findsOneWidget);
       });
 
@@ -335,6 +335,14 @@ void main() {
       await pumpApp(tester, await TestEnv.create());
       await openDetails(tester, 'w-quijote');
       expect(find.textContaining('Borrow'), findsWidgets);
+    });
+
+    testWidgets('says once that reading needs a connection (persona round one)', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await openDetails(tester, 'w-pride');
+      expect(find.byKey(const Key('offline-note')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('offline-note'))).data,
+          "You need an internet connection to read or listen. Books can't be saved for offline use yet.");
     });
 
     testWidgets('each book links to the source page', (tester) async {

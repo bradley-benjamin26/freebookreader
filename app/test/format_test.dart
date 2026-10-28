@@ -152,4 +152,43 @@ void main() {
       expect(bookSummary(book('openlibrary', BookFormat.text)), isNull);
     });
   });
+
+  group('accessNote says where a book opens (persona round one)', () {
+    Book book(String source, Access access, {bool inApp = false, BookFormat format = BookFormat.text, bool usOnly = false}) =>
+        Book(
+          source: source,
+          sourceId: '1',
+          title: 'T',
+          format: format,
+          url: 'https://example.org/1',
+          access: access,
+          reading: ReadingOptions(
+              mode: inApp ? ReadingMode.inApp : ReadingMode.external, kind: 'html', url: 'https://example.org/1'),
+          usOnly: usOnly,
+        );
+
+    test('in the app', () {
+      expect(accessNote(book('gutenberg', Access.open, inApp: true)), 'Read in this app.');
+      expect(accessNote(book('librivox', Access.open, inApp: true, format: BookFormat.audio)), 'Listen in this app.');
+    });
+    test('borrowing needs an account at the source', () {
+      expect(accessNote(book('openlibrary', Access.borrow)),
+          "Opens Open Library's website. You need a free account there to borrow it.");
+    });
+    test("HathiTrust opens its reader", () {
+      expect(accessNote(book('hathitrust', Access.open)), "Opens HathiTrust's reader in your web browser.");
+    });
+    test('other open books open the source website', () {
+      expect(accessNote(book('openlibrary', Access.open)), "Opens Open Library's website, where it is free to read.");
+    });
+    test('print disability and no copy are unchanged', () {
+      expect(accessNote(book('openlibrary', Access.printDisabled)),
+          'Available at Open Library to people with a print disability.');
+      expect(accessNote(book('openlibrary', Access.none)), 'Listed at Open Library, which has no free copy to read.');
+    });
+    test('a book public domain only in the United States says so', () {
+      expect(accessNote(book('hathitrust', Access.open, usOnly: true)),
+          "Opens HathiTrust's reader in your web browser. It may open only in the United States.");
+    });
+  });
 }

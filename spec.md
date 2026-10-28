@@ -51,6 +51,7 @@ Because this includes public-domain and open access publications, it serves both
     * The default view is page-turner view but a user can choose to just have a plain, scroll view.
     * Read aloud: text-to-speech reads the book in the viewer, with the text highlighted as it is read. It uses a voice that matches the book's language. Speed can be changed. (Goal confirmed 2026-10-10.)
     * Save a book to the device to read offline. Supported in principle; the milestone is not decided. Open Library books cannot be saved because they open at the source. See decision_reader.md for what to check before enabling it.
+    * Before a book opens, the app says whether it opens here or on another website, what that site needs (such as a free account), and that an internet connection is needed. When offline saving is built, this note changes with it.
 
 ## Data
 
