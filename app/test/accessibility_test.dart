@@ -110,6 +110,7 @@ void main() {
       final handle = tester.ensureSemantics();
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
+      await openFilters(tester);
       expect(tester.getSemantics(find.byKey(const Key('filter-language'))).label, contains('Language'));
       await tester.tap(find.byKey(const Key('filter-language')));
       await tester.pumpAndSettle();
@@ -117,6 +118,24 @@ void main() {
       await tester.pumpAndSettle();
       final label = tester.getSemantics(find.byKey(const Key('filter-language'))).label;
       expect(label, allOf(contains('Language'), contains('French')));
+      handle.dispose();
+    });
+  });
+
+  group('Filters button (persona round one)', () {
+    testWidgets('the Filters button is a named button and works at 200% text on a small phone', (tester) async {
+      final handle = tester.ensureSemantics();
+      await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
+      await searchFor(tester, 'pride');
+      final button = find.byKey(const Key('filters-button'));
+      await tester.ensureVisible(button);
+      expect(tester.getSemantics(button), containsSemantics(isButton: true));
+      expect(tester.getSemantics(button).label, allOf(contains('Filters'), contains('All sources · Any language')));
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      final heading = find.descendant(of: find.byKey(const Key('filters-sheet')), matching: find.text('Filters'));
+      expect(tester.getSemantics(heading), containsSemantics(isHeader: true));
+      expect(tester.takeException(), isNull);
       handle.dispose();
     });
   });

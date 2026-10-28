@@ -247,6 +247,7 @@ void main() {
     testWidgets('offer every source, both formats and a language', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
+      await openFilters(tester);
       for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
         expect(find.byKey(Key('filter-source-$id')), findsOneWidget, reason: id);
       }
@@ -268,6 +269,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
+      await openFilters(tester);
       for (final id in ['gutenberg', 'doab', 'openlibrary', 'hathitrust']) {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
@@ -279,6 +281,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
+      await openFilters(tester);
       await tester.tap(find.byKey(const Key('filter-source-librivox')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('filter-source-doab')));
@@ -290,6 +293,7 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'pride');
+      await openFilters(tester);
       for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
         await tester.tap(find.byKey(Key('filter-source-$id')));
         await tester.pumpAndSettle();
@@ -332,11 +336,74 @@ void main() {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
       await searchFor(tester, 'les miserables');
+      await openFilters(tester);
       await tester.tap(find.byKey(const Key('filter-language')));
       await tester.pumpAndSettle();
       await tester.tap(find.text('French').last);
       await tester.pumpAndSettle();
       expect(env.api.queries.last.language, 'fr');
+    });
+  });
+
+  group('filters on a phone (persona round one)', () {
+    String buttonText(WidgetTester tester) => tester
+        .widget<Text>(find.descendant(of: find.byKey(const Key('filters-button')), matching: find.byType(Text)))
+        .data!;
+
+    testWidgets('on a phone the sources and language are behind a Filters button', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      expect(find.byKey(const Key('filter-format-audio')), findsOneWidget);
+      expect(find.byKey(const Key('filter-source-doab')), findsNothing);
+      expect(find.byKey(const Key('filter-language')), findsNothing);
+      expect(buttonText(tester), 'All sources · Any language');
+    });
+
+    testWidgets('the button shows what is chosen', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'pride');
+      await openFilters(tester);
+      await tester.tap(find.byKey(const Key('filter-source-doab')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('filter-source-hathitrust')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('filter-language')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Spanish').last);
+      await tester.pumpAndSettle();
+      await closeFilters(tester);
+      expect(buttonText(tester), '3 of 5 sources · Spanish');
+      expect(env.api.queries.last.sources, unorderedEquals(['gutenberg', 'librivox', 'openlibrary']));
+      expect(env.api.queries.last.language, 'es');
+    });
+
+    testWidgets('a source turned off stays off when the sheet is opened again', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      await openFilters(tester);
+      await tester.tap(find.byKey(const Key('filter-source-librivox')));
+      await tester.pumpAndSettle();
+      await closeFilters(tester);
+      await openFilters(tester);
+      expect(tester.widget<FilterChip>(find.byKey(const Key('filter-source-librivox'))).selected, isFalse);
+    });
+
+    testWidgets('the first result is higher on a phone', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: phone);
+      await searchFor(tester, 'pride');
+      final box = tester.getRect(find.byKey(const Key('search-field')));
+      final first = tester.getRect(find.byKey(const Key('result-w-pride')));
+      // 500 before the filters moved into a sheet, 308 after. The test font is wide ("All formats" is 209 px),
+      // so the format chips take two lines here; on a real phone they take one.
+      expect(first.top - box.bottom, lessThanOrEqualTo(320));
+    });
+
+    testWidgets('on a wide screen nothing moves into a sheet', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: desktop);
+      await searchFor(tester, 'pride');
+      expect(find.byKey(const Key('filters-button')), findsNothing);
+      expect(find.byKey(const Key('filter-source-doab')), findsOneWidget);
     });
   });
 

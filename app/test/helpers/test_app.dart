@@ -125,6 +125,25 @@ Future<void> chooseSearchField(WidgetTester tester, String field) async {
   await tester.pumpAndSettle();
 }
 
+/// On a phone, opens the sheet that holds the source and language filters; on a wide screen they are on
+/// the page already and this does nothing.
+Future<void> openFilters(WidgetTester tester) async {
+  final button = find.byKey(const Key('filters-button'));
+  if (button.evaluate().isEmpty) return;
+  await tester.ensureVisible(button);
+  await tester.tap(button);
+  await tester.pumpAndSettle();
+}
+
+/// Closes the filters sheet if it is open.
+Future<void> closeFilters(WidgetTester tester) async {
+  final done = find.byKey(const Key('filters-done'));
+  if (done.evaluate().isEmpty) return;
+  await tester.ensureVisible(done);
+  await tester.tap(done);
+  await tester.pumpAndSettle();
+}
+
 /// Runs a search then opens a work's details page.
 Future<void> openDetails(WidgetTester tester, String workId) async {
   await searchFor(tester, 'pride');

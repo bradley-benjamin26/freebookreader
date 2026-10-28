@@ -8,8 +8,8 @@ import 'common.dart';
 import 'details_page.dart';
 import 'search_bar.dart';
 
-/// Search results: the search box on top, filters (left on wide screens, under
-/// the search box on phones), then one row per work.
+/// Search results: the search box on top, filters (left on wide screens; on
+/// phones the format under the search box and the rest in a sheet), then one row per work.
 class ResultsPage extends StatefulWidget {
   const ResultsPage({super.key, required this.initialText, this.initialField = SearchField.anything});
 
@@ -53,6 +53,60 @@ class _ResultsPageState extends State<ResultsPage> {
         : _query.copyWith(sources: sourceIds.where(next.contains).toList()));
   }
 
+  /// The filters; [changed] lets the sheet redraw after a change.
+  _Filters _filters({Key? key, bool format = true, bool sourcesAndLanguage = true, VoidCallback? changed}) =>
+      _Filters(
+        key: key,
+        query: _query,
+        sources: _sources,
+        format: format,
+        sourcesAndLanguage: sourcesAndLanguage,
+        onToggleSource: (id) {
+          _toggleSource(id);
+          changed?.call();
+        },
+        onFormat: (format) => _search(
+            format == null ? _query.copyWith(clearFormat: true) : _query.copyWith(format: format)),
+        onLanguage: (language) {
+          _search(language == null
+              ? _query.copyWith(clearLanguage: true)
+              : _query.copyWith(language: language));
+          changed?.call();
+        },
+      );
+
+  /// Phones: sources and language in a sheet. Changes apply at once, as on the page.
+  Future<void> _openFilters(BuildContext context) => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (_) => StatefulBuilder(
+          builder: (sheetContext, setSheet) => SafeArea(
+            child: SingleChildScrollView(
+              key: const Key('filters-sheet'),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Heading('Filters', style: Theme.of(sheetContext).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  _filters(format: false, changed: () => setSheet(() {})),
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FilledButton(
+                      key: const Key('filters-done'),
+                      onPressed: () => Navigator.pop(sheetContext),
+                      child: const Text('Done'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
   @override
   Widget build(BuildContext context) {
     final searchBar = BookSearchBar(
@@ -60,17 +114,6 @@ class _ResultsPageState extends State<ResultsPage> {
       initialText: widget.initialText,
       initialField: widget.initialField,
       onSearch: (field, text) => _search(_query.withTerm(field, text)),
-    );
-    final filters = _Filters(
-      key: const Key('filters'),
-      query: _query,
-      sources: _sources,
-      onToggleSource: _toggleSource,
-      onFormat: (format) => _search(
-          format == null ? _query.copyWith(clearFormat: true) : _query.copyWith(format: format)),
-      onLanguage: (language) => _search(language == null
-          ? _query.copyWith(clearLanguage: true)
-          : _query.copyWith(language: language)),
     );
     final results = FutureBuilder<SearchResponse>(
       future: _results,
@@ -100,7 +143,7 @@ class _ResultsPageState extends State<ResultsPage> {
                       width: 280,
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: filters,
+                        child: _filters(key: const Key('filters')),
                       ),
                     ),
                     Expanded(
@@ -115,16 +158,37 @@ class _ResultsPageState extends State<ResultsPage> {
             ],
           );
         }
+        final narrowFilters = Wrap(
+          key: const Key('filters'),
+          spacing: 8,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _filters(sourcesAndLanguage: false),
+            OutlinedButton.icon(
+              key: const Key('filters-button'),
+              onPressed: () => _openFilters(context),
+              icon: const Icon(Icons.tune, semanticLabel: 'Filters'),
+              label: Text(filterSummary(_query, _sources)),
+            ),
+          ],
+        );
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [searchBar, const SizedBox(height: 8), filters, const SizedBox(height: 8), results],
+            children: [searchBar, const SizedBox(height: 8), narrowFilters, const SizedBox(height: 8), results],
           ),
         );
       }),
     );
   }
+}
+
+/// What the sources and language filters are set to, e.g. "2 of 5 sources · Spanish".
+String filterSummary(SearchQuery query, Set<String> sources) {
+  final which =
+      sources.length == sourceIds.length ? 'All sources' : '${sources.length} of ${sourceIds.length} sources';
+  return '$which · ${query.language == null ? 'Any language' : languageName(query.language)}';
 }
 
 class _Filters extends StatelessWidget {
@@ -135,7 +199,13 @@ class _Filters extends StatelessWidget {
     required this.onToggleSource,
     required this.onFormat,
     required this.onLanguage,
+    this.format = true,
+    this.sourcesAndLanguage = true,
   });
+
+  // Which parts to draw: both on a wide screen; on a phone the format on the page, the rest in a sheet.
+  final bool format;
+  final bool sourcesAndLanguage;
 
   final SearchQuery query;
   final Set<String> sources;
@@ -154,7 +224,7 @@ class _Filters extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        group('Sources', [
+        if (sourcesAndLanguage) group('Sources', [
           for (final id in sourceIds)
             FilterChip(
               key: Key('filter-source-$id'),
@@ -163,7 +233,7 @@ class _Filters extends StatelessWidget {
               onSelected: (_) => onToggleSource(id),
             ),
         ]),
-        group('Format', [
+        if (format) group('Format', [
           for (final (key, label, format) in [
             ('all', 'All formats', null),
             ('text', 'Text', BookFormat.text),
@@ -177,7 +247,7 @@ class _Filters extends StatelessWidget {
             ),
         ]),
         // Without a label, a chosen language is announced as just "French, button".
-        Semantics(
+        if (sourcesAndLanguage) Semantics(
           label: 'Language',
           child: DropdownButton<String?>(
             key: const Key('filter-language'),
