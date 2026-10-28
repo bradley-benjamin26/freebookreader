@@ -166,6 +166,9 @@ class Book {
   String get key => '$source:$sourceId';
 
   bool get inApp => reading.mode == ReadingMode.inApp;
+
+  /// A recording that knows its chapters or length (Gutenberg audio eBooks know neither).
+  bool get hasAudioDetails => chapters.isNotEmpty || audioSeconds != null;
 }
 
 /// Records from several sources that are the same work.
@@ -219,14 +222,20 @@ class Work {
   /// language as the text.
   List<Book> recordingsFor(Book book) {
     if (book.language == null) return const [];
-    return audioBooks.where((a) => a.inApp && a.language == book.language).toList();
+    return _detailsFirst(audioBooks.where((a) => a.inApp && a.language == book.language));
   }
+
+  /// Recordings with chapters or a length first, otherwise in their order.
+  static List<Book> _detailsFirst(Iterable<Book> recordings) => [
+        ...recordings.where((b) => b.hasAudioDetails),
+        ...recordings.where((b) => !b.hasAudioDetails),
+      ];
 
   /// The best way in: read in the app, else listen in the app, else the first
   /// book (opened at its source).
   Book? get bestBook =>
       textBooks.where((b) => b.inApp).firstOrNull ??
-      audioBooks.where((b) => b.inApp).firstOrNull ??
+      _detailsFirst(audioBooks.where((b) => b.inApp)).firstOrNull ??
       books.firstOrNull;
 }
 

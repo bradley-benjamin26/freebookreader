@@ -62,6 +62,10 @@ Change a test and this README together.
 - `FakeReaderEngine` has `readAloud` (null unless a test sets it; `FakeReaderEngines.readAloud = true` sets it on every engine). `ReaderEngine.readAloud` is a new member of the interface.
 - Not tested: Readium's TTS and the device's real voices (decision_reader.md checks 5 and 9, by hand), and the Android `TTS_SERVICE` entry in `AndroidManifest.xml` that Android 11+ needs.
 
+### Persona round one fixes (2026-10-27)
+
+- `models_test` audio choice: a recording with chapters or a length is chosen before a bare one (Gutenberg audio eBooks have neither), in `bestBook` and `recordingsFor`. `Book.hasAudioDetails` is new.
+
 ## Milestones to tests
 
 | Milestone | Tests |

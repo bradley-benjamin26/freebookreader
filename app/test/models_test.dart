@@ -114,6 +114,45 @@ void main() {
     });
   });
 
+  group('audio choice', () {
+    Book audio(String source, {int? seconds}) => Book(
+          source: source,
+          sourceId: '1',
+          title: 'The Time Machine',
+          format: BookFormat.audio,
+          url: 'https://example.org/$source',
+          access: Access.open,
+          reading: ReadingOptions(mode: ReadingMode.inApp, kind: 'audio', url: 'https://example.org/$source.mp3'),
+          language: 'en',
+          audioSeconds: seconds,
+        );
+    final gutenbergAudio = audio('gutenberg');
+    final librivoxAudio = audio('librivox', seconds: 12464);
+    const text = Book(
+      source: 'gutenberg',
+      sourceId: '35',
+      title: 'The Time Machine',
+      format: BookFormat.text,
+      url: 'https://example.org/35',
+      access: Access.open,
+      reading: ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://example.org/35.html'),
+      language: 'en',
+    );
+
+    test('a work with only audio opens the recording that has a length', () {
+      final work = Work(id: 'w', title: 'The Time Machine', books: [gutenbergAudio, librivoxAudio]);
+      expect(work.bestBook!.source, 'librivox');
+    });
+    test('the recording beside a text is the one with chapters or a length', () {
+      final work = Work(id: 'w', title: 'T', books: [text, gutenbergAudio, librivoxAudio]);
+      expect(work.recordingsFor(text).map((b) => b.source), ['librivox', 'gutenberg']);
+    });
+    test('a bare recording is still chosen when it is the only one', () {
+      final work = Work(id: 'w', title: 'T', books: [gutenbergAudio]);
+      expect(work.bestBook!.source, 'gutenberg');
+    });
+  });
+
   group('Book', () {
     test('text book from Project Gutenberg', () {
       final book = response.works.first.books.first;
