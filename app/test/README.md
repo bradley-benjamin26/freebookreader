@@ -65,6 +65,7 @@ Change a test and this README together.
 ### Persona round one fixes (2026-10-27)
 
 - `models_test` audio choice: a recording with chapters or a length is chosen before a bare one (Gutenberg audio eBooks have neither), in `bestBook` and `recordingsFor`. `Book.hasAudioDetails` is new.
+- `audio_player_test` unknown lengths: a recording or chapter with no length shows "<time> played · length unknown" (`position-elapsed`, not a live region) instead of a slider whose total grew with the time played; a recording with no chapters has no Chapters heading. No existing test changed.
 
 ## Milestones to tests
 
@@ -128,7 +129,7 @@ injected so tests can fake it.
 - **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
 - **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`, or a `Text.rich` with several paragraphs or a highlight), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
 - **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `view-page-turner|scroll`
-- **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `chapter-<i>`, `audio-error` (live region), `audio-retry`
+- **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `position-elapsed` (shown instead of the slider when the length is unknown), `chapter-<i>`, `audio-error` (live region), `audio-retry`
 
 ### Behavior notes
 

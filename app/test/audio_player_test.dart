@@ -289,6 +289,63 @@ void main() {
     });
   });
 
+  group('unknown lengths (persona round one)', () {
+    Map<String, dynamic> librivox(Map<String, dynamic> pride) =>
+        (pride['books'] as List).cast<Map<String, dynamic>>().firstWhere((b) => b['source'] == 'librivox');
+
+    testWidgets('a recording with no length shows time played, not a total', (tester) async {
+      final env = await TestEnv.create(response: modified((pride) {
+        final book = librivox(pride);
+        book['chapters'] = [];
+        book['audio_seconds'] = null;
+      }));
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      final url = Uri.parse(env.audio.calls.last.split(' ').last);
+      env.audio.emitPosition(url, const Duration(seconds: 12));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('position-slider')), findsNothing);
+      expect(tester.widget<Text>(find.byKey(const Key('position-elapsed'))).data,
+          '12 sec played · length unknown');
+    });
+
+    testWidgets('a chapter with no length shows time played', (tester) async {
+      final env = await TestEnv.create(response: modified((pride) {
+        final chapters = librivox(pride)['chapters'] as List;
+        chapters.removeLast();
+        (chapters[0] as Map)['duration_seconds'] = null;
+        (chapters[1] as Map)['duration_seconds'] = 600;
+      }));
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      expect(find.byKey(const Key('position-elapsed')), findsOneWidget);
+      expect(find.byKey(const Key('position-slider')), findsNothing);
+      await tester.tap(find.byKey(const Key('chapter-1')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('position-elapsed')), findsNothing);
+      expect(tester.getSemantics(find.byKey(const Key('position-slider'))),
+          containsSemantics(isSlider: true, value: '0 sec of 10 min'));
+    });
+
+    testWidgets('no Chapters heading when the recording has no chapters', (tester) async {
+      final env = await TestEnv.create(response: modified((pride) {
+        librivox(pride)['chapters'] = [];
+      }));
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      expect(find.text('Chapters'), findsNothing);
+    });
+
+    testWidgets('the Chapters heading shows when there are chapters', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      expect(find.text('Chapters'), findsOneWidget);
+    });
+  });
+
   group('one engine, several recordings', () {
     // Review 2026-10-11, #18: the player is shared, and a new listener gets its last position at once.
     Book recording(String id) {

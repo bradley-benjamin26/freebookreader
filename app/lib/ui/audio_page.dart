@@ -55,8 +55,8 @@ class _AudioPageState extends State<AudioPage> {
               const SizedBox(height: 16),
               AudioPlayerPanel(key: const Key('audio-player'), controller: controller),
               const SizedBox(height: 16),
-              Heading('Chapters', style: text.titleLarge),
-              ListenableBuilder(
+              if (book.chapters.isNotEmpty) Heading('Chapters', style: text.titleLarge),
+              if (book.chapters.isNotEmpty) ListenableBuilder(
                 listenable: controller,
                 builder: (context, _) => Column(
                   children: [

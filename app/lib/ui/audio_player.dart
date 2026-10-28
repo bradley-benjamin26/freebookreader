@@ -190,7 +190,18 @@ class AudioPlayerPanel extends StatelessWidget {
             ],
           );
         }
-        final length = controller.chapterLength ?? controller.position;
+        final length = controller.chapterLength;
+        if (length == null) {
+          // Not a live region: it changes every second.
+          return Column(
+            children: [
+              Text('${formatDuration(controller.position.inSeconds) ?? '0 sec'} played · length unknown',
+                  key: const Key('position-elapsed')),
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
+              ?error,
+            ],
+          );
+        }
         final max = length.inSeconds <= 0 ? 1.0 : length.inSeconds.toDouble();
         final value = controller.position.inSeconds.clamp(0, max).toDouble();
         return Column(
