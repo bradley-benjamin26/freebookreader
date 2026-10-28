@@ -109,6 +109,15 @@ void main() {
     test('every word in the authors', () {
       expect(matchNote(SearchQuery(q: 'mary shelley'), work('Frankenstein', authors: ['Shelley, Mary'])), isNull);
     });
+    // Final review: these got the note although the right book came back.
+    test('an Anything search may mix title and author words', () {
+      expect(matchNote(SearchQuery(q: 'austen pride'), work('Pride and Prejudice', authors: ['Jane Austen'])), isNull);
+    });
+    test('small words do not have to match', () {
+      expect(matchNote(SearchQuery(title: 'The Time Machine'), work('Time Machine')), isNull);
+      expect(matchNote(SearchQuery(q: 'pride and prejudice'), work('Pride & Prejudice')), isNull);
+    });
+
     test('words missing from the title and author', () {
       expect(matchNote(SearchQuery(q: 'Heartstopper'), work('Eat Fat, Be Healthy')), note);
       expect(matchNote(SearchQuery(q: 'time travel'),

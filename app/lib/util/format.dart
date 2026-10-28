@@ -83,7 +83,11 @@ String actionLabel(Book book) {
 
 final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
 
-Set<String> _words(String text) => text.toLowerCase().split(_nonWord).where((w) => w.isNotEmpty).toSet();
+// Catalogs drop or spell these differently ("Time Machine", "Pride & Prejudice"), so they need not match.
+const _smallWords = {'the', 'a', 'an', 'and', 'of'};
+
+Set<String> _words(String text) =>
+    text.toLowerCase().split(_nonWord).where((w) => w.isNotEmpty && !_smallWords.contains(w)).toSet();
 
 /// A note for a result whose title and author do not contain the searched words, so it matched on
 /// something the card does not show; null when they do, and for ISBN and subject searches.
@@ -97,7 +101,7 @@ String? matchNote(SearchQuery query, Work work) {
   final inTitle = words.every(titles.contains);
   final inAuthor = words.every(authors.contains);
   final matched = has(query.q)
-      ? inTitle || inAuthor
+      ? words.every((w) => titles.contains(w) || authors.contains(w))
       : has(query.title)
           ? inTitle
           : has(query.author)

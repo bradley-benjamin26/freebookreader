@@ -444,6 +444,18 @@ void main() {
       expect(pageNumber(tester), pageCount(tester));
     });
 
+    // Final review (persona round one): scroll view never sent a position, so the last place was never saved.
+    testWidgets('scroll view saves the last place when scrolling stops', (tester) async {
+      final env = await textEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await tester.drag(find.byKey(const Key('reader-scroll')), const Offset(0, -3000));
+      await tester.pumpAndSettle();
+      final place = env.bookmarks.loadLastPlace(gutenberg);
+      expect(place, isNotNull);
+      expect(place!.progress, greaterThan(0));
+      expect(place.locator, startsWith('word:'));
+    });
+
     testWidgets('a bookmark made in scroll view is restored in page view', (tester) async {
       final env = await textEnv(tester, prefs: {'reader_settings': '{"viewMode":"scroll"}'});
       await openBook(tester, env, 'w-pride', gutenberg);

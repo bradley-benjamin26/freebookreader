@@ -237,7 +237,13 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
         // A new layout is a new list: given a new controller, a list keeps its old pixel offset instead.
         return KeyedSubtree(
           key: ObjectKey(layout),
-          child: ListView.builder(
+          // Page view sends a position on each page; scroll view sends one when scrolling stops.
+          child: NotificationListener<ScrollEndNotification>(
+            onNotification: (_) {
+              if (!_positions.isClosed) _positions.add(position);
+              return false;
+            },
+            child: ListView.builder(
             key: const Key('reader-scroll'),
             controller: layout.controller,
             padding: const EdgeInsets.all(padding),
@@ -246,6 +252,7 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
               padding: EdgeInsets.only(bottom: layout.gap),
               child: _paragraph(book, i, style),
             ),
+          ),
           ),
         );
       }
