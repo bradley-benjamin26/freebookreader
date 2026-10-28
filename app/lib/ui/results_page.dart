@@ -347,7 +347,7 @@ class _ResultsBody extends StatelessWidget {
               ),
             ),
           ),
-          for (final work in response.works) ResultRow(work: work),
+          for (final work in response.works) ResultRow(work: work, query: query),
         ],
       ],
     );
@@ -380,9 +380,10 @@ String? _skippedNotice(SearchResponse response) {
 /// One work: cover, title, authors, sources, formats, and a button that goes
 /// straight to the best way in. Tapping the row opens the details page.
 class ResultRow extends StatelessWidget {
-  const ResultRow({super.key, required this.work});
+  const ResultRow({super.key, required this.work, required this.query});
 
   final Work work;
+  final SearchQuery query;
 
   @override
   Widget build(BuildContext context) {
@@ -392,6 +393,7 @@ class ResultRow extends StatelessWidget {
       if (work.formats.contains('text')) 'Text',
       if (work.formats.contains('audio')) 'Audio',
     ].join(' and ');
+    final note = matchNote(query, work);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
       clipBehavior: Clip.antiAlias,
@@ -413,7 +415,9 @@ class ResultRow extends StatelessWidget {
                     Text(work.title, style: text.titleMedium),
                     Text(formatAuthors(work.authors), style: text.bodyMedium),
                     Text(work.sources.map(sourceName).join(', '), style: text.bodySmall),
-                    if (formats.isNotEmpty) Text(formats, style: text.bodySmall),
+                    if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodySmall),
+                    Text([if (formats.isNotEmpty) formats, languageName(work.language)].join(' · '),
+                        style: text.bodySmall),
                     if (best != null)
                       BookActionButton(key: Key('open-${work.id}'), work: work, book: best),
                   ],

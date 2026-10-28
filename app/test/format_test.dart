@@ -81,4 +81,46 @@ void main() {
       }
     });
   });
+
+  group('matchNote (persona round one)', () {
+    const note = 'Matched other catalog details, not the title or author';
+    Work work(String title, {List<String> authors = const [], List<String> bookTitles = const []}) => Work(
+          id: 'w',
+          title: title,
+          authors: authors,
+          books: [
+            for (final t in bookTitles)
+              Book(
+                source: 'gutenberg',
+                sourceId: '1',
+                title: t,
+                format: BookFormat.text,
+                url: 'https://example.org/1',
+                access: Access.open,
+                reading: const ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://example.org/1.html'),
+              ),
+          ],
+        );
+
+    test('every word in the title', () {
+      expect(matchNote(SearchQuery(q: 'Frankenstein'), work('Frankenstein; Or, The Modern Prometheus')), isNull);
+      expect(matchNote(SearchQuery(q: 'pride & prejudice'), work('Pride and Prejudice')), isNull);
+    });
+    test('every word in the authors', () {
+      expect(matchNote(SearchQuery(q: 'mary shelley'), work('Frankenstein', authors: ['Shelley, Mary'])), isNull);
+    });
+    test('words missing from the title and author', () {
+      expect(matchNote(SearchQuery(q: 'Heartstopper'), work('Eat Fat, Be Healthy')), note);
+      expect(matchNote(SearchQuery(q: 'time travel'),
+          work('A General History and Collection of Voyages and Travels')), note);
+    });
+    test("a title search matches a book's title too", () {
+      expect(matchNote(SearchQuery(title: 'Frankenstein'),
+          work('Frankenstein', bookTitles: ['Frankenstein (1818)'])), isNull);
+    });
+    test('ISBN and subject searches never get the note', () {
+      expect(matchNote(SearchQuery(isbn: '9780141439471'), work('Anything')), isNull);
+      expect(matchNote(SearchQuery(keyword: 'democracy'), work('Anything')), isNull);
+    });
+  });
 }

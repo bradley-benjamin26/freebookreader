@@ -80,3 +80,28 @@ String actionLabel(Book book) {
     final verb => '$verb $what at ${sourceName(book.source)}',
   };
 }
+
+final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
+
+Set<String> _words(String text) => text.toLowerCase().split(_nonWord).where((w) => w.isNotEmpty).toSet();
+
+/// A note for a result whose title and author do not contain the searched words, so it matched on
+/// something the card does not show; null when they do, and for ISBN and subject searches.
+// shortcut: no accent folding ("Quixote" vs "Quijote" gets the note); add it if round two finds that misleading.
+String? matchNote(SearchQuery query, Work work) {
+  bool has(String? text) => text != null && text.trim().isNotEmpty;
+  final words = _words(query.searchedText);
+  if (words.isEmpty) return null;
+  final titles = {for (final title in [work.title, ...work.books.map((b) => b.title)]) ..._words(title)};
+  final authors = _words(work.authors.join(' '));
+  final inTitle = words.every(titles.contains);
+  final inAuthor = words.every(authors.contains);
+  final matched = has(query.q)
+      ? inTitle || inAuthor
+      : has(query.title)
+          ? inTitle
+          : has(query.author)
+              ? inAuthor
+              : true; // subject or ISBN: the card cannot show the match, and that is expected
+  return matched ? null : 'Matched other catalog details, not the title or author';
+}

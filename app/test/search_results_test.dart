@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/api/search_api.dart';
 import 'package:free_book_reader/models/models.dart';
 
+import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
 
 void main() {
@@ -240,6 +241,21 @@ void main() {
       final error = find.byKey(const Key('search-error'));
       expect(find.descendant(of: error, matching: find.textContaining('connection')), findsNothing);
       expect(find.descendant(of: error, matching: find.textContaining("can't be run")), findsOneWidget);
+    });
+  });
+
+  group('why a result is here (persona round one)', () {
+    testWidgets('a result shows its language, and a note when the title and author do not match', (tester) async {
+      final json = loadJson('search_response.json') as Map<String, dynamic>;
+      final works = json['works'] as List;
+      (works[1] as Map<String, dynamic>)['language'] = 'pl';
+      works.removeLast();
+      await pumpApp(tester, await TestEnv.create(response: SearchResponse.fromJson(json)));
+      await searchFor(tester, 'pride');
+      expect(find.byKey(const Key('result-match-w-quijote')), findsOneWidget);
+      expect(find.byKey(const Key('result-match-w-pride')), findsNothing);
+      expect(find.text('Text · Polish'), findsOneWidget);
+      expect(find.text('Text and Audio · English'), findsOneWidget);
     });
   });
 
