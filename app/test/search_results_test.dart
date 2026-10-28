@@ -169,6 +169,30 @@ void main() {
       expect(env.api.queries.last.format, BookFormat.audio);
     });
 
+    // Persona round one (Jordan): the choice seemed to go back to Anything.
+    testWidgets('the Title choice stays after Audio is chosen and after returning from a book', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await searchFor(tester, 'The Time Machine');
+      await chooseSearchField(tester, 'title');
+      await searchFor(tester, 'The Time Machine');
+      await tester.tap(find.byKey(const Key('result-w-pride')));
+      await tester.pumpAndSettle();
+      final open = find.byKey(const Key('open-gutenberg:1342'));
+      await tester.ensureVisible(open);
+      await tester.tap(open);
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('filter-format-audio')));
+      await tester.pumpAndSettle();
+      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(env.api.queries.last.title, 'The Time Machine');
+      expect(env.api.queries.last.format, BookFormat.audio);
+    });
+
     testWidgets('anything that is an ISBN is searched as an ISBN', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);

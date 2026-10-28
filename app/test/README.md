@@ -67,6 +67,7 @@ Change a test and this README together.
 - `models_test` audio choice: a recording with chapters or a length is chosen before a bare one (Gutenberg audio eBooks have neither), in `bestBook` and `recordingsFor`. `Book.hasAudioDetails` is new.
 - `audio_player_test` unknown lengths: a recording or chapter with no length shows "<time> played · length unknown" (`position-elapsed`, not a live region) instead of a slider whose total grew with the time played; a recording with no chapters has no Chapters heading. No existing test changed.
 - `reader_test` last place, `bookmark_store_test`: the reader saves the last place on every position (`lastplace:<book key>`, apart from the bookmark, not in `savedBookKeys`) and reopens there; else at the bookmark, else at the start. A damaged last place loads as none. The bookmark button still shows only the manual bookmark. No existing test changed: none read on and then reopened expecting the bookmark.
+- `search_results_test` "the Title choice stays after Audio is chosen and after returning from a book": pins that the search field survives a filter change and a trip to the reader. It passed when written, so Jordan's reset was likely an older build; no code changed.
 
 ## Milestones to tests
 
