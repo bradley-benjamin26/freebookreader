@@ -5,6 +5,7 @@ only, and answers HTTP 500 when `title` and `author` are sent together. So every
 title search is sent as `title=^<text>` (a title prefix match), and author and language are
 filtered here after the response comes back.
 """
+import html
 import re
 
 import httpx
@@ -92,7 +93,7 @@ class LibriVoxSource:
         return Book(
             source="librivox",
             source_id=str(record["id"]),
-            title=record.get("title") or "Untitled",
+            title=html.unescape(record.get("title") or "Untitled"),
             authors=_people(record.get("authors")),
             narrators=narrators,
             contributors=_people(record.get("translators")),
@@ -102,7 +103,7 @@ class LibriVoxSource:
             identifiers=identifiers,
             url=record.get("url_librivox") or f"https://librivox.org/?p={record['id']}",
             cover_url=record.get("coverart_jpg") or None,
-            chapters=[Chapter(title=s.get("title") or f"Section {s.get('section_number', '')}".strip(),
+            chapters=[Chapter(title=html.unescape(s.get("title") or "") or f"Section {s.get('section_number', '')}".strip(),
                               url=s["listen_url"], duration_seconds=_seconds(s.get("playtime")))
                       for s in sections if s.get("listen_url")],
             access="open",

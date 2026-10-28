@@ -186,6 +186,8 @@ queried in parallel threads, on one executor shared by all searches.
   20 identifiers of each kind (`MAX_SERIALIZED_IDENTIFIERS`); merging and the known-item ISBN check see them all.
 - **LibriVox keeps "Il" and "De"** (review 2026-10-11, #16): "Il Principe" and "De Profundis" are searched as
   titled. Dutch "De Kleine Johannes" is the price (LibriVox drops that one).
+- **LibriVox titles are HTML-unescaped** (`TestEntities`, persona round one 2026-10-27): LibriVox sends
+  "Tasa &amp; El Rey"; book and chapter titles arrive as "Tasa & El Rey". Unescaping runs once, so a real `&` stays.
 - **At most 8 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
   its place until its thread finishes. A source with no free place is not asked: it is listed in
   `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 8 threads.

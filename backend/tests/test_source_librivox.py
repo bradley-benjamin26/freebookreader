@@ -234,3 +234,23 @@ class TestErrors:
         source, _ = source_for(text="<html>maintenance</html>")
         with pytest.raises(SourceError):
             source.search(SearchQuery(q="x"))
+
+
+class TestEntities:
+    """Persona round one (Lucía): LibriVox sends "Tasa &amp; El Rey"."""
+
+    def test_book_and_chapter_titles_are_unescaped(self, source_for, sample_json):
+        data = sample_json("librivox-title-search.json")
+        record = data["books"][0]
+        record["title"] = "Pride &amp; Prejudice"
+        record["sections"][0]["title"] = "Tasa &amp; El Rey"
+        source, _ = source_for(json=data)
+        book = source.search(SearchQuery(title="pride and prejudice"))[0]
+        assert book.title == "Pride & Prejudice"
+        assert book.chapters[0].title == "Tasa & El Rey"
+
+    def test_plain_ampersand_is_unchanged(self, source_for, sample_json):
+        data = sample_json("librivox-title-search.json")
+        data["books"][0]["title"] = "Tom & Jerry <1>"
+        source, _ = source_for(json=data)
+        assert source.search(SearchQuery(title="pride and prejudice"))[0].title == "Tom & Jerry <1>"
