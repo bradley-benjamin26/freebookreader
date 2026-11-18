@@ -31,6 +31,10 @@
 
   <title>free_book_reader</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Readium sizes its view to the window (100vh - 96px); Flutter decides its size. */
+    #wrapper#wrapper { height: 100% !important; }
+  </style>
 </head>
 <body>
   <!--
