@@ -84,7 +84,7 @@ def test_links_that_run_code_are_removed(url):
 def test_svg_links_and_animations_that_run_code_are_removed():
     page = ('<a xlink:href="javascript:x()">a</a>'
             '<animate attributeName="href" values="javascript:x()"/><set attributeName="href" to="javascript:x()"/>')
-    assert clean(page) == '<a>a</a><animate attributeName="href"/><set attributeName="href"/>'
+    assert clean(page) == '<a>a</a>'
 
 
 def test_srcdoc_and_form_actions_are_removed():
@@ -101,3 +101,22 @@ def test_ordinary_links_and_images_are_kept():
 def test_a_comment_or_cdata_section_is_left_alone():
     page = "<!-- <script>not run</script> --><p><![CDATA[ a < b ]]></p>"
     assert clean(page) == page
+
+
+@pytest.mark.parametrize("markup", [
+    '<svg:script xmlns:svg="http://www.w3.org/2000/svg">alert(1)</svg:script>',
+    '<h:script xmlns:h="http://www.w3.org/1999/xhtml">alert(1)</h:script>',
+    '<SVG:SCRIPT xmlns:SVG="http://www.w3.org/2000/svg">alert(1)</SVG:SCRIPT>',
+    '<x:iframe xmlns:x="http://www.w3.org/1999/xhtml" src="a.html"></x:iframe>',
+])
+def test_a_script_or_frame_with_a_namespace_prefix_is_removed(markup):
+    assert clean(f"<p>a</p>{markup}<p>b</p>") == "<p>a</p><p>b</p>"
+
+
+@pytest.mark.parametrize("markup", [
+    '<animate attributeName="href" values="0;javascript:alert(1)"/>',
+    '<animate attributeName="href" values="0;javascript:alert(1)"></animate>',
+    '<set attributeName="href" to="https://example.org/"/>',
+])
+def test_svg_animations_are_removed(markup):
+    assert clean(f'<svg><a>{markup}<text>x</text></a></svg>') == "<svg><a><text>x</text></a></svg>"

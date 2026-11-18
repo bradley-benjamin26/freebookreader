@@ -1,8 +1,14 @@
 // Turning a book's HTML or plain text into paragraphs for our own renderer.
 // Review 2026-10-11, #10: verse lost its line breaks and text outside <p> was dropped.
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/reader/content.dart';
 import 'package:free_book_reader/reader/pagination.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 void main() {
   group('htmlParagraphs', () {
@@ -75,6 +81,41 @@ void main() {
       final book = BookText(['Once upon,\nwhile I', 'Next']);
       expect(book.text(0, book.length, '\n\n'), 'Once upon,\nwhile I\n\nNext');
       expect(book.length, 5);
+    });
+  });
+
+  // Audit 2026-11-18: a stalled download never ended, parsing ran on the UI thread, and every text was UTF-8.
+  group('HttpContentLoader', () {
+    const html = ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://example.org/b.html');
+    const text = ReadingOptions(mode: ReadingMode.inApp, kind: 'text', url: 'https://example.org/b.txt');
+
+    test('a download slower than the timeout is a load error', () async {
+      final client = MockClient((_) => Completer<http.Response>().future);
+      final loader = HttpContentLoader(client, timeout: const Duration(milliseconds: 10));
+      await expectLater(loader.load(html), throwsA(isA<ContentLoadException>()));
+    });
+
+    test('HTML is split into paragraphs', () async {
+      final client = MockClient((_) async => http.Response.bytes(utf8.encode('<p>Café</p><p>Two</p>'), 200));
+      expect((await HttpContentLoader(client).load(html) as TextContent).paragraphs, ['Café', 'Two']);
+    });
+
+    test('a Latin-1 text file is read as Latin-1', () async {
+      final client = MockClient((_) async => http.Response.bytes(latin1.encode('Café'), 200,
+          headers: {'content-type': 'text/plain; charset=iso-8859-1'}));
+      expect((await HttpContentLoader(client).load(text) as TextContent).paragraphs, ['Café']);
+    });
+
+    test('a body that does not fit its charset is read as UTF-8', () async {
+      final client = MockClient((_) async => http.Response.bytes(utf8.encode('Café'), 200,
+          headers: {'content-type': 'text/plain; charset=us-ascii'}));
+      expect((await HttpContentLoader(client).load(text) as TextContent).paragraphs, ['Café']);
+    });
+
+    test('without a charset the text is UTF-8', () async {
+      final client = MockClient((_) async => http.Response.bytes(utf8.encode('Café'), 200,
+          headers: {'content-type': 'text/plain'}));
+      expect((await HttpContentLoader(client).load(text) as TextContent).paragraphs, ['Café']);
     });
   });
 }

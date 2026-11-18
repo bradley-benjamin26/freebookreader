@@ -52,9 +52,17 @@ class HomePage extends StatelessWidget {
                   spacing: 8,
                   children: [
                     for (final example in exampleSearches)
-                      ActionChip(
-                        label: Text(example),
-                        onPressed: () => _search(context, SearchField.title, example),
+                      // Flutter gives an ActionChip a selected state, which the web announces as a checkbox.
+                      Semantics(
+                        button: true,
+                        focusable: true,
+                        label: example,
+                        onTap: () => _search(context, SearchField.title, example),
+                        excludeSemantics: true,
+                        child: ActionChip(
+                          label: Text(example),
+                          onPressed: () => _search(context, SearchField.title, example),
+                        ),
                       ),
                   ],
                 ),

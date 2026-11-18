@@ -207,6 +207,19 @@ void main() {
       expect(find.byKey(const Key('fake-reader-view')), findsOneWidget);
     });
 
+    testWidgets('the compact player names the source of the recording', (tester) async {
+      final env = await TestEnv.create(response: modified((pride) {
+        final book = (pride['books'] as List).cast<Map<String, dynamic>>().firstWhere((b) => b['source'] == 'librivox');
+        book['source'] = 'gutenberg';
+        book['source_id'] = '1342a';
+        book['chapters'] = [];
+      }));
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', 'gutenberg:1342');
+      expect(find.text('Project Gutenberg recording'), findsOneWidget);
+      expect(find.textContaining('LibriVox'), findsNothing);
+    });
+
     testWidgets('when a chapter ends, the next one starts', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);

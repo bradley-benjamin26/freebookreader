@@ -1,7 +1,12 @@
 // The app's models mirror the backend's JSON (backend/app/models.py and
 // backend/app/search.py). Unknown enum values are rejected, not guessed.
 
+import 'package:flutter/foundation.dart';
+
 import '../util/isbn.dart';
+
+/// Whether the app runs in a browser. A variable so tests can set it.
+bool onWeb = kIsWeb;
 
 enum BookFormat { text, audio }
 
@@ -165,7 +170,10 @@ class Book {
   /// Unique across sources, e.g. `gutenberg:1342`. Bookmarks are stored under it.
   String get key => '$source:$sourceId';
 
-  bool get inApp => reading.mode == ReadingMode.inApp;
+  /// On web, a text book opens in the app only with a Readium manifest: gutenberg.org sends no CORS headers,
+  /// so our renderer cannot fetch the book there, and PDFs open at their source anyway.
+  bool get inApp =>
+      reading.mode == ReadingMode.inApp && !(onWeb && format == BookFormat.text && reading.publication == null);
 
   /// A recording that knows its chapters or length (Gutenberg audio eBooks know neither).
   bool get hasAudioDetails => chapters.isNotEmpty || audioSeconds != null;

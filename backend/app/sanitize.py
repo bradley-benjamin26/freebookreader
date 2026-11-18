@@ -14,7 +14,8 @@ from html import unescape
 from html.parser import HTMLParser, attrfind_tolerant, tagfind_tolerant
 
 # Elements removed with everything in them.
-_REMOVE_WITH_CONTENT = {"script", "iframe", "object", "applet", "frameset", "noembed"}
+# Gutenberg books do not animate; an animation can set an href to javascript:
+_REMOVE_WITH_CONTENT = {"script", "iframe", "object", "applet", "frameset", "noembed", "animate", "set"}
 # Empty elements that load something or send the page elsewhere.
 _REMOVE = {"embed", "base", "frame"}
 # A link to one of these runs code in the page (after removing whitespace and control characters, as browsers do).
@@ -84,13 +85,14 @@ class _Finder(HTMLParser):
             if tag == self._skipping[0] and not empty:
                 self._skipping[1] += 1
             return
-        if tag in _REMOVE_WITH_CONTENT:
+        local = tag.rpartition(":")[2]      # <svg:script> is a script too
+        if local in _REMOVE_WITH_CONTENT:
             if empty:
                 self.edits.append((start, end, ""))
             else:
                 self._skipping = [tag, 1, start]
             return
-        if tag in _REMOVE or (tag == "meta" and any(name == "http-equiv" for name, _ in attrs)):
+        if local in _REMOVE or (local == "meta" and any(name == "http-equiv" for name, _ in attrs)):
             self.edits.append((start, end, ""))
             return
         if any(_dangerous(name, value) for name, value in attrs):

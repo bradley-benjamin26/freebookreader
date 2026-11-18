@@ -68,7 +68,7 @@ backend/app/
   hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state), writing() (lock; IndexBusy); IndexState
   hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
-  outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
+  outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=8, cache_seconds=0, cache_entries=500, now): search(SearchQuery) -> SearchResponse
   reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
   publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
@@ -124,6 +124,7 @@ queried in parallel threads, on one executor shared by all searches.
   A file that has lines but no Hathifile rows (a gzipped error page), or a monthly file with no open book, is an
   error before anything is committed, so the old index and its date stay (#27). One update runs at a time: a lock
   file beside the index (`HathiIndex.writing`), and a second run fails at once with "already running" (#28).
+  A Hathifile made of several gzip parts one after another is read whole (`iter_gzip_lines`, audit 2026-11-18).
 - **HathiTrust books link out.** Each book is one volume with `url` `https://babel.hathitrust.org/cgi/pt?id=<htid>`,
   `volume` ("v.2"), `library` (name for the 40 most common library codes, else the code) and `us_only` (rights `pdus`).
   Copies and volumes of one catalog record merge into one work through `identifiers.hathitrust` (= `ht_bib_key`), a new
@@ -138,7 +139,7 @@ queried in parallel threads, on one executor shared by all searches.
   link is left to the DOAB record page. DOAB's `open-access-no-cover.png` placeholder is not a cover.
 - **Invalid ISBNs are dropped.** OAPEN/DOAB data contained one with a bad check digit.
 - **A malformed record is skipped, not the source** (review 2026-10-11-main #31, `TestMalformedRecords`). A null or
-  non-object Open Library doc or LibriVox book, chapter or reader, and author names that are not text, are left
+  non-object Open Library doc or LibriVox book, chapter or reader, author names that are not text, and a record that cannot be built (e.g. a title that is a list or a number, audit 2026-11-18; if no record of an answer can be built, the adapter fails and the source is skipped as `error`, not cached as no results), are left
   out; the rest of the answer is used. It is not an outage either: the source answered.
 - **Identifier merging tries every pair** (#2): when the first record holding an identifier is in another language,
   the others still merge with each other.
@@ -191,6 +192,8 @@ queried in parallel threads, on one executor shared by all searches.
 - **At most 8 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
   its place until its thread finishes. A source with no free place is not asked: it is listed in
   `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 8 threads.
+  A source can ask for fewer with a `max_in_flight` class attribute: Open Library 2, because it allows about 3
+  requests a second and each search is 2 requests (audit 2026-11-18).
 - **Only the source's fault is an outage** (review 2026-10-10, #1). A `4xx` answer raises `SourceRejected`
   (a `SourceError` subclass), and an exception that is not a `SourceError` is a bug in our adapter. Both leave
   the source out of that search only (listed in `unavailable_sources`) without `record_failure`.
@@ -241,7 +244,8 @@ queried in parallel threads, on one executor shared by all searches.
   opened directly cannot run scripts on the API's origin; Readium builds its own documents, so the reader is unaffected
   (checked in Chromium 2026-10-10). Because Readium's documents are on the app's origin, where that header does not
   reach, XHTML, HTML and SVG files are also served without anything that runs code (review 2026-10-11-main #15,
-  `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like,
+  `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like
+  (also with a namespace prefix, `<svg:script>`), SVG `<animate>` and `<set>`,
   `on*` attributes, `srcdoc`, and `javascript:`/`vbscript:`/`data:` page links. Everything else is unchanged byte for
   byte (all 78 pages of 5 cached Gutenberg books came back unchanged).
 - **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.

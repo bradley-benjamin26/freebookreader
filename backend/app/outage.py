@@ -30,8 +30,3 @@ class OutageTracker:
 
     def is_available(self, source: str) -> bool:
         return self.retry_at(source) is None
-
-    def unavailable(self) -> list[str]:
-        with self._lock:
-            names = list(self._failed_at)
-        return sorted(n for n in names if not self.is_available(n))

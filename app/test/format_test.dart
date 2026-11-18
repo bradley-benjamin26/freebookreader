@@ -75,6 +75,34 @@ void main() {
       expect(actionLabel(book('openlibrary', access: Access.borrow, mode: ReadingMode.external)),
           'Borrow Emma by Jane Austen at Open Library');
     });
+    // Final review 2026-11-18: gutenberg.org sends no CORS headers, so on web only a book with a Readium
+    // manifest can be read in the app; the others must not promise it.
+    group('on web', () {
+      setUp(() => onWeb = true);
+      tearDown(() => onWeb = false);
+
+      test('a book without a manifest opens at its source', () {
+        final b = book('gutenberg');
+        expect(b.inApp, isFalse);
+        expect(actionVerb(b), 'View');
+        expect(accessNote(b), contains("Opens Project Gutenberg's website"));
+      });
+
+      test('a book with a manifest is read in the app', () {
+        final b = Book(
+          source: 'gutenberg', sourceId: '1', title: 'Emma', authors: const ['Jane Austen'],
+          format: BookFormat.text, access: Access.open, url: 'https://x',
+          reading: const ReadingOptions(mode: ReadingMode.inApp, kind: 'html', url: 'https://x',
+              publication: '/publications/gutenberg/1/manifest.json'),
+        );
+        expect(actionVerb(b), 'Read');
+      });
+
+      test('audio is still played in the app', () {
+        expect(actionVerb(book('librivox', format: BookFormat.audio)), 'Listen');
+      });
+    });
+
     test('labels always include the title so each one is unique to a screen reader', () {
       for (final source in ['gutenberg', 'doab', 'openlibrary', 'hathitrust']) {
         expect(actionLabel(book(source)), contains('Emma'));
@@ -127,6 +155,11 @@ void main() {
       expect(matchNote(SearchQuery(title: 'Frankenstein'),
           work('Frankenstein', bookTitles: ['Frankenstein (1818)'])), isNull);
     });
+    test('Chinese and Japanese searches never get the note (words are not separated by spaces)', () {
+      expect(matchNote(SearchQuery(q: '红楼'), work('红楼梦')), isNull);
+      expect(matchNote(SearchQuery(title: 'こころ'), work('Kokoro')), isNull);
+    });
+
     test('ISBN and subject searches never get the note', () {
       expect(matchNote(SearchQuery(isbn: '9780141439471'), work('Anything')), isNull);
       expect(matchNote(SearchQuery(keyword: 'democracy'), work('Anything')), isNull);

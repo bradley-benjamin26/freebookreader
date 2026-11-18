@@ -121,7 +121,7 @@ class BookActionButton extends StatelessWidget {
 /// Opens [book] the way it can be read: the reader, the player, or its source.
 Future<void> openBook(BuildContext context, Work work, Book book) async {
   final reading = book.reading;
-  if (reading.mode == ReadingMode.external) {
+  if (!book.inApp) {
     await Services.of(context).urlOpener.open(Uri.parse(reading.url));
     return;
   }

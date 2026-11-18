@@ -8,8 +8,10 @@ import 'text_engine.dart';
 /// The engine that shows [book], or null when none can.
 ///
 /// On web, flutter_readium opens the Readium manifest the backend serves for
-/// the book (`reading.publication`). Elsewhere, and for books without one, our
-/// own renderer shows HTML and plain text. PDFs go to the PDF viewer instead.
+/// the book (`reading.publication`); a book without one has no engine there,
+/// because gutenberg.org sends no CORS headers, so the reader links out.
+/// Off web, our own renderer shows HTML and plain text. PDFs go to the PDF
+/// viewer instead.
 ReaderEngine? chooseReaderEngine(
   ReadingOptions book, {
   required bool web,
@@ -18,7 +20,7 @@ ReaderEngine? chooseReaderEngine(
   SpeechEngine? speech,
 }) {
   final publication = book.publication;
-  if (web && publication != null) return ReadiumReaderEngine(backendUrl(backend, publication));
+  if (web) return publication == null ? null : ReadiumReaderEngine(backendUrl(backend, publication));
   if (book.kind == 'html' || book.kind == 'text') return TextReaderEngine(loader, speech: speech);
   return null;
 }

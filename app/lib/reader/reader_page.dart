@@ -63,6 +63,21 @@ class _ReaderPageState extends State<ReaderPage> {
 
   bool get _isPdf => widget.book.reading.kind == 'pdf';
 
+  // The last place is saved at most once a [placeSaveDelay] (a scroll sends many positions), and on close.
+  static const placeSaveDelay = Duration(seconds: 1);
+  Bookmark? _unsavedPlace;
+  Timer? _saveTimer;
+
+  void _saveLastPlace() {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    final place = _unsavedPlace;
+    if (place == null) return;
+    _unsavedPlace = null;
+    // Losing a place is better than breaking the reader (web storage can be full or blocked).
+    _services.bookmarks.saveLastPlace(widget.book.key, place).catchError((Object _) {});
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -84,7 +99,8 @@ class _ReaderPageState extends State<ReaderPage> {
     }
     _readAloud = _engine!.readAloud;
     _positionSub = _engine!.positions.listen((p) {
-      _services.bookmarks.saveLastPlace(widget.book.key, Bookmark(progress: p.progress, locator: p.locator));
+      _unsavedPlace = Bookmark(progress: p.progress, locator: p.locator);
+      _saveTimer ??= Timer(placeSaveDelay, _saveLastPlace);
       if (mounted) setState(() => _position = p);
     });
     _load();
@@ -92,6 +108,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   void dispose() {
+    _saveLastPlace();
     _limit?.cancel();
     _audio?.removeListener(_audioChanged);
     _audio?.dispose();
@@ -158,7 +175,8 @@ class _ReaderPageState extends State<ReaderPage> {
     final messenger = ScaffoldMessenger.of(context);
     final key = widget.book.key;
     final target = !_bookmarked;
-    final String message;
+    String message;
+    var saved = true;
     try {
       if (target) {
         final at = _engine!.position;
@@ -168,11 +186,14 @@ class _ReaderPageState extends State<ReaderPage> {
         await _services.bookmarks.remove(key);
         message = 'Bookmark removed';
       }
+    } on Object {
+      saved = false;
+      message = target ? 'Bookmark could not be saved' : 'Bookmark could not be removed';
     } finally {
       _bookmarkBusy = false;
     }
     if (!mounted) return;
-    setState(() => _bookmarked = target);
+    if (saved) setState(() => _bookmarked = target);
     messenger
       ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));

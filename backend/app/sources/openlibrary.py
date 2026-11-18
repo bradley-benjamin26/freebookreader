@@ -10,7 +10,7 @@ from app.models import Access, Book, SearchQuery
 from app.normalize import (
     normalize_author_name, normalize_isbn, normalize_oclc, to_language_code, to_marc_language, unique,
 )
-from app.sources.base import SourceError, get, get_json
+from app.sources.base import SourceError, _valid_books, get, get_json
 
 PAGE_SIZE = 20
 FIELDS = ",".join([
@@ -29,6 +29,7 @@ _AVAILABLE = {"open", "borrow_available"}
 
 class OpenLibrarySource:
     name = "openlibrary"
+    max_in_flight = 2      # it allows about 3 requests a second, and each search is 2 requests
 
     def __init__(self, client: httpx.Client, base_url: str):
         self.client = client
@@ -50,7 +51,8 @@ class OpenLibrarySource:
         if not isinstance(data, dict) or not isinstance(data.get("docs"), list):
             raise SourceError("openlibrary: unexpected response")
         # A record that is not an object is skipped; the rest of the answer is still good.
-        books = [self._book(d) for d in data["docs"] if isinstance(d, dict) and d.get("key") and d.get("title")]
+        books = _valid_books([d for d in data["docs"] if isinstance(d, dict) and d.get("key") and d.get("title")],
+                             self._book)
         books = self._available([b for b in books if b.access in ("open", "borrow")])
         if query.language:   # the `language` filter guarantees an edition in that language
             for book in books:

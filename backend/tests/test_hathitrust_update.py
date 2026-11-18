@@ -140,6 +140,9 @@ class TestIterGzipLines:
     def test_decompresses_and_splits_lines(self):
         assert self.lines(gz("a\tb", "c\td")) == ["a\tb", "c\td"]
 
+    def test_a_file_of_several_gzip_parts_is_read_whole(self):
+        assert self.lines(gzip.compress(b"a\nb\n") + gzip.compress(b"c\n")) == ["a", "b", "c"]
+
     def test_non_ascii_text_survives(self):
         assert self.lines(gz("Oeuvres complètes", "日本語")) == ["Oeuvres complètes", "日本語"]
 

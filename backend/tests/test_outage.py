@@ -56,15 +56,6 @@ def test_a_second_failure_after_recovery_starts_a_new_period(clock):
     assert not tracker.is_available("doab")
 
 
-def test_unavailable_lists_sources_in_cooldown(clock):
-    tracker = OutageTracker(clock=clock)
-    tracker.record_failure("doab")
-    tracker.record_failure("librivox")
-    assert tracker.unavailable() == ["doab", "librivox"]
-    clock.advance(hours=24)
-    assert tracker.unavailable() == []
-
-
 def test_retry_at_reports_when_the_source_returns(clock):
     tracker = OutageTracker(clock=clock)
     start = clock()

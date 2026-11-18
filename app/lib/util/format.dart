@@ -82,6 +82,7 @@ String actionLabel(Book book) {
 }
 
 final _nonWord = RegExp(r'[^\p{L}\p{N}]+', unicode: true);
+final _unspaced = RegExp(r'[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]', unicode: true);
 
 // Catalogs drop or spell these differently ("Time Machine", "Pride & Prejudice"), so they need not match.
 const _smallWords = {'the', 'a', 'an', 'and', 'of'};
@@ -95,7 +96,8 @@ Set<String> _words(String text) =>
 String? matchNote(SearchQuery query, Work work) {
   bool has(String? text) => text != null && text.trim().isNotEmpty;
   final words = _words(query.searchedText);
-  if (words.isEmpty) return null;
+  // Chinese and Japanese are written without spaces, so a search is not a list of words.
+  if (words.isEmpty || _unspaced.hasMatch(query.searchedText)) return null;
   final titles = {for (final title in [work.title, ...work.books.map((b) => b.title)]) ..._words(title)};
   final authors = _words(work.authors.join(' '));
   final inTitle = words.every(titles.contains);

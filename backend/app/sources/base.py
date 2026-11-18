@@ -1,5 +1,6 @@
 """What every source adapter has in common."""
-from typing import Protocol
+import logging
+from typing import Callable, Protocol
 
 import httpx
 
@@ -57,3 +58,21 @@ def get_json(client: httpx.Client, url: str, params, *, not_found_is_empty: bool
         return response.json()
     except ValueError as error:
         raise SourceError(f"{url}: response is not JSON") from error
+
+
+def _valid_books(records: list, build: Callable[[dict], Book]) -> list[Book]:
+    """Builds each record; one that cannot be built (e.g. a title that is not text) is skipped, not the source.
+
+    When none can be built, the last error is raised: that is a format change or our bug, not "no results",
+    so the search reports the source as `error` and does not cache an empty answer.
+    """
+    books, last_error = [], None
+    for record in records:
+        try:
+            books.append(build(record))
+        except (ValueError, TypeError, AttributeError, KeyError) as error:   # pydantic's ValidationError is a ValueError
+            logging.getLogger(__name__).warning("skipped a malformed record: %s", error)
+            last_error = error
+    if not books and last_error is not None:
+        raise last_error
+    return books

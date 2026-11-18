@@ -33,6 +33,11 @@ def test_source_name():
     assert OpenLibrarySource.name == "openlibrary"
 
 
+def test_open_library_runs_at_most_two_searches_at_once():
+    """Audit 2026-11-18: it allows about 3 requests a second, and each search is 2 requests."""
+    assert OpenLibrarySource.max_in_flight == 2
+
+
 class TestRequests:
     def test_free_text_uses_q_on_search_json(self, source_for, sample_json):
         source, rec = source_for(json=sample_json("openlibrary-search.json"))
@@ -307,6 +312,17 @@ class TestMalformedRecords:
 
     def test_a_record_that_is_not_an_object_is_skipped(self, source_for):
         source, _ = source_for(json=payload(None, doc(), "x", 3))
+        assert [b.source_id for b in source.search(SearchQuery(q="a book"))] == ["OL1W"]
+
+    def test_an_answer_where_no_record_can_be_read_is_an_error(self, source_for):
+        """Final review 2026-11-18: a format change or an adapter bug must not look like "no results" (and be cached)."""
+        source, _ = source_for(json=payload(doc(title=["x"]), doc(key="/works/OL9W", title=["y"])))
+        with pytest.raises(Exception) as error:     # an adapter crash: reason `error`, no outage, not cached
+            source.search(SearchQuery(q="a book"))
+        assert not isinstance(error.value, SourceError)
+
+    def test_a_record_with_a_title_that_is_not_text_is_skipped(self, source_for):
+        source, _ = source_for(json=payload(doc(key="/works/OL9W", title=["x"]), doc()))
         assert [b.source_id for b in source.search(SearchQuery(q="a book"))] == ["OL1W"]
 
     def test_author_names_that_are_not_text_are_skipped(self, source_for):
