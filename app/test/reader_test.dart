@@ -525,6 +525,18 @@ void main() {
           containsSemantics(label: stored ? 'Remove bookmark' : 'Add bookmark'));
     });
 
+    // Audit 2026-11-18: a failed save used to go uncaught and show nothing.
+    testWidgets('a bookmark that cannot be saved says so and stays off', (tester) async {
+      final env = await TestEnv.create(bookmarks: (prefs) => _FailingBookmarkStore(prefs));
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await tester.tap(find.byKey(const Key('bookmark-button')));
+      await tester.pumpAndSettle();
+      expect(find.text('Bookmark could not be saved'), findsOneWidget);
+      expect(tester.getSemantics(find.byKey(const Key('bookmark-button'))),
+          containsSemantics(label: 'Add bookmark'));
+    });
+
     testWidgets('is restored when the book is reopened', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
@@ -719,6 +731,13 @@ void main() {
       expect(env.engines.asked, isEmpty);
     });
   });
+}
+
+class _FailingBookmarkStore extends BookmarkStore {
+  _FailingBookmarkStore(super.prefs);
+
+  @override
+  Future<void> save(String bookKey, Bookmark bookmark) async => throw StateError('storage is full');
 }
 
 class _FailingPlaceStore extends BookmarkStore {

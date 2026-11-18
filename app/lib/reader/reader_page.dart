@@ -175,7 +175,8 @@ class _ReaderPageState extends State<ReaderPage> {
     final messenger = ScaffoldMessenger.of(context);
     final key = widget.book.key;
     final target = !_bookmarked;
-    final String message;
+    String message;
+    var saved = true;
     try {
       if (target) {
         final at = _engine!.position;
@@ -185,11 +186,14 @@ class _ReaderPageState extends State<ReaderPage> {
         await _services.bookmarks.remove(key);
         message = 'Bookmark removed';
       }
+    } on Object {
+      saved = false;
+      message = target ? 'Bookmark could not be saved' : 'Bookmark could not be removed';
     } finally {
       _bookmarkBusy = false;
     }
     if (!mounted) return;
-    setState(() => _bookmarked = target);
+    if (saved) setState(() => _bookmarked = target);
     messenger
       ..removeCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text(message)));

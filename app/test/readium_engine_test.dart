@@ -70,10 +70,10 @@ void main() {
           isA<TextReaderEngine>());
     });
 
-    test('on web a book without a manifest falls back to our renderer', () {
+    // Audit 2026-11-18: our renderer could never fetch the book there, so the reader was a dead end.
+    test('on web a book without a manifest has no engine (gutenberg.org sends no CORS headers)', () {
       const text = ReadingOptions(mode: ReadingMode.inApp, kind: 'text', url: 'https://example.org/a.txt');
-      expect(chooseReaderEngine(text, web: true, backend: backend, loader: loader),
-          isA<TextReaderEngine>());
+      expect(chooseReaderEngine(text, web: true, backend: backend, loader: loader), isNull);
     });
 
     test('no engine for PDFs, audio or books read at the source', () {
