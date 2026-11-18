@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:html/dom.dart' as dom;
 import 'package:html/parser.dart' as html_parser;
 import 'package:http/http.dart' as http;
@@ -45,9 +47,12 @@ abstract class ContentLoader {
 /// Provisional: the reader package is not chosen yet (see decision_reader.md),
 /// and this loader does not read EPUB.
 class HttpContentLoader implements ContentLoader {
-  HttpContentLoader(this.client);
+  HttpContentLoader(this.client, {this.timeout = const Duration(seconds: 30)});
 
   final http.Client client;
+
+  /// A download that takes longer is a load error, so the reader can offer Try again.
+  final Duration timeout;
 
   @override
   Future<BookContent> load(ReadingOptions options) async {
@@ -57,18 +62,38 @@ class HttpContentLoader implements ContentLoader {
     }
     final http.Response response;
     try {
-      response = await client.get(Uri.parse(options.url));
+      response = await client.get(Uri.parse(options.url)).timeout(timeout);
+    } on TimeoutException {
+      throw const ContentLoadException('The download took too long.');
     } on Object catch (e) {
       throw ContentLoadException('Could not download the book: $e');
     }
     if (response.statusCode != 200) {
       throw ContentLoadException('The source answered ${response.statusCode}.');
     }
-    final body = utf8.decode(response.bodyBytes, allowMalformed: true);
-    final paragraphs = kind == 'html' ? htmlParagraphs(body) : textParagraphs(body);
+    final body = decodeBody(response);
+    // In a background isolate: a big book takes long enough to freeze the screen.
+    final paragraphs = await compute(kind == 'html' ? htmlParagraphs : textParagraphs, body);
     if (paragraphs.isEmpty) throw const ContentLoadException('The book has no text.');
     return TextContent(paragraphs);
   }
+}
+
+/// The response's text in the charset its `content-type` names; UTF-8 when it names none or one Dart does not
+/// know (the `http` package would use Latin-1).
+String decodeBody(http.Response response) {
+  final charset = RegExp(r'charset=([\w.:-]+)', caseSensitive: false)
+      .firstMatch(response.headers['content-type'] ?? '')
+      ?.group(1);
+  final encoding = charset == null ? null : Encoding.getByName(charset);
+  if (encoding != null && encoding != utf8) {
+    try {
+      return encoding.decode(response.bodyBytes);
+    } on FormatException {
+      // e.g. us-ascii with bytes above 127: fall through to UTF-8
+    }
+  }
+  return utf8.decode(response.bodyBytes, allowMalformed: true);
 }
 
 /// Stands for a line break (<br>, or a newline in <pre>) until [_clean] turns it into a '\n'.
