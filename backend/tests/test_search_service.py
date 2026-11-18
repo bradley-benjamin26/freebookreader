@@ -28,8 +28,9 @@ def austen_audio():
                      authors=["Jane Austen"], format="audio")
 
 
-def build(sources, clock, **kwargs):
-    outage = OutageTracker(clock=clock)
+def build(sources, clock, failures=1, **kwargs):
+    """failures=1: most tests are about which errors count, not how many it takes (see TestOutageCount)."""
+    outage = OutageTracker(clock=clock, failures=failures)
     return SearchService(sources=sources, outage=outage, **kwargs), outage
 
 
@@ -310,6 +311,40 @@ class TestOutages:
         response = service.search(SearchQuery(q="x", sources=["librivox"]))
         assert response.unavailable_sources == ["librivox"]
         assert reasons(response) == {"librivox": "outage"}
+
+
+class TestOutageCount:
+    """2026-11-18 (user request): an outside source is shut off for 24 hours after 3 failures in a row."""
+
+    def test_failures_before_the_limit_skip_that_search_only(self, clock):
+        bad = FakeSource("librivox", error=SourceError("HTTP 502"))
+        service, outage = build([bad], clock, failures=3)
+        first = service.search(SearchQuery(q="a"))
+        second = service.search(SearchQuery(q="b"))
+        assert reasons(first) == reasons(second) == {"librivox": "error"}
+        assert outage.is_available("librivox")
+
+    def test_the_third_failure_in_a_row_is_an_outage(self, clock):
+        bad = FakeSource("librivox", error=SourceError("HTTP 502"))
+        service, outage = build([bad], clock, failures=3)
+        for q in ("a", "b"):
+            service.search(SearchQuery(q=q))
+        third = service.search(SearchQuery(q="c"))
+        assert reasons(third) == {"librivox": "outage"}
+        service.search(SearchQuery(q="d"))
+        assert len(bad.calls) == 3
+
+    def test_a_good_answer_resets_the_count(self, clock):
+        flaky = FakeSource("librivox", [austen_audio()], error=SourceError("HTTP 502"))
+        service, outage = build([flaky], clock, failures=3)
+        for q in ("a", "b"):
+            service.search(SearchQuery(q=q))
+        flaky._error = None
+        service.search(SearchQuery(q="c"))
+        flaky._error = SourceError("HTTP 502")
+        for q in ("d", "e"):
+            service.search(SearchQuery(q=q))
+        assert outage.is_available("librivox")
 
 
 class TestTimeout:

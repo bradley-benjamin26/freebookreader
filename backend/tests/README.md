@@ -16,7 +16,7 @@ uvicorn app.main:create_app --factory --port 8000
 ```
 
 Settings come from `FBR_*` environment variables: `FBR_GUTENDEX_URL`, `FBR_LIBRIVOX_URL`, `FBR_OPENLIBRARY_URL`,
-`FBR_DOAB_URL`, `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`), `FBR_HATHITRUST_FILE_LIST_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_SEARCH_ADMISSION_SECONDS` (default 3), `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_CORS_ORIGINS` (comma-separated,
+`FBR_DOAB_URL`, `FBR_HATHITRUST_INDEX` (default `backend/cache/hathitrust.sqlite`), `FBR_HATHITRUST_FILE_LIST_URL`, `FBR_SEARCH_TIMEOUT_SECONDS`, `FBR_MAX_CONCURRENT_SEARCHES`, `FBR_SEARCH_ADMISSION_SECONDS` (default 3), `FBR_OUTAGE_COOLDOWN_HOURS`, `FBR_OUTAGE_FAILURES` (default 3), `FBR_CORS_ORIGINS` (comma-separated,
 default `*`) and `FBR_CONTACT`. The EPUB cache for the web reader uses `FBR_GUTENBERG_URL` (default
 `https://www.gutenberg.org`), `FBR_EPUB_CACHE_DIR` (default `backend/cache/epub`, ignored by git),
 `FBR_MAX_DOWNLOAD_MB` (200) and `FBR_EPUB_CACHE_MB` (2000). The `User-Agent` is built from the project's top-level `.env` (JSON:
@@ -68,7 +68,7 @@ backend/app/
   hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state), writing() (lock; IndexBusy); IndexState
   hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
-  outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, retry_at
+  outage.py        OutageTracker(clock, cooldown=24h, failures=3): record_failure, record_success, is_available, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=8, cache_seconds=0, cache_entries=500, now): search(SearchQuery) -> SearchResponse
   reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
   publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
@@ -197,6 +197,10 @@ queried in parallel threads, on one executor shared by all searches.
 - **Only the source's fault is an outage** (review 2026-10-10, #1). A `4xx` answer raises `SourceRejected`
   (a `SourceError` subclass), and an exception that is not a `SourceError` is a bug in our adapter. Both leave
   the source out of that search only (listed in `unavailable_sources`) without `record_failure`.
+- **3 failures in a row start an outage** (user request 2026-11-18, `test_outage.py`, `TestOutageCount`). Before the
+  third, the source is skipped as `error` for that search only; a good answer (`record_success`) resets the count.
+  The 24-hour tests in `test_outage.py` and most `test_search_service.py` tests use `failures=1`, because they are
+  about the period and about which errors count, not the number.
   `test_hostile_inputs.py` sends odd input (`(anon)`, punctuation, maximum-length text, the last page) to every
   adapter: each must return a list or raise `SourceError`.
 - **Unknown book ids are refused locally** (review 2026-10-11, #19). Before downloading an EPUB that is not cached, the store asks the local Gutendex (`GET /books/<id>/`, 3 s) through `GutendexCatalog`: no such book, or no EPUB format, is a 404 without any request to gutenberg.org. If Gutendex is down or answers oddly the answer is unknown and the book is asked for at Gutenberg as before. A book already on disk is never looked up. Per-book download locks are a fixed set of 64 (`id % 64`) instead of one per id. A book newer than the last `updatecatalog` is a 404 until the catalog is updated.
