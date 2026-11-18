@@ -139,7 +139,7 @@ queried in parallel threads, on one executor shared by all searches.
   link is left to the DOAB record page. DOAB's `open-access-no-cover.png` placeholder is not a cover.
 - **Invalid ISBNs are dropped.** OAPEN/DOAB data contained one with a bad check digit.
 - **A malformed record is skipped, not the source** (review 2026-10-11-main #31, `TestMalformedRecords`). A null or
-  non-object Open Library doc or LibriVox book, chapter or reader, author names that are not text, and a record that cannot be built (e.g. a title that is a list or a number, audit 2026-11-18), are left
+  non-object Open Library doc or LibriVox book, chapter or reader, author names that are not text, and a record that cannot be built (e.g. a title that is a list or a number, audit 2026-11-18; if no record of an answer can be built, the adapter fails and the source is skipped as `error`, not cached as no results), are left
   out; the rest of the answer is used. It is not an outage either: the source answered.
 - **Identifier merging tries every pair** (#2): when the first record holding an identifier is in another language,
   the others still merge with each other.
