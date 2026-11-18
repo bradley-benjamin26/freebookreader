@@ -410,6 +410,7 @@ class UpdateCatalogTests(TestCase):
         self.rsync_status = 0
         self.import_error = None
         self.imported = False
+        self.skipped = []                 # ids the fake import could not read
 
         def check_call(args, **kwargs):
             if args[0] == 'tar':
@@ -429,6 +430,7 @@ class UpdateCatalogTests(TestCase):
             if self.import_error:
                 raise self.import_error
             self.imported = True
+            return self.skipped
 
         for name, fake in {
             'check_call': check_call,
@@ -455,6 +457,14 @@ class UpdateCatalogTests(TestCase):
         self.assertTrue(self.imported)
         self.assertEqual(self.ids(), [100])
         self.assertFalse(os.path.exists(self.temp))
+
+    def test_skipped_books_fail_the_run_after_stale_books_are_deleted(self):
+        """Audit 2026-11-18: one unreadable RDF used to stop the whole import."""
+        from django.core.management.base import CommandError
+        self.skipped = [7]
+        with self.assertRaises(CommandError):
+            self.run_command()
+        self.assertFalse(Book.objects.filter(gutenberg_id=202).exists())
 
     def test_a_failed_extraction_deletes_nothing_and_fails(self):
         from django.core.management.base import CommandError
@@ -509,3 +519,37 @@ class UpdateCatalogTests(TestCase):
             self.run_command()
         self.assertTrue(os.path.exists(marker))
         self.assertFalse(self.imported)
+
+
+class CatalogImportTests(TestCase):
+    """put_catalog_in_db on real RDF files (audit 2026-11-18): an unreadable book is skipped, not the import."""
+
+    def setUp(self):
+        from unittest import mock
+        from django.test import override_settings
+        from books.management.commands import updatecatalog
+
+        self.command = updatecatalog
+        root = tempfile.mkdtemp()
+        self.addCleanup(__import__('shutil').rmtree, root, True)
+        rdf = RDF_TEMPLATE % {'issued': '2004-10-01', 'extra': '', 'source_files': ''}
+        broken = rdf.replace('    <dcterms:rights>Public domain in the USA.</dcterms:rights>\n', '')
+        assert broken != rdf
+        for book_id, text in (('10', broken), ('20', rdf)):
+            os.makedirs(os.path.join(root, 'rdf', book_id))
+            with open(os.path.join(root, 'rdf', book_id, f'pg{book_id}.rdf'), 'w', encoding='utf-8') as f:
+                f.write(text)
+        settings = override_settings(CATALOG_RDF_DIR=os.path.join(root, 'rdf'))
+        settings.enable()
+        self.addCleanup(settings.disable)
+        for name, value in {'LOG_DIRECTORY': os.path.join(root, 'log'),
+                            'LOG_PATH': os.path.join(root, 'log', 'run.txt')}.items():
+            patcher = mock.patch.object(updatecatalog, name, value)
+            patcher.start()
+            self.addCleanup(patcher.stop)
+
+    def test_an_unreadable_book_is_skipped_and_the_next_one_is_imported(self):
+        skipped = self.command.put_catalog_in_db()
+        self.assertEqual(skipped, [10])
+        self.assertTrue(Book.objects.filter(gutenberg_id=20).exists())
+        self.assertFalse(Book.objects.filter(gutenberg_id=10).exists())

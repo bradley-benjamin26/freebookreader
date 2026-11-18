@@ -54,6 +54,8 @@ def log(*args):
 
 
 def put_catalog_in_db():
+    """Imports every book in the catalog and returns the ids it could not read or store, in id order."""
+    skipped = []
     book_ids = []
     for directory_item in os.listdir(settings.CATALOG_RDF_DIR):
         item_path = os.path.join(settings.CATALOG_RDF_DIR, directory_item)
@@ -80,9 +82,10 @@ def put_catalog_in_db():
             'pg' + directory + '.rdf'
         )
 
-        book = utils.get_book(id, book_path)
-
+        book = None
         try:
+            book = utils.get_book(id, book_path)
+
             '''Make/update the book.'''
 
             book_in_db = Book.objects.filter(gutenberg_id=id)
@@ -234,13 +237,17 @@ def put_catalog_in_db():
                     old_summary.delete()
 
         except Exception as error:
-            book_json = json.dumps(book, indent=4, default=str)
-            log(
-                '  Error while putting this book info in the database:\n',
-                book_json,
-                '\n'
-            )
-            raise error
+            # One unreadable book must not stop the import of the rest (audit 2026-11-18).
+            log('  Skipped book %d: %r' % (id, error))
+            if book is not None:
+                log(
+                    '  Error while putting this book info in the database:\n',
+                    json.dumps(book, indent=4, default=str),
+                    '\n'
+                )
+            skipped.append(id)
+
+    return skipped
 
 
 def get_or_create_person(data):
@@ -367,10 +374,14 @@ class Command(BaseCommand):
                     )
 
             log('  Putting the catalog in the database...')
-            put_catalog_in_db()
+            skipped = put_catalog_in_db()
 
             log('  Removing books that left the catalog...')
             Book.objects.filter(gutenberg_id__in=stale_ids).delete()
+
+            if skipped:
+                ids = ', '.join(str(i) for i in skipped[:20]) + ('…' if len(skipped) > 20 else '')
+                raise CommandError(f'{len(skipped)} books could not be imported: {ids}')
 
             log('Done!\n')
         except Exception as error:
