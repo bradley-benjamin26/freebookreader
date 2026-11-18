@@ -509,7 +509,7 @@ prerequisite and has not been reproduced end-to-end in a browser.
   executable URL; assert none can mutate parent DOM/storage while normal navigation and
   TTS still work. DOMPurify would be a new dependency and must be maintained/configured.
 
-- **Status:** fixed 2026-10-11, in the backend rather than in Readium's bundle: `PublicationStore.resource()` serves XHTML, HTML and SVG through `app/sanitize.py`, which removes scripts, frames, `<base>`, `<meta http-equiv>`, `on*` attributes, `srcdoc` and code URLs, and leaves every other byte as it was. Tests: `test_sanitize.py`, `test_publications.py`. Still not checked end to end in a browser.
+- **Status:** fixed 2026-10-11, in the backend rather than in Readium's bundle: `PublicationStore.resource()` serves XHTML, HTML and SVG through `app/sanitize.py`, which removes scripts, frames, `<base>`, `<meta http-equiv>`, `on*` attributes, `srcdoc` and code URLs, and leaves every other byte as it was. Tests: `test_sanitize.py`, `test_publications.py`. Still not checked end to end in a browser. 2026-11-18: prefixed tag names and `<animate>`/`<set>` also removed (audit).
 
 ## Claims deliberately excluded
 

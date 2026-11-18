@@ -241,7 +241,8 @@ queried in parallel threads, on one executor shared by all searches.
   opened directly cannot run scripts on the API's origin; Readium builds its own documents, so the reader is unaffected
   (checked in Chromium 2026-10-10). Because Readium's documents are on the app's origin, where that header does not
   reach, XHTML, HTML and SVG files are also served without anything that runs code (review 2026-10-11-main #15,
-  `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like,
+  `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like
+  (also with a namespace prefix, `<svg:script>`), SVG `<animate>` and `<set>`,
   `on*` attributes, `srcdoc`, and `javascript:`/`vbscript:`/`data:` page links. Everything else is unchanged byte for
   byte (all 78 pages of 5 cached Gutenberg books came back unchanged).
 - **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.
