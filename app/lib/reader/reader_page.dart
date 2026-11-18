@@ -53,6 +53,10 @@ class _ReaderPageState extends State<ReaderPage> {
   // On web the engine's view can be an iframe, which takes clicks meant for
   // Flutter widgets drawn over it; it is covered while the settings are open.
   bool _settingsOpen = false;
+  ReaderTheme? _appliedTheme;
+
+  /// The settings with Auto resolved by the platform's brightness.
+  ReaderSettings get _shown => _settings.value.resolve(MediaQuery.platformBrightnessOf(context));
 
   // Loading.
   bool _opened = false;
@@ -82,9 +86,17 @@ class _ReaderPageState extends State<ReaderPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _services = Services.of(context);
-    if (_started) return;
+    if (_started) {
+      final shown = _shown;
+      if (shown.theme != _appliedTheme) {
+        _appliedTheme = shown.theme;
+        _engine?.apply(shown);
+      }
+      return;
+    }
     _started = true;
     _settings = ValueNotifier(_services.settingsStore.load())..addListener(_settingsChanged);
+    _appliedTheme = _shown.theme;
     final recording = widget.work.recordingsFor(widget.book).firstOrNull;
     if (recording != null && !_isPdf) _audio = AudioController(_services.audio, recording)..addListener(_audioChanged);
     final bookmark = _services.bookmarks.load(widget.book.key);
@@ -128,7 +140,7 @@ class _ReaderPageState extends State<ReaderPage> {
     _limit = Timer(loadLimit, () {
       if (mounted && !_opened) setState(() => _timedOut = true);
     });
-    engine.open(widget.book.reading, settings: _settings.value, at: _startAt).then((_) {
+    engine.open(widget.book.reading, settings: _shown, at: _startAt).then((_) {
       if (!mounted || attempt != _loadAttempt) return;
       _limit?.cancel();
       setState(() {
@@ -164,7 +176,9 @@ class _ReaderPageState extends State<ReaderPage> {
   void _settingsChanged() {
     final next = _settings.value;
     _services.settingsStore.save(next);
-    _engine?.apply(next);
+    final shown = _shown;
+    _appliedTheme = shown.theme;
+    _engine?.apply(shown);
     setState(() {});
   }
 
@@ -227,7 +241,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = _settings.value;
+    final settings = _shown;
     final brightness = settings.theme == ReaderTheme.dark ? Brightness.dark : Brightness.light;
     final showText = !_isPdf && _opened;
     return Theme(

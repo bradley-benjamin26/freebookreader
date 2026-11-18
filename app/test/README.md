@@ -104,6 +104,8 @@ Change a test and this README together.
 | Search results within 15 s | `search_api_test.dart` (client gives up at 20 s; backend limit is 15 s) |
 | Dark/light, font size and style, spacing, page-turner vs scroll | `reader_settings_test.dart`, `reader_test.dart` |
 
+- Reader colours: `ReaderTheme.system` (Auto) is the default; the page resolves it with the platform brightness (`ReaderSettings.resolve`), follows a brightness change while open, and a chosen Light or Dark stays (`reader_test` "following the system").
+
 ## The contract the tests expect
 
 ```
@@ -148,7 +150,7 @@ injected so tests can fake it.
 - **About:** `about-page`, `about-title`, `about-description`, `about-how-it-works`, `about-how-to-access`, `about-reading-note`, `donate` ("Donate to <name>"; not shown for HathiTrust, whose `donation_url` is null), `visit-website`, `about-error`
 - **Reader:** `reader-page`, `reader-title`, `reader-surface` (holds the engine's view), `reader-click-shield` (covers the view while the settings sheet is open), `page-indicator` ("Page 3 of 12", or "29% read" when the engine has no page numbers; live region), `next-page`, `previous-page`, `bookmark-button`, `loading-book`, `load-timeout`, `load-error`, `retry`, `open-external`, `pdf-viewer`
 - **Our own renderer (TextReaderEngine):** `reader-page-text` (a `Text` with `data`, or a `Text.rich` with several paragraphs or a highlight), `reader-page-pending` (while pages are counted), `reader-scroll`, `reader-paragraph-<i>`. **FakeReaderEngine:** `fake-reader-view`
-- **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `setting-line-height-value|letter-spacing-value|paragraph-spacing-value` ("1.5×", "0.10 em"; not read aloud, the slider speaks the same text), `settings-preview`, `view-page-turner|scroll`
+- **Reader settings:** `reader-settings-button`, `reader-settings`, `settings-close`, `theme-system|light|dark`, `font-increase|decrease` (step 2), `font-size-value`, `font-<serif|sansSerif|monospace|dyslexiaFriendly>`, `setting-line-height|letter-spacing|paragraph-spacing` (sliders named "Line spacing", "Letter spacing", "Paragraph spacing"), `setting-line-height-value|letter-spacing-value|paragraph-spacing-value` ("1.5×", "0.10 em"; not read aloud, the slider speaks the same text), `settings-preview`, `view-page-turner|scroll`
 - **Audio:** `audio-page`, `audio-title`, `audio-player`, `play-pause` ("Play"/"Pause"), `skip-back`/`skip-forward` (30 s), `position-slider` ("Playback position"), `position-elapsed` (shown instead of the slider when the length is unknown), `chapter-<i>`, `audio-error` (live region), `audio-retry`
 
 ### Behavior notes

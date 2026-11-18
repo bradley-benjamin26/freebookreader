@@ -286,7 +286,8 @@ void main() {
     testWidgets('the engine opens with the defaults', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(env.engines.last.settings, const ReaderSettings());
+      // Auto reaches the engine resolved; the test platform is light.
+      expect(env.engines.last.settings, const ReaderSettings(theme: ReaderTheme.light));
     });
 
     // Persona round one (Ruth, Morgan): see the text before settling in; on web the sheet covers the book.
@@ -479,6 +480,50 @@ void main() {
       expect(tester.getSemantics(find.byKey(const Key('theme-dark'))), containsSemantics(isSelected: true));
       expect(tester.getSemantics(find.byKey(const Key('theme-light'))),
           isNot(containsSemantics(isSelected: true)));
+    });
+  });
+
+  group('following the system', () {
+    void darkSystem(WidgetTester tester) {
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    }
+
+    testWidgets('the reader is dark on a dark system', (tester) async {
+      darkSystem(tester);
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.dark);
+      final box = tester.widget<ColoredBox>(find.descendant(
+          of: find.byKey(const Key('reader-surface')), matching: find.byType(ColoredBox)).first);
+      expect(box.color, const Color(0xFF121212));
+    });
+
+    testWidgets('an explicit Light stays light in dark mode', (tester) async {
+      darkSystem(tester);
+      final env = await readerEnv(tester, prefs: {'reader_settings': '{"theme":"light"}'});
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
+    });
+
+    testWidgets('the reader follows a brightness change while open', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
+      darkSystem(tester);
+      await tester.pumpAndSettle();
+      expect(env.engines.last.applied.last.theme, ReaderTheme.dark);
+    });
+
+    testWidgets('the settings sheet offers Auto, Light and Dark', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      for (final k in ['theme-system', 'theme-light', 'theme-dark']) {
+        expect(find.byKey(Key(k)), findsOneWidget);
+      }
+      expect(find.text('Auto'), findsOneWidget);
+      expect(tester.getSemantics(find.byKey(const Key('theme-system'))), containsSemantics(isSelected: true));
     });
   });
 

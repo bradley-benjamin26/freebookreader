@@ -1,6 +1,7 @@
 // Reading experience: dark/light mode, font size and style, spacing, and the
 // page-turner (default) vs scroll view.
 import 'dart:math' as math;
+import 'dart:ui' show Brightness;
 
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,7 +18,12 @@ void main() {
   group('defaults', () {
     const settings = ReaderSettings();
     test('start in page-turner view', () => expect(settings.viewMode, ViewMode.pageTurner));
-    test('start in light mode', () => expect(settings.theme, ReaderTheme.light));
+    test('start following the system', () => expect(settings.theme, ReaderTheme.system));
+    test('resolve picks dark on a dark system and keeps a chosen theme', () {
+      expect(const ReaderSettings().resolve(Brightness.dark).theme, ReaderTheme.dark);
+      expect(const ReaderSettings().resolve(Brightness.light).theme, ReaderTheme.light);
+      expect(const ReaderSettings(theme: ReaderTheme.light).resolve(Brightness.dark).theme, ReaderTheme.light);
+    });
     test('readable starting sizes', () {
       expect(settings.fontSize, 18);
       expect(settings.lineHeight, 1.5);
@@ -137,7 +143,7 @@ void main() {
 
     test('unknown stored enum values fall back to defaults', () async {
       final s = await store({'reader_settings': '{"theme":"sepia","viewMode":"swipe"}'});
-      expect(s.load().theme, ReaderTheme.light);
+      expect(s.load().theme, ReaderTheme.system);
       expect(s.load().viewMode, ViewMode.pageTurner);
     });
   });

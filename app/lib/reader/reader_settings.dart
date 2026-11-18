@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'dart:ui' show Brightness;
+
 import 'package:flutter/painting.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum ReaderTheme { light, dark }
+/// [system] follows the platform's brightness; see [ReaderSettings.resolve].
+enum ReaderTheme { system, light, dark }
 
 enum ViewMode { pageTurner, scroll }
 
@@ -26,7 +29,7 @@ enum ReaderFont {
 /// Display settings for the reader. Values outside the limits are clamped.
 class ReaderSettings {
   const ReaderSettings({
-    this.theme = ReaderTheme.light,
+    this.theme = ReaderTheme.system,
     double fontSize = 18,
     this.fontFamily = ReaderFont.serif,
     double lineHeight = 1.5,
@@ -56,6 +59,11 @@ class ReaderSettings {
 
   /// Space between paragraphs, in ems.
   double get paragraphSpacing => _paragraphSpacing.clamp(0.0, maxParagraphSpacing);
+
+  /// [system] made concrete for [platform]; the engines and the screen only see resolved settings.
+  ReaderSettings resolve(Brightness platform) => theme != ReaderTheme.system
+      ? this
+      : copyWith(theme: platform == Brightness.dark ? ReaderTheme.dark : ReaderTheme.light);
 
   // Both pairs exceed the WCAG AA 4.5:1 contrast ratio by a wide margin.
   Color get backgroundColor =>
