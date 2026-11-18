@@ -191,6 +191,8 @@ queried in parallel threads, on one executor shared by all searches.
 - **At most 8 searches per source run at once** (`MAX_IN_FLIGHT`, review 2026-10-10, #6). A timed-out search keeps
   its place until its thread finishes. A source with no free place is not asked: it is listed in
   `unavailable_sources` for that search only and is not marked down. So a stuck source holds at most 8 threads.
+  A source can ask for fewer with a `max_in_flight` class attribute: Open Library 2, because it allows about 3
+  requests a second and each search is 2 requests (audit 2026-11-18).
 - **Only the source's fault is an outage** (review 2026-10-10, #1). A `4xx` answer raises `SourceRejected`
   (a `SourceError` subclass), and an exception that is not a `SourceError` is a bug in our adapter. Both leave
   the source out of that search only (listed in `unavailable_sources`) without `record_failure`.

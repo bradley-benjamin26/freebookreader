@@ -33,6 +33,11 @@ def test_source_name():
     assert OpenLibrarySource.name == "openlibrary"
 
 
+def test_open_library_runs_at_most_two_searches_at_once():
+    """Audit 2026-11-18: it allows about 3 requests a second, and each search is 2 requests."""
+    assert OpenLibrarySource.max_in_flight == 2
+
+
 class TestRequests:
     def test_free_text_uses_q_on_search_json(self, source_for, sample_json):
         source, rec = source_for(json=sample_json("openlibrary-search.json"))

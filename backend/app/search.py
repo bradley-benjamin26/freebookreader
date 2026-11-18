@@ -49,9 +49,11 @@ class SearchService:
         self._now = now
         self._cache: dict[tuple[str, str], tuple[float, list[Book]]] = {}
         self._cache_lock = threading.Lock()
-        self._slots = {s.name: threading.BoundedSemaphore(max_in_flight) for s in self.sources}
+        # A source may ask for fewer (Open Library: its rate limit).
+        self._limits = {s.name: getattr(s, "max_in_flight", max_in_flight) for s in self.sources}
+        self._slots = {name: threading.BoundedSemaphore(limit) for name, limit in self._limits.items()}
         # Every running search holds one of its source's slots, so a task never waits for a worker.
-        self._executor = ThreadPoolExecutor(max_workers=max(1, len(self.sources) * max_in_flight),
+        self._executor = ThreadPoolExecutor(max_workers=max(1, sum(self._limits.values())),
                                             thread_name_prefix="source-search")
 
     def close(self) -> None:
@@ -91,7 +93,7 @@ class SearchService:
                 continue
             slot = self._slots[source.name]
             if not slot.acquire(blocking=False):
-                log.warning("source %s skipped: %s searches still running", source.name, self.max_in_flight)
+                log.warning("source %s skipped: %s searches still running", source.name, self._limits[source.name])
                 missing[source.name] = "busy"
                 continue
             futures[self._executor.submit(self._run, source, query, slot, key)] = source

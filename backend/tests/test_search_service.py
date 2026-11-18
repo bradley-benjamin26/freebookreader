@@ -377,6 +377,15 @@ class TestSearchesInFlight:
         assert outage.is_available("doab")
 
     @pytest.mark.slow
+    def test_a_source_can_ask_for_fewer_searches_in_flight(self, clock):
+        slow = FakeSource("openlibrary", [], delay=1.0)
+        slow.max_in_flight = 1
+        service, _ = build([slow], clock, timeout_seconds=0.02, max_in_flight=8)
+        service.search(SearchQuery(q="first"))    # times out, still running
+        response = service.search(SearchQuery(q="second"))
+        assert [(s.source, s.reason) for s in response.skipped] == [("openlibrary", "busy")]
+
+    @pytest.mark.slow
     def test_a_source_is_asked_again_once_its_slow_search_finishes(self, clock):
         slow = FakeSource("doab", [], delay=0.3)
         service, _ = build([slow], clock, timeout_seconds=0.02, max_in_flight=1)

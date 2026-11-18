@@ -29,6 +29,7 @@ _AVAILABLE = {"open", "borrow_available"}
 
 class OpenLibrarySource:
     name = "openlibrary"
+    max_in_flight = 2      # it allows about 3 requests a second, and each search is 2 requests
 
     def __init__(self, client: httpx.Client, base_url: str):
         self.client = client
