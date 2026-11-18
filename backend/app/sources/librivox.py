@@ -12,7 +12,7 @@ import httpx
 
 from app.models import Book, Chapter, SearchQuery
 from app.normalize import NAME_SUFFIX, author_key, normalize_author_name, to_language_code
-from app.sources.base import SourceError, get_json
+from app.sources.base import SourceError, _valid_books, get_json
 
 PAGE_SIZE = 25   # extended responses list every section, so keep pages small
 _GUTENBERG_ID = re.compile(r"gutenberg\.org/(?:etext|ebooks)/(\d+)")
@@ -49,7 +49,7 @@ class LibriVoxSource:
         if not isinstance(data, dict) or not isinstance(data.get("books"), list):
             raise SourceError("librivox: unexpected response")
         # A record that is not an object, or has no id, is skipped; the rest of the answer is still good.
-        books = [self._book(record) for record in _objects(data["books"]) if record.get("id")]
+        books = _valid_books([record for record in _objects(data["books"]) if record.get("id")], self._book)
         if query.author and "title" in params:
             wanted = author_key(query.author).split()
             books = [b for b in books if _has_author(b, wanted)]

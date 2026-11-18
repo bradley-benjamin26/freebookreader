@@ -309,6 +309,10 @@ class TestMalformedRecords:
         source, _ = source_for(json=payload(None, doc(), "x", 3))
         assert [b.source_id for b in source.search(SearchQuery(q="a book"))] == ["OL1W"]
 
+    def test_a_record_with_a_title_that_is_not_text_is_skipped(self, source_for):
+        source, _ = source_for(json=payload(doc(key="/works/OL9W", title=["x"]), doc()))
+        assert [b.source_id for b in source.search(SearchQuery(q="a book"))] == ["OL1W"]
+
     def test_author_names_that_are_not_text_are_skipped(self, source_for):
         source, _ = source_for(json=payload(doc(author_name=[{"name": "x"}, "Jane Austen", None])))
         assert source.search(SearchQuery(q="a book"))[0].authors == ["Jane Austen"]

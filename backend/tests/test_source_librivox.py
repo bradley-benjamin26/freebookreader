@@ -203,6 +203,12 @@ class TestMalformedRecords:
         source, _ = source_for(json=data)
         assert source.search(SearchQuery(title="pride and prejudice"))[0].source_id == "253"
 
+    def test_a_book_with_a_title_that_is_not_text_is_skipped(self, source_for, sample_json):
+        data = sample_json("librivox-title-search.json")
+        data["books"] = [{**data["books"][0], "id": "999", "title": 123}, *data["books"]]
+        source, _ = source_for(json=data)
+        assert [b.source_id for b in source.search(SearchQuery(title="pride and prejudice"))][0] == "253"
+
     def test_chapters_and_readers_that_are_not_objects_are_skipped(self, source_for, sample_json):
         data = sample_json("librivox-title-search.json")
         record = data["books"][0]
