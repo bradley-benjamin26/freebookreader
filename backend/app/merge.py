@@ -205,12 +205,11 @@ def _work(books: list[Book]) -> Work:
     for book in preferred:
         for name in book.authors:
             authors.setdefault(author_key(name), normalize_author_name(name) or name)
-    identifiers: dict[str, list[str]] = {}
+    identifiers: dict[str, dict[str, None]] = {}     # a dict keeps first-seen order and drops repeats in linear time
     source_ids: dict[str, list[str]] = {}
     for book in books:
         for kind, values in book.identifiers.items():
-            bucket = identifiers.setdefault(kind, [])
-            bucket.extend(v for v in values if v not in bucket)
+            identifiers.setdefault(kind, {}).update(dict.fromkeys(values))
         source_ids.setdefault(book.source, []).append(book.source_id)
     first = books[0]
     return Work(
@@ -220,7 +219,7 @@ def _work(books: list[Book]) -> Work:
         language=next((b.language for b in preferred if b.language), None),
         sources=sorted(source_ids),
         source_ids=source_ids,
-        identifiers=identifiers,
+        identifiers={kind: list(values) for kind, values in identifiers.items()},
         urls=list(dict.fromkeys(b.url for b in books)),
         cover_url=next((b.cover_url for b in preferred if b.cover_url), None),
         formats=sorted({b.format for b in books}),

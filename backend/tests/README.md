@@ -68,7 +68,7 @@ backend/app/
   hathitrust_index.py   HathiIndex(path): exists, state, count, search(text,title,author,isbn,language,limit,offset), replace_all(volumes, state), apply(changes, state), writing() (lock; IndexBusy); IndexState
   hathitrust_update.py  plan_update(file_list, state) -> Plan(full, updates, missing); update_index(client, index, file_list_url) -> UpdateResult; iter_gzip_lines; main (python -m app.hathitrust_update)
   merge.py         merge_books(list[Book]) -> list[Work]
-  outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, unavailable, retry_at
+  outage.py        OutageTracker(clock, cooldown=24h): record_failure, is_available, retry_at
   search.py        SearchService(sources, outage, timeout_seconds=12, max_in_flight=8, cache_seconds=0, cache_entries=500, now): search(SearchQuery) -> SearchResponse
   reader.py        reading_options(Book) -> ReadingOptions(mode, kind, url, publication)
   publications.py  build_manifest(ZipFile, max_entry_bytes) -> dict; PublicationStore(client, gutenberg_url, cache_dir, max_download_bytes,
@@ -124,6 +124,7 @@ queried in parallel threads, on one executor shared by all searches.
   A file that has lines but no Hathifile rows (a gzipped error page), or a monthly file with no open book, is an
   error before anything is committed, so the old index and its date stay (#27). One update runs at a time: a lock
   file beside the index (`HathiIndex.writing`), and a second run fails at once with "already running" (#28).
+  A Hathifile made of several gzip parts one after another is read whole (`iter_gzip_lines`, audit 2026-11-18).
 - **HathiTrust books link out.** Each book is one volume with `url` `https://babel.hathitrust.org/cgi/pt?id=<htid>`,
   `volume` ("v.2"), `library` (name for the 40 most common library codes, else the code) and `us_only` (rights `pdus`).
   Copies and volumes of one catalog record merge into one work through `identifiers.hathitrust` (= `ht_bib_key`), a new
