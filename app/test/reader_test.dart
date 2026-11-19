@@ -369,6 +369,8 @@ void main() {
       await openSettings(tester);
       expect(find.descendant(of: find.byKey(const Key('font-size-value')), matching: find.text('18')),
           findsOneWidget);
+      final value = tester.widget<Text>(find.text('18'));
+      expect(value.style?.fontFamily, isNot('Literata'), reason: 'UI review #24: the labels around it are not the title serif');
     });
 
     testWidgets('font size stops at the limits', (tester) async {

@@ -134,7 +134,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                           container: true,
                           label: 'Text size',
                           child: Text(s.fontSize.round().toString(),
-                              textAlign: TextAlign.center, style: text.titleMedium),
+                              textAlign: TextAlign.center, style: text.titleSmall),
                         ),
                       ),
                       OutlinedButton(
