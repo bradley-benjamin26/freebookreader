@@ -90,6 +90,10 @@ queried in parallel threads, on one executor shared by all searches.
   usually span many languages) only merges through a shared ISBN/OCLC. This follows "a duplicate is
   better than a false merge", and it means Open Library records will often stay separate from
   Gutenberg ones.
+- **A merged work names each author once** (UI review 2026-11-18 #14, `test_merge.py::TestAuthorNames`). A name from
+  one record is dropped when another record has a longer spelling with the same first and last name ("Mary Shelley"
+  beside "Mary Wollstonecraft Shelley"). Names within one record are never folded (co-authors Percy Bysshe and Mary
+  Shelley stay); the text record's order comes first.
 - **Records with no author never merge on title alone.**
 - **A fuzzy author match allows fuzziness only in the surname.** Both records need the same number of
   authors, each with the same number of name parts and identical given names; only the surnames may differ

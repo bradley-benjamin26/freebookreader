@@ -198,13 +198,27 @@ def _merge_fuzzy(entries: list[_Entry], groups: _Groups) -> None:
                 groups.union(g, h)
 
 
+def _shorter_spelling(short: str, full: str) -> bool:
+    """'mary shelley' of 'mary wollstonecraft shelley': same first and last name, fewer names between."""
+    s, f = short.split(), full.split()
+    return 0 < len(s) < len(f) and s[0] == f[0] and s[-1] == f[-1] and set(s) < set(f)
+
+
 def _work(books: list[Book]) -> Work:
     # LibriVox drops leading articles ("Time Machine (Version 4)"), so prefer a text record's title.
     preferred = sorted(books, key=lambda b: (b.format != "text", b.source, b.source_id))
     authors: dict[str, str] = {}
-    for book in preferred:
+    found_in: dict[str, int] = {}         # key -> the book it first came from
+    for i, book in enumerate(preferred):
         for name in book.authors:
-            authors.setdefault(author_key(name), normalize_author_name(name) or name)
+            key = author_key(name)
+            authors.setdefault(key, normalize_author_name(name) or name)
+            found_in.setdefault(key, i)
+    for short in list(authors):
+        # Another record's "Mary Shelley" is the "Mary Wollstonecraft Shelley" already here; co-authors in one
+        # record are never folded together.
+        if any(found_in[short] != found_in[full] and _shorter_spelling(short, full) for full in authors):
+            del authors[short]
     identifiers: dict[str, dict[str, None]] = {}     # a dict keeps first-seen order and drops repeats in linear time
     source_ids: dict[str, list[str]] = {}
     for book in books:
