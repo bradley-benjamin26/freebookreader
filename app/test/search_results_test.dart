@@ -73,6 +73,16 @@ void main() {
       expect(tester.getSemantics(cover), containsSemantics(label: 'Cover of Pride and Prejudice'));
     });
 
+    testWidgets('covers can load from sites without CORS on web', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      final cover = find.descendant(
+          of: find.byKey(const Key('result-w-pride')), matching: find.byKey(const Key('cover')));
+      final image = tester.widget<Image>(find.descendant(of: cover, matching: find.byType(Image)));
+      expect((image.image as NetworkImage).webHtmlElementStrategy, WebHtmlElementStrategy.fallback);
+      expect(tester.getSize(cover).width, 64);
+    });
+
     testWidgets('a work without a cover still shows a placeholder', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');

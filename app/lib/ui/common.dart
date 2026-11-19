@@ -86,6 +86,8 @@ class Cover extends StatelessWidget {
                   url!,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
+                  // gutenberg.org sends no CORS header; an <img> element does not need one.
+                  webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
                   errorBuilder: (_, _, _) => placeholder,
                 ),
         ),

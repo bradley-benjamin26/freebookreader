@@ -443,7 +443,7 @@ class ResultRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Cover(key: const Key('cover'), title: work.title, url: work.coverUrl),
+              Cover(key: const Key('cover'), title: work.title, url: work.coverUrl, width: 64),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
