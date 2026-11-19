@@ -536,3 +536,9 @@ class TestAuthorNames:
 
     def test_an_author_name_with_no_letters_does_not_break_the_merge(self):
         assert self.frankenstein(["Mary Shelley", "?"]).authors[0] == "Mary Wollstonecraft Shelley"
+
+    def test_the_longer_spelling_takes_the_shorter_ones_place(self):
+        # UI review 2026-11-18 #19: the text record's order holds even when its spelling is the shorter one.
+        work = self.frankenstein(["Percy Bysshe Shelley", "Mary Wollstonecraft Shelley"],
+                                 gutenberg_authors=["Shelley, Mary", "Shelley, Percy Bysshe"])
+        assert work.authors == ["Mary Wollstonecraft Shelley", "Percy Bysshe Shelley"]

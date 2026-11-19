@@ -93,7 +93,8 @@ queried in parallel threads, on one executor shared by all searches.
 - **A merged work names each author once** (UI review 2026-11-18 #14, `test_merge.py::TestAuthorNames`). A name from
   one record is dropped when another record has a longer spelling with the same first and last name ("Mary Shelley"
   beside "Mary Wollstonecraft Shelley"). Names within one record are never folded (co-authors Percy Bysshe and Mary
-  Shelley stay); the text record's order comes first.
+  Shelley stay); the text record's order comes first, and a longer spelling takes the place of the shorter one
+  (#19, `test_the_longer_spelling_takes_the_shorter_ones_place`).
 - **Records with no author never merge on title alone.**
 - **A fuzzy author match allows fuzziness only in the surname.** Both records need the same number of
   authors, each with the same number of name parts and identical given names; only the surnames may differ

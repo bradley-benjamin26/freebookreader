@@ -214,11 +214,12 @@ def _work(books: list[Book]) -> Work:
             key = author_key(name)
             authors.setdefault(key, normalize_author_name(name) or name)
             found_in.setdefault(key, i)
-    for short in list(authors):
-        # Another record's "Mary Shelley" is the "Mary Wollstonecraft Shelley" already here; co-authors in one
-        # record are never folded together.
-        if any(found_in[short] != found_in[full] and _shorter_spelling(short, full) for full in authors):
-            del authors[short]
+    names: dict[str, None] = {}
+    for key in authors:
+        # Another record's "Mary Shelley" is the "Mary Wollstonecraft Shelley" already here, and the longer spelling
+        # takes the place of the first one listed; co-authors in one record are never folded together.
+        longer = [full for full in authors if found_in[key] != found_in[full] and _shorter_spelling(key, full)]
+        names.setdefault(authors[max(longer, key=len)] if longer else authors[key])
     identifiers: dict[str, dict[str, None]] = {}     # a dict keeps first-seen order and drops repeats in linear time
     source_ids: dict[str, list[str]] = {}
     for book in books:
@@ -229,7 +230,7 @@ def _work(books: list[Book]) -> Work:
     return Work(
         id=f"{first.source}:{first.source_id}",
         title=preferred[0].title,
-        authors=list(authors.values()),
+        authors=list(names),
         language=next((b.language for b in preferred if b.language), None),
         sources=sorted(source_ids),
         source_ids=source_ids,
