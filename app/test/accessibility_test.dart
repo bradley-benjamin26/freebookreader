@@ -171,6 +171,12 @@ void main() {
           lessThanOrEqualTo(smallPhone.width));
     });
 
+    testWidgets('result cards fit at 200% text on a small phone', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
+      await searchFor(tester, 'pride');
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('results: nothing needs sideways scrolling', (tester) async {
       await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
       await searchFor(tester, 'pride');

@@ -426,10 +426,8 @@ class ResultRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final best = work.bestBook;
-    final formats = [
-      if (work.formats.contains('text')) 'Text',
-      if (work.formats.contains('audio')) 'Audio',
-    ].join(' and ');
+    final hasText = work.formats.contains('text'), hasAudio = work.formats.contains('audio');
+    final formats = hasText && hasAudio ? 'Text and audio' : hasText ? 'Text' : hasAudio ? 'Audio' : '';
     final note = matchNote(query, work);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -451,15 +449,20 @@ class ResultRow extends StatelessWidget {
                   children: [
                     Text(work.title, style: text.titleMedium),
                     Text(formatAuthors(work.authors), style: text.bodyMedium),
-                    Text(work.sources.map(sourceName).join(', '), style: text.bodySmall),
-                    if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodySmall),
+                    // The sources are on the details page ("Available from"); cards stay short (UI review #10).
+                    if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodyMedium),
                     Text([if (formats.isNotEmpty) formats, languageName(work.language)].join(' · '),
-                        style: text.bodySmall),
+                        style: text.bodyMedium),
                     if (best != null) ...[
+                      const SizedBox(height: 4),
                       BookActionButton(key: Key('open-${work.id}'), work: work, book: best),
                       if (bookSummary(best) case final summary?)
-                        Text(summary, key: Key('result-edition-${work.id}'), style: text.bodySmall),
-                      Text(accessNote(best), key: Key('result-access-${work.id}'), style: text.bodySmall),
+                        Text(summary,
+                            key: Key('result-edition-${work.id}'),
+                            style: text.bodyMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      Text(accessNote(best), key: Key('result-access-${work.id}'), style: text.bodyMedium),
                     ],
                   ],
                 ),
