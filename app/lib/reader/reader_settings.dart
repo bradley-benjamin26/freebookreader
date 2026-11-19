@@ -11,7 +11,7 @@ enum ReaderTheme { system, light, dark }
 enum ViewMode { pageTurner, scroll }
 
 enum ReaderFont {
-  serif('Serif', 'serif', ['Georgia', 'Times New Roman', 'Noto Serif']),
+  serif('Serif', 'serif', ['Georgia', 'Times New Roman', 'Noto Serif', 'Literata']), // Literata is bundled
   sansSerif('Sans serif', 'sans-serif', ['Helvetica Neue', 'Arial', 'Roboto']),
   monospace('Monospace', 'monospace', ['Menlo', 'Courier New', 'Roboto Mono']),
   // TODO: bundle a dyslexia-friendly font (OpenDyslexic or Atkinson

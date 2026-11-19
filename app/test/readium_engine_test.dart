@@ -217,7 +217,7 @@ void main() {
     });
 
     test('fonts become CSS font stacks ending in a generic family', () {
-      expect(cssFontStack(ReaderFont.serif), '"Georgia", "Times New Roman", "Noto Serif", serif');
+      expect(cssFontStack(ReaderFont.serif), '"Georgia", "Times New Roman", "Noto Serif", "Literata", serif');
       expect(cssFontStack(ReaderFont.monospace), '"Menlo", "Courier New", "Roboto Mono", monospace');
       expect(cssFontStack(ReaderFont.dyslexiaFriendly),
           '"OpenDyslexic", "Atkinson Hyperlegible", "Verdana", sans-serif');

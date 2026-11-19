@@ -31,6 +31,9 @@ void main() {
       expect(settings.paragraphSpacing, 1.0);
       expect(settings.fontFamily, ReaderFont.serif);
     });
+    test('Serif ends with the bundled serif, so web (no system fonts) still draws a serif (UI review #23)', () {
+      expect(ReaderFont.serif.fallback.last, 'Literata');
+    });
   });
 
   group('limits', () {
