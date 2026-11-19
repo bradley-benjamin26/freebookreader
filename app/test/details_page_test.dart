@@ -435,6 +435,18 @@ void main() {
 
   // UI review 2026-11-18, #6, #13, #16.
   group('what the page leads with', () {
+    testWidgets('no two book buttons have the same name (UI review #20)', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await openDetails(tester, 'w-pride');
+      final labels = [
+        for (final e in find.byType(BookActionButton).evaluate())
+          tester.getSemantics(find.byWidget(e.widget)).label,
+      ];
+      expect(labels.length, greaterThan(2));
+      expect(labels.toSet().length, labels.length, reason: '$labels');
+      expect(labels.first, 'Read Pride and Prejudice by Jane Austen');
+    });
+
     Future<Work> audioFirst(WidgetTester tester, {Size size = phone}) async {
       final env = await TestEnv.create();
       final pride = env.api.response.works.first;

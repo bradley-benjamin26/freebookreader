@@ -102,12 +102,14 @@ class Cover extends StatelessWidget {
 
 /// The button that opens a book. It shows a verb ("Read", "Borrow") and its
 /// accessible name says which book and where, e.g. "Borrow Emma by Jane
-/// Austen at Open Library".
+/// Austen at Open Library". [detail] is added to that name, so a book card's button differs from the
+/// details page's main button.
 class BookActionButton extends StatelessWidget {
-  const BookActionButton({super.key, required this.work, required this.book});
+  const BookActionButton({super.key, required this.work, required this.book, this.detail});
 
   final Work work;
   final Book book;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +118,7 @@ class BookActionButton extends StatelessWidget {
       icon: Icon(book.inApp ? (book.format == BookFormat.audio ? Icons.headphones : Icons.menu_book)
           : Icons.open_in_new),
       label: Semantics(
-        label: actionLabel(book),
+        label: detail == null || detail!.isEmpty ? actionLabel(book) : '${actionLabel(book)}, $detail',
         excludeSemantics: true,
         child: Text(actionVerb(book)),
       ),

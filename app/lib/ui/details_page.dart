@@ -223,7 +223,13 @@ class _BookCard extends StatelessWidget {
               runSpacing: 8,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                BookActionButton(key: Key('open-${book.key}'), work: work, book: book),
+                BookActionButton(key: Key('open-${book.key}'), work: work, book: book, detail: [
+                  if (book.inApp) sourceName(book.source),
+                  if (book.source == 'gutenberg') 'eBook #${book.sourceId}',
+                  if (narrators != null) 'read by $narrators',
+                  if (book.volume != null) 'volume ${book.volume}',
+                  ?book.library,
+                ].join(', ')),
                 TextButton(
                   key: Key('source-link-${book.key}'),
                   onPressed: () => Services.of(context).urlOpener.open(Uri.parse(book.url)),
