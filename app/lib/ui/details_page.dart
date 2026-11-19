@@ -37,7 +37,9 @@ class _DetailsPageState extends State<DetailsPage> {
     final cut = !_allVolumes && volumes > _hathitrustVolumesShown;
     final cards = <Widget>[];
     var seen = 0;
-    for (final book in work.books) {
+    final best = work.bestBook;
+    // The book the result's button opens comes first, so the two pages agree (UI review #6).
+    for (final book in [?best, ...work.books.where((b) => b.key != best?.key)]) {
       if (book.source == 'hathitrust' && cut) {
         seen++;
         if (seen > _hathitrustVolumesShown) continue;
@@ -64,7 +66,8 @@ class _DetailsPageState extends State<DetailsPage> {
     return Scaffold(
       key: const Key('details-page'),
       appBar: AppBar(title: Text(work.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: ScrollColumn(
@@ -76,13 +79,23 @@ class _DetailsPageState extends State<DetailsPage> {
               ),
               const SizedBox(height: 16),
               Heading(work.title, key: const Key('details-title'), level: 1, style: text.headlineSmall),
-              Text("You need an internet connection to read or listen. Books can't be saved for offline use yet.",
-                  key: const Key('offline-note'), style: text.bodyMedium),
+              if (work.bestBook case final best?)
+                Padding(
+                  key: const Key('details-primary'),
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: BookActionButton(key: const Key('open-primary'), work: work, book: best),
+                  ),
+                ),
               const SizedBox(height: 8),
               _Metadata(key: const Key('details-metadata'), work: work),
               const SizedBox(height: 24),
               Heading('Ways to read or listen', style: text.titleLarge),
               ..._bookCards(),
+              const SizedBox(height: 24),
+              Text("You need an internet connection to read or listen. Books can't be saved for offline use yet.",
+                  key: const Key('offline-note'), style: text.bodyMedium),
             ],
           ),
         ),
