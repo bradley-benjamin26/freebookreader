@@ -52,7 +52,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   // On web the engine's view can be an iframe, which takes clicks meant for
   // Flutter widgets drawn over it; it is covered while the settings are open.
-  bool _settingsOpen = false;
+  bool _sheetOpen = false;
   ReaderTheme? _appliedTheme;
 
   /// The settings with Auto resolved by the platform's brightness.
@@ -214,14 +214,50 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   Future<void> _openSettings(BuildContext context) async {
-    setState(() => _settingsOpen = true);
+    setState(() => _sheetOpen = true);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => ReaderSettingsSheet(settings: _settings),
     );
-    if (mounted) setState(() => _settingsOpen = false);
+    if (mounted) setState(() => _sheetOpen = false);
+  }
+
+  Future<void> _openContents(BuildContext context) async {
+    setState(() => _sheetOpen = true);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          key: const Key('contents-sheet'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Heading('Contents', style: Theme.of(sheet).textTheme.titleLarge),
+            ),
+            Flexible(
+              child: ListView(shrinkWrap: true, children: [
+                for (final (i, chapter) in _engine!.contents.indexed)
+                  ListTile(
+                    key: Key('contents-$i'),
+                    title: Text(chapter.title),
+                    onTap: () {
+                      _engine!.goTo(ReaderPosition(progress: 0, locator: chapter.locator));
+                      Navigator.of(sheet).pop();
+                    },
+                  ),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) setState(() => _sheetOpen = false);
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -254,6 +290,12 @@ class _ReaderPageState extends State<ReaderPage> {
             title: Heading(widget.book.title, key: const Key('reader-title'), maxLines: 1),
             actions: [
               if (showText) ...[
+                if (_engine!.contents.isNotEmpty)
+                  IconButton(
+                    key: const Key('contents-button'),
+                    onPressed: () => _openContents(context),
+                    icon: const Icon(Icons.toc, semanticLabel: 'Contents'),
+                  ),
                 IconButton(
                   key: const Key('bookmark-button'),
                   onPressed: _toggleBookmark,
@@ -283,7 +325,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                     child: Focus(
                                         autofocus: true, onKeyEvent: _onKey, child: _engine!.buildView(context, locale: _bookLocale)),
                                   ),
-                                  if (_settingsOpen)
+                                  if (_sheetOpen)
                                     Positioned.fill(
                                       child: PointerInterceptor(
                                           key: const Key('reader-click-shield'), child: const SizedBox.expand()),

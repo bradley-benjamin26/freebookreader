@@ -120,3 +120,17 @@ def test_a_script_or_frame_with_a_namespace_prefix_is_removed(markup):
 ])
 def test_svg_animations_are_removed(markup):
     assert clean(f'<svg><a>{markup}<text>x</text></a></svg>') == "<svg><a><text>x</text></a></svg>"
+
+
+# UI review 2026-11-18 #3: the web reader opened on Gutenberg's header (licence blurb, catalog data) instead of the
+# book. Readium ignores the fragment of a contents entry, so the header itself is left out, as our own renderer does.
+def test_gutenbergs_header_is_left_out_but_the_book_and_footer_stay():
+    page = PAGE.replace(
+        '<body>\n',
+        '<body><header class="pg-boilerplate" id="pg-header"><h2>The Project Gutenberg eBook</h2>'
+        '<div id="pg-start-separator">START OF</div></header>\n',
+    ).replace('</body>', '<section id="pg-footer">The licence</section></body>')
+    out = clean(page)
+    assert "Project Gutenberg eBook" not in out and "START OF" not in out
+    assert out == page.replace(page[page.index('<header'):page.index('</header>') + 9], "")
+    assert '<section id="pg-footer">The licence</section>' in out

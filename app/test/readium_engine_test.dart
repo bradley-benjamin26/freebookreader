@@ -2,12 +2,14 @@
 // preferences. Readium itself only runs in a browser or on a phone; check it
 // by hand with the spike checklist in decision_reader.md.
 import 'dart:async';
+import 'dart:convert';
 import 'dart:ui' show TextAlign;
 
 import 'package:flutter_readium/flutter_readium.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/reader/engines.dart';
+import 'package:free_book_reader/reader/reader_engine.dart';
 import 'package:free_book_reader/reader/readium_engine.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/reader/text_engine.dart';
@@ -26,8 +28,8 @@ class FakeReadium implements FlutterReadium {
   final List<String> calls = [];
   final List<Completer<Publication>> _opens = [];
 
-  void finishOpen() => _opens.removeAt(0)
-      .complete(Publication.fromJson({'metadata': {'title': 'A book'}, 'links': [], 'readingOrder': []})!);
+  void finishOpen([Map<String, dynamic>? publication]) => _opens.removeAt(0).complete(Publication.fromJson(
+      publication ?? {'metadata': {'title': 'A book'}, 'links': [], 'readingOrder': []})!);
 
   @override
   Future<Publication> openPublication(String pubUrl) {
@@ -126,6 +128,58 @@ void main() {
       expect(readium.calls, ['open $a', 'close', 'open $b']);
       await second.dispose();
       expect(readium.calls.last, 'close');
+    });
+  });
+
+  // UI review 2026-11-18, #3 and #4: a new book opens at its first contents entry (past Gutenberg's licence),
+  // and the contents are listed.
+  group('contents', () {
+    final manifest = Uri.parse('http://localhost:8000/publications/gutenberg/84/manifest.json');
+    Map<String, dynamic> book({bool toc = true}) => {
+          'metadata': {'title': 'A book'},
+          'links': [],
+          'readingOrder': [
+            {'href': 'a.xhtml', 'type': 'application/xhtml+xml'},
+            {'href': 'b.xhtml', 'type': 'application/xhtml+xml'},
+          ],
+          if (toc)
+            'toc': [
+              {'href': 'b.xhtml#start', 'title': 'Chapter 1'},
+              {'href': 'b.xhtml#two', 'title': 'Chapter 2'},
+            ],
+        };
+
+    Future<ReadiumReaderEngine> open({bool toc = true, ReaderPosition? at}) async {
+      final readium = FakeReadium();
+      final engine = ReadiumReaderEngine(manifest, readium: readium);
+      final opening = engine.open(gutenberg, settings: const ReaderSettings(), at: at);
+      await pumpEventQueue();
+      readium.finishOpen(book(toc: toc));
+      await opening;
+      return engine;
+    }
+
+    test('a new book starts at the first contents entry', () async {
+      final engine = await open();
+      expect(engine.startAt!.href, 'b.xhtml');
+      expect(engine.startAt!.locations!.fragments, contains('start'));
+    });
+
+    test('a saved place wins over the contents', () async {
+      const saved = Locator(href: 'a.xhtml', type: 'application/xhtml+xml');
+      final engine = await open(at: ReaderPosition(progress: 0.1, locator: jsonEncode(saved.toJson())));
+      expect(engine.startAt!.href, 'a.xhtml');
+    });
+
+    test('a book without contents starts at the beginning and lists none', () async {
+      final engine = await open(toc: false);
+      expect(engine.startAt, isNull);
+      expect(engine.contents, isEmpty);
+    });
+
+    test('contents lists every entry', () async {
+      final engine = await open();
+      expect(engine.contents.map((c) => c.title), ['Chapter 1', 'Chapter 2']);
     });
   });
 

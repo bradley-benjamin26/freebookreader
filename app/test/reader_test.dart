@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:free_book_reader/reader/reader_engine.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/storage/bookmark_store.dart';
 
@@ -480,6 +481,33 @@ void main() {
       expect(tester.getSemantics(find.byKey(const Key('theme-dark'))), containsSemantics(isSelected: true));
       expect(tester.getSemantics(find.byKey(const Key('theme-light'))),
           isNot(containsSemantics(isSelected: true)));
+    });
+  });
+
+  // UI review 2026-11-18, #4.
+  group('contents', () {
+    testWidgets('Contents opens a list and goes to the chosen chapter', (tester) async {
+      final env = await TestEnv.create();
+      env.engines.contents = const [
+        ReaderChapter(title: 'Letter I', locator: 'fake:2'),
+        ReaderChapter(title: 'Chapter 1', locator: 'fake:5'),
+      ];
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(tester.getSemantics(find.byKey(const Key('contents-button'))), containsSemantics(label: 'Contents'));
+      await tester.tap(find.byKey(const Key('contents-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('contents-sheet')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('contents-1')));
+      await tester.pumpAndSettle();
+      expect(env.engines.last.wentTo.single.locator, 'fake:5');
+      expect(find.byKey(const Key('contents-sheet')), findsNothing);
+    });
+
+    testWidgets('no Contents button when the book has none', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(find.byKey(const Key('contents-button')), findsNothing);
     });
   });
 

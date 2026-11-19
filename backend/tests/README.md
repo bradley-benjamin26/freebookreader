@@ -251,7 +251,8 @@ queried in parallel threads, on one executor shared by all searches.
   `test_sanitize.py`): `<script>`, `<iframe>`, `<object>`, `<embed>`, `<base>`, `<meta http-equiv>` and the like
   (also with a namespace prefix, `<svg:script>`), SVG `<animate>` and `<set>`,
   `on*` attributes, `srcdoc`, and `javascript:`/`vbscript:`/`data:` page links. Everything else is unchanged byte for
-  byte (all 78 pages of 5 cached Gutenberg books came back unchanged).
+  byte (all 78 pages of 5 cached Gutenberg books came back unchanged). Gutenberg's header (`id="pg-header"`) is cut out
+  too, so the web reader opens at the book (UI review 2026-11-18 #3; the footer with the licence stays).
 - **Downloading:** `<gutenberg_url>/ebooks/<id>.epub3.images`, following at most 5 redirects, only on the same host.
   404 there is 404; any other failure is 502 (also a `Content-Length` that is not a number, #5), a timeout 504. Downloads over 200 MB, files that are not a usable EPUB
   and zip entries over 100 MB (package files, i.e. container, OPF, nav and NCX, over 5 MB) are refused with 502, checked before and while reading (against zip bombs). A book is

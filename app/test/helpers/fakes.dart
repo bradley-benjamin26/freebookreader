@@ -110,6 +110,12 @@ class FakeReaderEngine implements ReaderEngine {
   FakeReadAloud? readAloud;
 
   @override
+  List<ReaderChapter> contents = const [];
+
+  /// Every position [goTo] was asked for.
+  final List<ReaderPosition> wentTo = [];
+
+  @override
   Future<void> open(ReadingOptions book, {required ReaderSettings settings, ReaderPosition? at}) {
     opens.add((book: book, at: at));
     this.settings = settings;
@@ -160,6 +166,7 @@ class FakeReaderEngine implements ReaderEngine {
   @override
   Future<void> goTo(ReaderPosition position) async {
     calls.add('goTo');
+    wentTo.add(position);
     _goTo(position);
     _positions.add(this.position);
   }
@@ -191,6 +198,9 @@ class FakeReaderEngines {
 
   /// Whether the engines can read aloud.
   bool readAloud = false;
+
+  /// The table of contents each engine reports.
+  List<ReaderChapter> contents = const [];
   final List<FakeReaderEngine> created = [];
   final List<ReadingOptions> asked = [];
 
@@ -203,6 +213,7 @@ class FakeReaderEngines {
     final engine = FakeReaderEngine(
         pageCount: pageCount, pageNumbers: pageNumbers, never: never, failNext: failNext);
     if (readAloud) engine.readAloud = FakeReadAloud();
+    engine.contents = contents;
     failNext = false;
     created.add(engine);
     return engine;
