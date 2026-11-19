@@ -140,7 +140,7 @@ class _ResultsPageState extends State<ResultsPage> {
     return Scaffold(
       key: const Key('results-page'),
       appBar: AppBar(
-        title: Heading('Search results', key: const Key('results-heading'), maxLines: 1),
+        title: Heading('Search results', key: const Key('results-heading'), level: 1, maxLines: 1),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
         if (constraints.maxWidth >= wideLayout) {

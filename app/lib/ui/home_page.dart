@@ -30,7 +30,7 @@ class HomePage extends StatelessWidget {
               children: [
                 const SizedBox(height: 8),
                 Heading('Free Book Reader',
-                    key: const Key('home-heading'),
+                    key: const Key('home-heading'), level: 1,
                     style: text.headlineMedium,
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),

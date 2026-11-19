@@ -287,7 +287,7 @@ class _ReaderPageState extends State<ReaderPage> {
           key: const Key('reader-page'),
           backgroundColor: _isPdf ? null : settings.backgroundColor,
           appBar: AppBar(
-            title: Heading(widget.book.title, key: const Key('reader-title'), maxLines: 1),
+            title: Heading(widget.book.title, key: const Key('reader-title'), level: 1, maxLines: 1),
             actions: [
               if (showText) ...[
                 if (_engine!.contents.isNotEmpty)

@@ -8,9 +8,12 @@ import 'audio_page.dart';
 
 /// A page heading that screen readers announce as a heading.
 class Heading extends StatelessWidget {
-  const Heading(this.text, {super.key, this.style, this.textAlign, this.maxLines});
+  const Heading(this.text, {super.key, this.style, this.textAlign, this.maxLines, this.level = 2});
 
   final String text;
+
+  /// 1 for a page's title, 2 for its sections.
+  final int level;
   final TextStyle? style;
   final TextAlign? textAlign;
   final int? maxLines;
@@ -19,6 +22,7 @@ class Heading extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
         container: true,
         header: true,
+        headingLevel: level,
         child: Text(text,
             style: style,
             textAlign: textAlign,

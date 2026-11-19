@@ -48,7 +48,7 @@ class _AudioPageState extends State<AudioPage> {
           child: ScrollColumn(
             padding: const EdgeInsets.all(16),
             children: [
-              Heading(book.title, key: const Key('audio-title'), style: text.headlineSmall),
+              Heading(book.title, key: const Key('audio-title'), level: 1, style: text.headlineSmall),
               Text(formatAuthors(book.authors), style: text.titleMedium),
               if (narrators != null) Text('Read by $narrators', style: text.bodyMedium),
               if (length != null) Text('Length: $length', style: text.bodyMedium),

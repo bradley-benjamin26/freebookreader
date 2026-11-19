@@ -75,7 +75,7 @@ class _DetailsPageState extends State<DetailsPage> {
                     key: const Key('details-cover'), title: work.title, url: work.coverUrl, width: 160),
               ),
               const SizedBox(height: 16),
-              Heading(work.title, key: const Key('details-title'), style: text.headlineSmall),
+              Heading(work.title, key: const Key('details-title'), level: 1, style: text.headlineSmall),
               Text("You need an internet connection to read or listen. Books can't be saved for offline use yet.",
                   key: const Key('offline-note'), style: text.bodyMedium),
               const SizedBox(height: 8),

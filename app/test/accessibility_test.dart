@@ -91,7 +91,20 @@ void main() {
             containsSemantics(isHeader: true));
         handle.dispose();
       });
+
+      // UI review 2026-11-18, #8.
+      testWidgets('${entry.key} title is heading level 1', (tester) async {
+        final env = await TestEnv.create();
+        await pumpApp(tester, env);
+        await entry.value.go(tester, env);
+        expect(tester.getSemantics(find.byKey(Key(entry.value.heading))).getSemanticsData().headingLevel, 1);
+      });
     }
+
+    testWidgets('a section heading is level 2', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      expect(tester.getSemantics(find.text('Try one of these')).getSemanticsData().headingLevel, 2);
+    });
   });
 
   group('section titles and labels (WCAG 1.3.1, 2.4.6, 4.1.2; review 2026-10-11, #23)', () {
