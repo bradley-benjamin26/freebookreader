@@ -93,7 +93,8 @@ class _AboutBody extends StatelessWidget {
             ],
           ),
         );
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: ScrollColumn(
