@@ -44,6 +44,13 @@ void main() {
       expect(find.textContaining('13 hr 6 min'), findsWidgets);
     });
 
+    testWidgets('starts at the top on a wide screen (UI review #21)', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env, size: const Size(1280, 800));
+      await openAudio(tester, env);
+      expect(tester.getTopLeft(find.byKey(const Key('audio-title'))).dy, lessThanOrEqualTo(100));
+    });
+
     testWidgets('has the player but no text viewer', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);

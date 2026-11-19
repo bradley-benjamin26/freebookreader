@@ -42,7 +42,8 @@ class _AudioPageState extends State<AudioPage> {
     return Scaffold(
       key: const Key('audio-page'),
       appBar: AppBar(title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: ScrollColumn(
