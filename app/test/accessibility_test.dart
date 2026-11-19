@@ -140,6 +140,16 @@ void main() {
     });
   });
 
+  // UI review 2026-11-18, #7: one choice of several is a radio button, not a checkbox (4.1.2).
+  testWidgets('format choices are one-of-a-group', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    await searchFor(tester, 'pride');
+    for (final key in ['all', 'text', 'audio']) {
+      expect(tester.getSemantics(find.byKey(Key('filter-format-$key'))),
+          containsSemantics(isInMutuallyExclusiveGroup: true), reason: key);
+    }
+  });
+
   group('resize text to 200% (WCAG 1.4.4) and reflow at 320px (1.4.10)', () {
     for (final entry in screens.entries) {
       testWidgets('${entry.key}: nothing overflows', (tester) async {

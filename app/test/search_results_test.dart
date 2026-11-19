@@ -490,6 +490,23 @@ void main() {
     });
   });
 
+  // UI review 2026-11-18, #12.
+  testWidgets('the wide filter rail labels its groups', (tester) async {
+    await pumpApp(tester, await TestEnv.create(), size: const Size(1280, 800));
+    await searchFor(tester, 'pride');
+    for (final label in ['Sources', 'Format', 'Language']) {
+      expect(find.descendant(of: find.byKey(const Key('filters')), matching: find.text(label)), findsOneWidget,
+          reason: label);
+    }
+  });
+
+  testWidgets("the phone's inline format chips have no visible group label", (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    await searchFor(tester, 'pride');
+    expect(find.byKey(const Key('filter-format-text')), findsOneWidget);
+    expect(find.text('Format'), findsNothing);
+  });
+
   group('filters on a phone (persona round one)', () {
     String buttonText(WidgetTester tester) => tester
         .widget<Text>(find.descendant(of: find.byKey(const Key('filters-button')), matching: find.byType(Text)))

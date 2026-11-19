@@ -228,11 +228,21 @@ class _Filters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleSmall = Theme.of(context).textTheme.titleSmall;
+    // On the wide rail and in the sheet each group shows its name; the group already says it to screen readers.
+    Widget visibleLabel(String label) => sourcesAndLanguage
+        ? ExcludeSemantics(
+            child: Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(label, style: titleSmall)))
+        : const SizedBox.shrink();
+    const gap = SizedBox(height: 16);
     Widget group(String label, List<Widget> children) => Semantics(
           container: true,
           label: label,
           explicitChildNodes: true,
-          child: Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: children),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            visibleLabel(label),
+            Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: children),
+          ]),
         );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,19 +256,27 @@ class _Filters extends StatelessWidget {
               onSelected: (_) => onToggleSource(id),
             ),
         ]),
+        if (sourcesAndLanguage && format) gap,
         if (format) group('Format', [
           for (final (key, label, format) in [
             ('all', 'All formats', null),
             ('text', 'Text', BookFormat.text),
             ('audio', 'Audio', BookFormat.audio),
           ])
-            ChoiceChip(
-              key: Key('filter-format-$key'),
-              label: Text(label),
-              selected: query.format == format,
-              onSelected: (_) => onFormat(format),
+            // One of a group: announced as a radio button, not a checkbox.
+            MergeSemantics(
+              child: Semantics(
+                inMutuallyExclusiveGroup: true,
+                child: ChoiceChip(
+                  key: Key('filter-format-$key'),
+                  label: Text(label),
+                  selected: query.format == format,
+                  onSelected: (_) => onFormat(format),
+                ),
+              ),
             ),
         ]),
+        if (sourcesAndLanguage) ...[gap, visibleLabel('Language')],
         // Without a label, a chosen language is announced as just "French, button".
         if (sourcesAndLanguage) Semantics(
           label: 'Language',
