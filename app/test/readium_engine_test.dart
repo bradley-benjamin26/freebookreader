@@ -216,6 +216,11 @@ void main() {
       expect(p.paragraphSpacing, 1.0, reason: 'Readium adds it above and below each paragraph');
     });
 
+    test('dark mode inverts images, so a scanned page is light ink on dark (UI review #22)', () {
+      expect(epubPreferences(const ReaderSettings(theme: ReaderTheme.dark)).imageFilter, EpubImageFilter.invert);
+      expect(epubPreferences(const ReaderSettings(theme: ReaderTheme.light)).imageFilter, isNull);
+    });
+
     test('fonts become CSS font stacks ending in a generic family', () {
       expect(cssFontStack(ReaderFont.serif), '"Georgia", "Times New Roman", "Noto Serif", "Literata", serif');
       expect(cssFontStack(ReaderFont.monospace), '"Menlo", "Courier New", "Roboto Mono", monospace');

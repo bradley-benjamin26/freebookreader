@@ -178,6 +178,9 @@ EPUBPreferences epubPreferences(ReaderSettings settings) => EPUBPreferences(
       paragraphSpacing: settings.paragraphSpacing / 2,
       backgroundColor: settings.backgroundColor,
       textColor: settings.textColor,
+      // Readium darkens the page, not its images: a scanned page would be dark ink on dark (UI review #22).
+      // shortcut: covers and photos are inverted too; add a per-book switch if readers mind.
+      imageFilter: settings.theme == ReaderTheme.dark ? EpubImageFilter.invert : null,
       scroll: settings.viewMode == ViewMode.scroll,
       // Otherwise the book's own CSS overrides spacing and line height.
       publisherStyles: false,
