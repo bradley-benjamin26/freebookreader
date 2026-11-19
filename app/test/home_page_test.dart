@@ -2,6 +2,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:free_book_reader/app.dart';
+import 'package:free_book_reader/models/models.dart';
 import 'package:free_book_reader/ui/common.dart' show Cover;
 
 import 'helpers/test_app.dart';
@@ -122,5 +124,22 @@ void main() {
   testWidgets('has no saved-books list yet (arrives with accounts)', (tester) async {
     await pumpApp(tester, await TestEnv.create());
     expect(find.byKey(const Key('saved-books')), findsNothing);
+  });
+
+  // UI review 2026-11-18, #18: one reading serif for titles; body text and the reader are unchanged.
+  test('titles use Literata', () {
+    final t = FreeBookReaderApp.theme(Brightness.light).textTheme;
+    for (final style in [t.headlineLarge, t.headlineMedium, t.headlineSmall, t.titleLarge, t.titleMedium]) {
+      expect(style!.fontFamily, 'Literata');
+    }
+    expect(t.bodyLarge!.fontFamily, isNot('Literata'));
+    expect(t.titleSmall!.fontFamily, isNot('Literata'));
+  });
+
+  testWidgets('the dropdowns keep the body font', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    expect(tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).style?.fontFamily,
+        isNot('Literata'));
+    expect(tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).style, isNotNull);
   });
 }

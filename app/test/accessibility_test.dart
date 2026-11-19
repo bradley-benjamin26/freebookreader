@@ -211,6 +211,14 @@ void main() {
       }
     });
 
+    testWidgets('on a 390 px phone Search in sits beside the box (UI review #11)', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: const Size(390, 844));
+      final field = tester.getRect(find.byKey(const Key('search-field')));
+      final searchIn = tester.getCenter(find.byKey(const Key('search-in')));
+      expect(searchIn.dy, inInclusiveRange(field.top, field.bottom));
+      expect(searchIn.dx, lessThan(field.left));
+    });
+
     testWidgets('results: nothing needs sideways scrolling', (tester) async {
       await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
       await searchFor(tester, 'pride');

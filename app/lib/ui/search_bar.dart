@@ -65,6 +65,7 @@ class _BookSearchBarState extends State<BookSearchBar> {
       child: DropdownButton<SearchField>(
         key: const Key('search-in'),
         value: _field,
+        style: Theme.of(context).textTheme.bodyLarge, // the default, titleMedium, is the title serif
         underline: const SizedBox.shrink(),
         items: [
           for (final entry in _fieldNames.entries)
@@ -94,7 +95,7 @@ class _BookSearchBarState extends State<BookSearchBar> {
     return LayoutBuilder(
       builder: (context, constraints) {
         // Too narrow for all three in a row: the choice goes on its own line above.
-        final narrow = constraints.maxWidth < MediaQuery.textScalerOf(context).scale(360);
+        final narrow = constraints.maxWidth < MediaQuery.textScalerOf(context).scale(320);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

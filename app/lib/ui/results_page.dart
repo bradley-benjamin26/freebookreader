@@ -283,6 +283,7 @@ class _Filters extends StatelessWidget {
           child: DropdownButton<String?>(
             key: const Key('filter-language'),
             isExpanded: true,
+            style: Theme.of(context).textTheme.bodyLarge, // the default, titleMedium, is the title serif
             value: query.language,
             onChanged: onLanguage,
             items: [

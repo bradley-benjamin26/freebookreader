@@ -63,10 +63,24 @@ class FreeBookReaderApp extends StatelessWidget {
 
   static const seed = Color(0xFF3B5BA9);
 
-  static ThemeData theme(Brightness brightness) => ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness),
-        materialTapTargetSize: MaterialTapTargetSize.padded,
-      );
+  static ThemeData theme(Brightness brightness) {
+    final t = ThemeData(
+      colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: brightness),
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+    );
+    // A reading serif for titles; body text stays in the platform font, and the reader has its own setting.
+    TextStyle? serif(TextStyle? s) => s?.copyWith(fontFamily: 'Literata');
+    final text = t.textTheme;
+    return t.copyWith(
+      textTheme: text.copyWith(
+        headlineLarge: serif(text.headlineLarge),
+        headlineMedium: serif(text.headlineMedium),
+        headlineSmall: serif(text.headlineSmall),
+        titleLarge: serif(text.titleLarge),
+        titleMedium: serif(text.titleMedium),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
