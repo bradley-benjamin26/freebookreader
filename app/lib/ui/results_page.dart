@@ -140,7 +140,7 @@ class _ResultsPageState extends State<ResultsPage> {
     return Scaffold(
       key: const Key('results-page'),
       appBar: AppBar(
-        title: Heading('Search results', key: const Key('results-heading'), maxLines: 1),
+        title: Heading('Search results', key: const Key('results-heading'), level: 1, maxLines: 1),
       ),
       body: LayoutBuilder(builder: (context, constraints) {
         if (constraints.maxWidth >= wideLayout) {
@@ -228,11 +228,21 @@ class _Filters extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final titleSmall = Theme.of(context).textTheme.titleSmall;
+    // On the wide rail and in the sheet each group shows its name; the group already says it to screen readers.
+    Widget visibleLabel(String label) => sourcesAndLanguage
+        ? ExcludeSemantics(
+            child: Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(label, style: titleSmall)))
+        : const SizedBox.shrink();
+    const gap = SizedBox(height: 16);
     Widget group(String label, List<Widget> children) => Semantics(
           container: true,
           label: label,
           explicitChildNodes: true,
-          child: Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: children),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            visibleLabel(label),
+            Wrap(spacing: 8, crossAxisAlignment: WrapCrossAlignment.center, children: children),
+          ]),
         );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,25 +256,34 @@ class _Filters extends StatelessWidget {
               onSelected: (_) => onToggleSource(id),
             ),
         ]),
+        if (sourcesAndLanguage && format) gap,
         if (format) group('Format', [
           for (final (key, label, format) in [
             ('all', 'All formats', null),
             ('text', 'Text', BookFormat.text),
             ('audio', 'Audio', BookFormat.audio),
           ])
-            ChoiceChip(
-              key: Key('filter-format-$key'),
-              label: Text(label),
-              selected: query.format == format,
-              onSelected: (_) => onFormat(format),
+            // One of a group: announced as a radio button, not a checkbox.
+            MergeSemantics(
+              child: Semantics(
+                inMutuallyExclusiveGroup: true,
+                child: ChoiceChip(
+                  key: Key('filter-format-$key'),
+                  label: Text(label),
+                  selected: query.format == format,
+                  onSelected: (_) => onFormat(format),
+                ),
+              ),
             ),
         ]),
+        if (sourcesAndLanguage) ...[gap, visibleLabel('Language')],
         // Without a label, a chosen language is announced as just "French, button".
         if (sourcesAndLanguage) Semantics(
           label: 'Language',
           child: DropdownButton<String?>(
             key: const Key('filter-language'),
             isExpanded: true,
+            style: Theme.of(context).textTheme.bodyLarge, // the default, titleMedium, is the title serif
             value: query.language,
             onChanged: onLanguage,
             items: [
@@ -426,10 +445,8 @@ class ResultRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
     final best = work.bestBook;
-    final formats = [
-      if (work.formats.contains('text')) 'Text',
-      if (work.formats.contains('audio')) 'Audio',
-    ].join(' and ');
+    final hasText = work.formats.contains('text'), hasAudio = work.formats.contains('audio');
+    final formats = hasText && hasAudio ? 'Text and audio' : hasText ? 'Text' : hasAudio ? 'Audio' : '';
     final note = matchNote(query, work);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 4),
@@ -443,7 +460,7 @@ class ResultRow extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Cover(key: const Key('cover'), title: work.title, url: work.coverUrl),
+              Cover(key: const Key('cover'), title: work.title, url: work.coverUrl, width: 64),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -451,15 +468,20 @@ class ResultRow extends StatelessWidget {
                   children: [
                     Text(work.title, style: text.titleMedium),
                     Text(formatAuthors(work.authors), style: text.bodyMedium),
-                    Text(work.sources.map(sourceName).join(', '), style: text.bodySmall),
-                    if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodySmall),
+                    // The sources are on the details page ("Available from"); cards stay short (UI review #10).
+                    if (note != null) Text(note, key: Key('result-match-${work.id}'), style: text.bodyMedium),
                     Text([if (formats.isNotEmpty) formats, languageName(work.language)].join(' · '),
-                        style: text.bodySmall),
+                        style: text.bodyMedium),
                     if (best != null) ...[
+                      const SizedBox(height: 4),
                       BookActionButton(key: Key('open-${work.id}'), work: work, book: best),
                       if (bookSummary(best) case final summary?)
-                        Text(summary, key: Key('result-edition-${work.id}'), style: text.bodySmall),
-                      Text(accessNote(best), key: Key('result-access-${work.id}'), style: text.bodySmall),
+                        Text(summary,
+                            key: Key('result-edition-${work.id}'),
+                            style: text.bodyMedium,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      Text(accessNote(best), key: Key('result-access-${work.id}'), style: text.bodyMedium),
                     ],
                   ],
                 ),

@@ -16,7 +16,7 @@ const _fieldNames = {
   SearchField.isbn: 'ISBN',
 };
 
-/// The search box, a choice of what to search in (anything, title, author, subject or ISBN), and the
+/// The search box, a dropdown of what to search in (anything, title, author, subject or ISBN), and the
 /// button. Calls [onSearch] with the field and the trimmed text, or explains why nothing happened when
 /// the box is empty or the text is longer than [maxSearchLength].
 class BookSearchBar extends StatefulWidget {
@@ -39,7 +39,7 @@ class _BookSearchBarState extends State<BookSearchBar> {
   late final TextEditingController _controller = TextEditingController(text: widget.initialText);
   late SearchField _field = widget.initialField;
   bool _showEmptyMessage = false;
-  int? _tooLongBy;   // the length of the text that was refused
+  int? _tooLongBy; // the length of the text that was refused
 
   @override
   void dispose() {
@@ -59,78 +59,76 @@ class _BookSearchBarState extends State<BookSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
+    final searchIn = Semantics(
+      container: true,
+      label: 'Search in',
+      child: DropdownButton<SearchField>(
+        key: const Key('search-in'),
+        value: _field,
+        style: Theme.of(context).textTheme.bodyLarge, // the default, titleMedium, is the title serif
+        underline: const SizedBox.shrink(),
+        items: [
+          for (final entry in _fieldNames.entries)
+            DropdownMenuItem(key: Key('search-in-${entry.key.name}'), value: entry.key, child: Text(entry.value)),
+        ],
+        onChanged: (field) => setState(() => _field = field ?? _field),
+      ),
+    );
+    final field = Expanded(
+      // One semantics node that starts at the field itself.
+      child: MergeSemantics(
+        child: TextField(
+          key: const Key('search-field'),
+          controller: _controller,
+          textInputAction: TextInputAction.search,
+          onSubmitted: (_) => _submit(),
+          onChanged: (text) {
+            if (_tooLongBy != null && text.trim().length <= maxSearchLength) {
+              setState(() => _tooLongBy = null);
+            }
+          },
+          decoration: const InputDecoration(labelText: 'Search books', border: OutlineInputBorder()),
+        ),
+      ),
+    );
+    final submit = FilledButton(key: const Key('search-submit'), onPressed: _submit, child: const Text('Search'));
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Too narrow for all three in a row: the choice goes on its own line above.
+        final narrow = constraints.maxWidth < MediaQuery.textScalerOf(context).scale(320);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              // One semantics node that starts at the field itself.
-              child: MergeSemantics(
-                child: TextField(
-                  key: const Key('search-field'),
-                  controller: _controller,
-                  textInputAction: TextInputAction.search,
-                  onSubmitted: (_) => _submit(),
-                  onChanged: (text) {
-                    if (_tooLongBy != null && text.trim().length <= maxSearchLength) {
-                      setState(() => _tooLongBy = null);
-                    }
-                  },
-                  decoration: const InputDecoration(
-                    labelText: 'Search books',
-                    border: OutlineInputBorder(),
+            if (narrow) Align(alignment: Alignment.centerLeft, child: searchIn),
+            Row(
+              children: [
+                if (!narrow) ...[searchIn, const SizedBox(width: 8)],
+                field,
+                const SizedBox(width: 8),
+                submit,
+              ],
+            ),
+            if (_tooLongBy != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: LiveRegion(
+                  key: const Key('search-too-long'),
+                  child: Text(
+                    'A search can have at most $maxSearchLength characters. This one has $_tooLongBy.',
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              key: const Key('search-submit'),
-              onPressed: _submit,
-              child: const Text('Search'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Semantics(
-          key: const Key('search-in'),
-          container: true,
-          label: 'Search in',
-          explicitChildNodes: true,
-          child: Wrap(
-            spacing: 8,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final entry in _fieldNames.entries)
-                ChoiceChip(
-                  key: Key('search-in-${entry.key.name}'),
-                  label: Text(entry.value),
-                  selected: _field == entry.key,
-                  onSelected: (_) => setState(() => _field = entry.key),
+            if (_showEmptyMessage)
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: LiveRegion(
+                  child: Text(emptySearchMessage, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ),
-            ],
-          ),
-        ),
-        if (_tooLongBy != null)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: LiveRegion(
-              key: const Key('search-too-long'),
-              child: Text(
-                  'A search can have at most $maxSearchLength characters. This one has $_tooLongBy.',
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-          ),
-        if (_showEmptyMessage)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: LiveRegion(
-              child: Text(emptySearchMessage,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
-            ),
-          ),
-      ],
+              ),
+          ],
+        );
+      },
     );
   }
 }

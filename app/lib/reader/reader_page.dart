@@ -52,7 +52,11 @@ class _ReaderPageState extends State<ReaderPage> {
 
   // On web the engine's view can be an iframe, which takes clicks meant for
   // Flutter widgets drawn over it; it is covered while the settings are open.
-  bool _settingsOpen = false;
+  bool _sheetOpen = false;
+  ReaderTheme? _appliedTheme;
+
+  /// The settings with Auto resolved by the platform's brightness.
+  ReaderSettings get _shown => _settings.value.resolve(MediaQuery.platformBrightnessOf(context));
 
   // Loading.
   bool _opened = false;
@@ -82,9 +86,17 @@ class _ReaderPageState extends State<ReaderPage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _services = Services.of(context);
-    if (_started) return;
+    if (_started) {
+      final shown = _shown;
+      if (shown.theme != _appliedTheme) {
+        _appliedTheme = shown.theme;
+        _engine?.apply(shown);
+      }
+      return;
+    }
     _started = true;
     _settings = ValueNotifier(_services.settingsStore.load())..addListener(_settingsChanged);
+    _appliedTheme = _shown.theme;
     final recording = widget.work.recordingsFor(widget.book).firstOrNull;
     if (recording != null && !_isPdf) _audio = AudioController(_services.audio, recording)..addListener(_audioChanged);
     final bookmark = _services.bookmarks.load(widget.book.key);
@@ -128,7 +140,7 @@ class _ReaderPageState extends State<ReaderPage> {
     _limit = Timer(loadLimit, () {
       if (mounted && !_opened) setState(() => _timedOut = true);
     });
-    engine.open(widget.book.reading, settings: _settings.value, at: _startAt).then((_) {
+    engine.open(widget.book.reading, settings: _shown, at: _startAt).then((_) {
       if (!mounted || attempt != _loadAttempt) return;
       _limit?.cancel();
       setState(() {
@@ -164,7 +176,9 @@ class _ReaderPageState extends State<ReaderPage> {
   void _settingsChanged() {
     final next = _settings.value;
     _services.settingsStore.save(next);
-    _engine?.apply(next);
+    final shown = _shown;
+    _appliedTheme = shown.theme;
+    _engine?.apply(shown);
     setState(() {});
   }
 
@@ -200,14 +214,50 @@ class _ReaderPageState extends State<ReaderPage> {
   }
 
   Future<void> _openSettings(BuildContext context) async {
-    setState(() => _settingsOpen = true);
+    setState(() => _sheetOpen = true);
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       showDragHandle: true,
       builder: (_) => ReaderSettingsSheet(settings: _settings),
     );
-    if (mounted) setState(() => _settingsOpen = false);
+    if (mounted) setState(() => _sheetOpen = false);
+  }
+
+  Future<void> _openContents(BuildContext context) async {
+    setState(() => _sheetOpen = true);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          key: const Key('contents-sheet'),
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Heading('Contents', style: Theme.of(sheet).textTheme.titleLarge),
+            ),
+            Flexible(
+              child: ListView(shrinkWrap: true, children: [
+                for (final (i, chapter) in _engine!.contents.indexed)
+                  ListTile(
+                    key: Key('contents-$i'),
+                    title: Text(chapter.title),
+                    onTap: () {
+                      _engine!.goTo(ReaderPosition(progress: 0, locator: chapter.locator));
+                      Navigator.of(sheet).pop();
+                    },
+                  ),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) setState(() => _sheetOpen = false);
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -227,7 +277,7 @@ class _ReaderPageState extends State<ReaderPage> {
 
   @override
   Widget build(BuildContext context) {
-    final settings = _settings.value;
+    final settings = _shown;
     final brightness = settings.theme == ReaderTheme.dark ? Brightness.dark : Brightness.light;
     final showText = !_isPdf && _opened;
     return Theme(
@@ -237,9 +287,15 @@ class _ReaderPageState extends State<ReaderPage> {
           key: const Key('reader-page'),
           backgroundColor: _isPdf ? null : settings.backgroundColor,
           appBar: AppBar(
-            title: Heading(widget.book.title, key: const Key('reader-title'), maxLines: 1),
+            title: Heading(widget.book.title, key: const Key('reader-title'), level: 1, maxLines: 1),
             actions: [
               if (showText) ...[
+                if (_engine!.contents.isNotEmpty)
+                  IconButton(
+                    key: const Key('contents-button'),
+                    onPressed: () => _openContents(context),
+                    icon: const Icon(Icons.toc, semanticLabel: 'Contents'),
+                  ),
                 IconButton(
                   key: const Key('bookmark-button'),
                   onPressed: _toggleBookmark,
@@ -269,7 +325,7 @@ class _ReaderPageState extends State<ReaderPage> {
                                     child: Focus(
                                         autofocus: true, onKeyEvent: _onKey, child: _engine!.buildView(context, locale: _bookLocale)),
                                   ),
-                                  if (_settingsOpen)
+                                  if (_sheetOpen)
                                     Positioned.fill(
                                       child: PointerInterceptor(
                                           key: const Key('reader-click-shield'), child: const SizedBox.expand()),

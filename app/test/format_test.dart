@@ -14,6 +14,13 @@ void main() {
     });
   });
 
+  group('formatClock', () {
+    test('seconds', () => expect(formatClock(const Duration(seconds: 5)), '0:05'));
+    test('minutes', () => expect(formatClock(const Duration(minutes: 12, seconds: 5)), '12:05'));
+    test('hours', () => expect(formatClock(const Duration(hours: 1, minutes: 2, seconds: 3)), '1:02:03'));
+    test('negative clamps to zero', () => expect(formatClock(const Duration(seconds: -3)), '0:00'));
+  });
+
   group('formatDate (month spelled out, so it reads the same everywhere)', () {
     test('a date', () => expect(formatDate(DateTime(2013, 5, 9)), 'May 9, 2013'));
     test('unknown', () => expect(formatDate(null), isNull));

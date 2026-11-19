@@ -93,13 +93,14 @@ class _AboutBody extends StatelessWidget {
             ],
           ),
         );
-    return Center(
+    return Align(
+      alignment: Alignment.topCenter,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 720),
         child: ScrollColumn(
           padding: const EdgeInsets.all(16),
           children: [
-            Heading(info.name, key: const Key('about-title'), style: text.headlineMedium),
+            Heading(info.name, key: const Key('about-title'), level: 1, style: text.headlineMedium),
             const SizedBox(height: 8),
             Text(info.description, key: const Key('about-description'), style: text.bodyLarge),
             section('How this app uses it', info.howItWorks, const Key('about-how-it-works')),

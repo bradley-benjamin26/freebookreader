@@ -121,11 +121,13 @@ class SearchService:
             elif isinstance(error, SourceError):
                 log.warning("source %s failed: %r", source.name, error)
                 self.outage.record_failure(source.name)
-                missing[source.name] = "outage"
+                # Before the limit of failures in a row, it is left out of this search only.
+                missing[source.name] = "error" if self.outage.is_available(source.name) else "outage"
             elif error is not None:
                 log.error("source %s adapter crashed", source.name, exc_info=error)
                 missing[source.name] = "error"
             else:
+                self.outage.record_success(source.name)
                 found[source.name] = future.result()
         return _in_source_order(sources, found), missing
 

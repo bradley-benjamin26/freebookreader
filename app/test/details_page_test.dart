@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:free_book_reader/models/models.dart';
+import 'package:free_book_reader/ui/common.dart' show BookActionButton;
 
 import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
@@ -429,6 +430,67 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('results-page')), findsOneWidget);
       expect(tester.widget<TextField>(find.byKey(const Key('search-field'))).controller!.text, 'pride');
+    });
+  });
+
+  // UI review 2026-11-18, #6, #13, #16.
+  group('what the page leads with', () {
+    testWidgets('no two book buttons have the same name (UI review #20)', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await openDetails(tester, 'w-pride');
+      final labels = [
+        for (final e in find.byType(BookActionButton).evaluate())
+          tester.getSemantics(find.byWidget(e.widget)).label,
+      ];
+      expect(labels.length, greaterThan(2));
+      expect(labels.toSet().length, labels.length, reason: '$labels');
+      expect(labels.first, 'Read Pride and Prejudice by Jane Austen');
+    });
+
+    Future<Work> audioFirst(WidgetTester tester, {Size size = phone}) async {
+      final env = await TestEnv.create();
+      final pride = env.api.response.works.first;
+      final books = [...pride.books]..sort((a, b) => a.format == BookFormat.audio ? -1 : 1);
+      final work = Work(id: pride.id, title: pride.title, authors: pride.authors, language: pride.language,
+          sources: pride.sources, identifiers: pride.identifiers, books: books);
+      expect(books.first.format, BookFormat.audio);
+      env.api.response = SearchResponse(works: [work], unavailableSources: const []);
+      await pumpApp(tester, env, size: size);
+      await openDetails(tester, 'w-pride');
+      return work;
+    }
+
+    double top(WidgetTester tester, Finder f) => tester.getTopLeft(f).dy;
+
+    testWidgets('the book the result button opens is listed first', (tester) async {
+      final work = await audioFirst(tester);
+      final cards = find.byWidgetPredicate((w) => w.key is ValueKey<String> &&
+          (w.key! as ValueKey<String>).value.startsWith('book-'));
+      final first = cards.evaluate().map((e) => e.widget.key! as ValueKey<String>).reduce((a, b) =>
+          top(tester, find.byKey(a)) <= top(tester, find.byKey(b)) ? a : b);
+      expect(first.value, 'book-${work.bestBook!.key}');
+    });
+
+    testWidgets('the main button is under the title', (tester) async {
+      final work = await audioFirst(tester);
+      final primary = find.byKey(const Key('details-primary'));
+      final button = tester.widget<BookActionButton>(
+          find.descendant(of: primary, matching: find.byType(BookActionButton)));
+      expect(button.book.key, work.bestBook!.key);
+      expect(top(tester, primary), lessThan(top(tester, find.byKey(const Key('details-metadata')))));
+      expect(top(tester, primary), greaterThan(top(tester, find.byKey(const Key('details-title')))));
+    });
+
+    testWidgets('the offline note comes last', (tester) async {
+      final work = await audioFirst(tester);
+      final lastCard = work.books.map((b) => tester.getBottomLeft(find.byKey(Key('book-${b.key}'))).dy).reduce(
+          (a, b) => a > b ? a : b);
+      expect(top(tester, find.byKey(const Key('offline-note'))), greaterThan(lastCard));
+    });
+
+    testWidgets('the page starts at the top on a wide screen', (tester) async {
+      await audioFirst(tester, size: const Size(1280, 800));
+      expect(top(tester, find.byKey(const Key('details-cover'))), lessThanOrEqualTo(100));
     });
   });
 }

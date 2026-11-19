@@ -35,6 +35,7 @@ class ReaderSettingsSheet extends StatelessWidget {
         child: ValueListenableBuilder<ReaderSettings>(
           valueListenable: settings,
           builder: (context, s, _) {
+            final shown = s.resolve(MediaQuery.platformBrightnessOf(context));
             Widget label(String name) => Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 4),
                   child: Text(name, style: text.titleSmall),
@@ -98,7 +99,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                     child: ClipRect(
                     child: Container(
                     key: const Key('settings-preview'),
-                    color: s.backgroundColor,
+                    color: shown.backgroundColor,
                     height: 150,
                     padding: const EdgeInsets.all(12),
                     child: OverflowBox(
@@ -107,9 +108,9 @@ class ReaderSettingsSheet extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(_previewParagraphs[0], style: s.textStyle),
+                          Text(_previewParagraphs[0], style: shown.textStyle),
                           SizedBox(height: s.paragraphSpacing * s.fontSize),
-                          Text(_previewParagraphs[1], style: s.textStyle),
+                          Text(_previewParagraphs[1], style: shown.textStyle),
                         ],
                       ),
                     ),
@@ -133,7 +134,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                           container: true,
                           label: 'Text size',
                           child: Text(s.fontSize.round().toString(),
-                              textAlign: TextAlign.center, style: text.titleMedium),
+                              textAlign: TextAlign.center, style: text.titleSmall),
                         ),
                       ),
                       OutlinedButton(
@@ -152,6 +153,7 @@ class ReaderSettingsSheet extends StatelessWidget {
                   ], s.fontFamily, (f) => _change((v) => v.copyWith(fontFamily: f))),
                   label('Colors'),
                   choices([
+                    (const Key('theme-system'), 'Auto', ReaderTheme.system),
                     (const Key('theme-light'), 'Light', ReaderTheme.light),
                     (const Key('theme-dark'), 'Dark', ReaderTheme.dark),
                   ], s.theme, (t) => _change((v) => v.copyWith(theme: t))),

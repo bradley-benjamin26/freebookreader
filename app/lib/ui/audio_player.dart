@@ -219,6 +219,21 @@ class AudioPlayerPanel extends StatelessWidget {
                 ),
               ),
             ),
+            // The slider already says where playback is.
+            ExcludeSemantics(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Wrap(alignment: WrapAlignment.spaceBetween, children: [
+                  Text(formatClock(Duration(seconds: value.round())),
+                      key: const Key('position-time'), style: Theme.of(context).textTheme.bodySmall),
+                  Text('-${formatClock(Duration(seconds: (max - value).round()))}',
+                      key: const Key('position-remaining'), style: Theme.of(context).textTheme.bodySmall),
+                  ]),
+                ),
+              ),
+            ),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: buttons),
             ?error,
           ],

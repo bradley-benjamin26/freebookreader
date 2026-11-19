@@ -8,9 +8,12 @@ import 'audio_page.dart';
 
 /// A page heading that screen readers announce as a heading.
 class Heading extends StatelessWidget {
-  const Heading(this.text, {super.key, this.style, this.textAlign, this.maxLines});
+  const Heading(this.text, {super.key, this.style, this.textAlign, this.maxLines, this.level = 2});
 
   final String text;
+
+  /// 1 for a page's title, 2 for its sections.
+  final int level;
   final TextStyle? style;
   final TextAlign? textAlign;
   final int? maxLines;
@@ -19,6 +22,7 @@ class Heading extends StatelessWidget {
   Widget build(BuildContext context) => Semantics(
         container: true,
         header: true,
+        headingLevel: level,
         child: Text(text,
             style: style,
             textAlign: textAlign,
@@ -86,6 +90,8 @@ class Cover extends StatelessWidget {
                   url!,
                   fit: BoxFit.cover,
                   excludeFromSemantics: true,
+                  // gutenberg.org sends no CORS header; an <img> element does not need one.
+                  webHtmlElementStrategy: WebHtmlElementStrategy.fallback,
                   errorBuilder: (_, _, _) => placeholder,
                 ),
         ),
@@ -96,12 +102,14 @@ class Cover extends StatelessWidget {
 
 /// The button that opens a book. It shows a verb ("Read", "Borrow") and its
 /// accessible name says which book and where, e.g. "Borrow Emma by Jane
-/// Austen at Open Library".
+/// Austen at Open Library". [detail] is added to that name, so a book card's button differs from the
+/// details page's main button.
 class BookActionButton extends StatelessWidget {
-  const BookActionButton({super.key, required this.work, required this.book});
+  const BookActionButton({super.key, required this.work, required this.book, this.detail});
 
   final Work work;
   final Book book;
+  final String? detail;
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +118,7 @@ class BookActionButton extends StatelessWidget {
       icon: Icon(book.inApp ? (book.format == BookFormat.audio ? Icons.headphones : Icons.menu_book)
           : Icons.open_in_new),
       label: Semantics(
-        label: actionLabel(book),
+        label: detail == null || detail!.isEmpty ? actionLabel(book) : '${actionLabel(book)}, $detail',
         excludeSemantics: true,
         child: Text(actionVerb(book)),
       ),

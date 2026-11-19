@@ -8,6 +8,8 @@ cleaning them costs nothing a reader would see.
 Only what is dangerous is cut out; every other byte stays as it was. The page is read the way an XML parser reads it
 (markup inside <script>, <style> and <title> is markup), so a script hidden where an HTML parser sees only text is
 found too.
+
+Gutenberg's header (`#pg-header`) is cut out too, so a book opens at its text, as in the app's own renderer.
 """
 import re
 from html import unescape
@@ -86,7 +88,8 @@ class _Finder(HTMLParser):
                 self._skipping[1] += 1
             return
         local = tag.rpartition(":")[2]      # <svg:script> is a script too
-        if local in _REMOVE_WITH_CONTENT:
+        # Not a danger: Gutenberg's header would be the first page Readium shows (UI review 2026-11-18 #3).
+        if local in _REMOVE_WITH_CONTENT or ("id", "pg-header") in attrs:
             if empty:
                 self.edits.append((start, end, ""))
             else:

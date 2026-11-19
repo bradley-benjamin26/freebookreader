@@ -42,6 +42,14 @@ class ReadiumReaderEngine implements ReaderEngine {
   bool _disposed = false;
   Publication? _publication;
   Locator? _initial;
+  List<ReaderChapter> _contents = const [];
+
+  /// Where the view opens.
+  @visibleForTesting
+  Locator? get startAt => _initial;
+
+  @override
+  List<ReaderChapter> get contents => _contents;
   double? _pendingProgress;
   ReaderPosition _position = ReaderPosition.start;
 
@@ -62,12 +70,20 @@ class ReadiumReaderEngine implements ReaderEngine {
       });
       if (_disposed) throw const ReaderOpenException('The reader was closed while the book opened.');
       _publication = publication;
+      final chapters = [
+        for (final link in publication.tocFlattened)
+          if (publication.locatorFromLink(link) case final locator?) (title: link.title ?? '', locator: locator),
+      ];
+      _contents = [for (final c in chapters) ReaderChapter(title: c.title, locator: jsonEncode(c.locator.toJson()))];
+      // A new book opens at its first contents entry: Gutenberg's first file is its licence and title page.
+      if (at == null && chapters.isNotEmpty) _initial = chapters.first.locator;
     } on ReadiumException catch (e) {
       throw ReaderOpenException(e.message);
     }
-    final locator = at?.locator == null ? null : Locator.fromJsonString(at!.locator!);
+    if (at == null) return;
+    final locator = at.locator == null ? null : Locator.fromJsonString(at.locator!);
     _initial = locator;
-    _pendingProgress = locator == null && at != null && at.progress > 0 ? at.progress : null;
+    _pendingProgress = locator == null && at.progress > 0 ? at.progress : null;
   }
 
   void _onLocator(Locator locator) {
@@ -162,6 +178,9 @@ EPUBPreferences epubPreferences(ReaderSettings settings) => EPUBPreferences(
       paragraphSpacing: settings.paragraphSpacing / 2,
       backgroundColor: settings.backgroundColor,
       textColor: settings.textColor,
+      // Readium darkens the page, not its images: a scanned page would be dark ink on dark (UI review #22).
+      // shortcut: covers and photos are inverted too; add a per-book switch if readers mind.
+      imageFilter: settings.theme == ReaderTheme.dark ? EpubImageFilter.invert : null,
       scroll: settings.viewMode == ViewMode.scroll,
       // Otherwise the book's own CSS overrides spacing and line height.
       publisherStyles: false,

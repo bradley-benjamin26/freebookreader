@@ -42,13 +42,14 @@ class _AudioPageState extends State<AudioPage> {
     return Scaffold(
       key: const Key('audio-page'),
       appBar: AppBar(title: Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis)),
-      body: Center(
+      body: Align(
+        alignment: Alignment.topCenter,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 720),
           child: ScrollColumn(
             padding: const EdgeInsets.all(16),
             children: [
-              Heading(book.title, key: const Key('audio-title'), style: text.headlineSmall),
+              Heading(book.title, key: const Key('audio-title'), level: 1, style: text.headlineSmall),
               Text(formatAuthors(book.authors), style: text.titleMedium),
               if (narrators != null) Text('Read by $narrators', style: text.bodyMedium),
               if (length != null) Text('Length: $length', style: text.bodyMedium),
@@ -64,6 +65,10 @@ class _AudioPageState extends State<AudioPage> {
                       ListTile(
                         key: Key('chapter-$i'),
                         selected: controller.chapter == i,
+                        // Not by colour alone.
+                        leading: controller.chapter == i
+                            ? const Icon(Icons.graphic_eq, semanticLabel: 'Current chapter')
+                            : const SizedBox(width: 24),
                         title: Text(chapter.title),
                         trailing: Text(formatDuration(chapter.durationSeconds) ?? ''),
                         onTap: () => controller.playChapter(i),

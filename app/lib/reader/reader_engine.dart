@@ -45,6 +45,14 @@ class ReaderOpenException implements Exception {
   String toString() => 'ReaderOpenException: $message';
 }
 
+/// One entry of a book's table of contents; [locator] is in the engine's own format.
+class ReaderChapter {
+  const ReaderChapter({required this.title, required this.locator});
+
+  final String title;
+  final String locator;
+}
+
 /// Shows a book's text. The reader page talks only to this, so the package
 /// behind it can change (see decision_reader.md). One engine reads one book.
 abstract class ReaderEngine {
@@ -70,6 +78,9 @@ abstract class ReaderEngine {
 
   /// Text-to-speech for this engine's book, or null when it cannot read aloud.
   ReadAloud? get readAloud;
+
+  /// The table of contents, flattened; empty until opened or when the book has none.
+  List<ReaderChapter> get contents;
 
   /// The book itself, once [open] has completed. [locale] is the book's language, so screen readers read
   /// its text in that language (the UI around it stays in the app's).

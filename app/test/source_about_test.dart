@@ -108,4 +108,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('home-heading')), findsOneWidget);
   });
+
+  // UI review 2026-11-18, #16.
+  testWidgets('About starts at the top on a wide screen', (tester) async {
+    await pumpApp(tester, await TestEnv.create(), size: const Size(1280, 800));
+    await openAbout(tester, 'librivox');
+    expect(tester.getTopLeft(find.byKey(const Key('about-title'))).dy, lessThanOrEqualTo(100));
+  });
 }

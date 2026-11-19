@@ -6,9 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:free_book_reader/api/search_api.dart';
 import 'package:free_book_reader/models/models.dart';
+import 'package:free_book_reader/ui/results_page.dart';
+import 'package:free_book_reader/util/format.dart';
 
 import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
+
+SearchField? searchIn(WidgetTester tester) =>
+    tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).value;
 
 void main() {
   group('the list', () {
@@ -25,7 +30,7 @@ void main() {
       expect(lefts, hasLength(1));
     });
 
-    testWidgets('each row has cover, author, title, source and a way to access the book',
+    testWidgets('each row has cover, author, title and a way to access the book',
         (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
@@ -33,25 +38,14 @@ void main() {
       expect(find.descendant(of: row, matching: find.byKey(const Key('cover'))), findsOneWidget);
       expect(find.descendant(of: row, matching: find.text('Pride and Prejudice')), findsOneWidget);
       expect(find.descendant(of: row, matching: find.text('Jane Austen')), findsOneWidget);
-      expect(find.descendant(of: row, matching: find.textContaining('Project Gutenberg')), findsOneWidget);
       expect(find.descendant(of: row, matching: find.byKey(const Key('open-w-pride'))), findsOneWidget);
-    });
-
-    testWidgets('a work available from several sources lists them all', (tester) async {
-      await pumpApp(tester, await TestEnv.create());
-      await searchFor(tester, 'pride');
-      final row = find.byKey(const Key('result-w-pride'));
-      for (final name in ['Project Gutenberg', 'LibriVox', 'Open Library']) {
-        expect(find.descendant(of: row, matching: find.textContaining(name)), findsWidgets, reason: name);
-      }
     });
 
     testWidgets('shows that a work has both text and audio', (tester) async {
       await pumpApp(tester, await TestEnv.create());
       await searchFor(tester, 'pride');
       final row = find.byKey(const Key('result-w-pride'));
-      expect(find.descendant(of: row, matching: find.textContaining('Text')), findsWidgets);
-      expect(find.descendant(of: row, matching: find.textContaining('Audio')), findsWidgets);
+      expect(find.descendant(of: row, matching: find.textContaining('Text and audio')), findsOneWidget);
     });
 
     testWidgets("the access button's name says what it does and for which book", (tester) async {
@@ -71,6 +65,16 @@ void main() {
       final cover = find.descendant(
           of: find.byKey(const Key('result-w-pride')), matching: find.byKey(const Key('cover')));
       expect(tester.getSemantics(cover), containsSemantics(label: 'Cover of Pride and Prejudice'));
+    });
+
+    testWidgets('covers can load from sites without CORS on web', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      await searchFor(tester, 'pride');
+      final cover = find.descendant(
+          of: find.byKey(const Key('result-w-pride')), matching: find.byKey(const Key('cover')));
+      final image = tester.widget<Image>(find.descendant(of: cover, matching: find.byType(Image)));
+      expect((image.image as NetworkImage).webHtmlElementStrategy, WebHtmlElementStrategy.fallback);
+      expect(tester.getSize(cover).width, 64);
     });
 
     testWidgets('a work without a cover still shows a placeholder', (tester) async {
@@ -141,11 +145,11 @@ void main() {
 
     testWidgets('the choices are labelled as a group and show which one is chosen', (tester) async {
       await pumpApp(tester, await TestEnv.create());
-      expect(tester.getSemantics(find.byKey(const Key('search-in'))), containsSemantics(label: 'Search in'));
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isTrue);
+      // The dropdown is a button named by the group and the current choice.
+      expect(tester.getSemantics(find.byKey(const Key('search-in'))).label, startsWith('Search in'));
+      expect(searchIn(tester), SearchField.anything);
       await chooseSearchField(tester, 'author');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-author'))).selected, isTrue);
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isFalse);
+      expect(searchIn(tester), SearchField.author);
     });
 
     testWidgets('a search from the home page keeps the choice on the results page', (tester) async {
@@ -153,7 +157,7 @@ void main() {
       await pumpApp(tester, env);
       await chooseSearchField(tester, 'title');
       await searchFor(tester, 'Emma');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
       await searchFor(tester, 'Persuasion');
       expect(env.api.queries.map((q) => q.title), ['Emma', 'Persuasion']);
     });
@@ -189,7 +193,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('filter-format-audio')));
       await tester.pumpAndSettle();
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
       expect(env.api.queries.last.title, 'The Time Machine');
       expect(env.api.queries.last.format, BookFormat.audio);
     });
@@ -255,8 +259,25 @@ void main() {
       expect(find.byKey(const Key('result-match-w-quijote')), findsOneWidget);
       expect(find.byKey(const Key('result-match-w-pride')), findsNothing);
       expect(find.text('Text · Polish'), findsOneWidget);
-      expect(find.text('Text and Audio · English'), findsOneWidget);
+      expect(find.text('Text and audio · English'), findsOneWidget);
     });
+  });
+
+  // UI review 2026-11-18, #9 and #10.
+  testWidgets('a result card shows title, author, one facts line, the button and where it opens', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    await searchFor(tester, 'pride');
+    final card = find.byKey(const Key('result-w-pride'));
+    final work = tester.widget<ResultRow>(find.ancestor(of: card, matching: find.byType(ResultRow))).work;
+    expect(find.descendant(of: card, matching: find.text(work.sources.map(sourceName).join(', '))), findsNothing);
+    expect(tester.widget<Text>(find.byKey(const Key('result-edition-w-pride'))).maxLines, 1);
+    expect(find.descendant(of: card, matching: find.text('Text and audio · English')), findsOneWidget);
+    final body = Theme.of(tester.element(card)).textTheme.bodyMedium!.fontSize!;
+    for (final t in tester.widgetList<Text>(find.descendant(of: card, matching: find.byType(Text)))) {
+      if (t.data == work.title) continue;
+      final size = DefaultTextStyle.of(tester.element(find.byWidget(t))).style.merge(t.style).fontSize!;
+      expect(size, greaterThanOrEqualTo(body), reason: '"${t.data}"');
+    }
   });
 
   group('what a result opens (persona round one)', () {
@@ -469,6 +490,23 @@ void main() {
     });
   });
 
+  // UI review 2026-11-18, #12.
+  testWidgets('the wide filter rail labels its groups', (tester) async {
+    await pumpApp(tester, await TestEnv.create(), size: const Size(1280, 800));
+    await searchFor(tester, 'pride');
+    for (final label in ['Sources', 'Format', 'Language']) {
+      expect(find.descendant(of: find.byKey(const Key('filters')), matching: find.text(label)), findsOneWidget,
+          reason: label);
+    }
+  });
+
+  testWidgets("the phone's inline format chips have no visible group label", (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    await searchFor(tester, 'pride');
+    expect(find.byKey(const Key('filter-format-text')), findsOneWidget);
+    expect(find.text('Format'), findsNothing);
+  });
+
   group('filters on a phone (persona round one)', () {
     String buttonText(WidgetTester tester) => tester
         .widget<Text>(find.descendant(of: find.byKey(const Key('filters-button')), matching: find.byType(Text)))
@@ -549,7 +587,7 @@ void main() {
       tester.view.physicalSize = phone;
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(find.byKey(const Key('search-field'))).controller!.text, 'Franken');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
     });
 
     testWidgets('on mobile the filters sit under the search box and above the results',

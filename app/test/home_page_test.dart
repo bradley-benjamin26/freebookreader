@@ -2,6 +2,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:free_book_reader/app.dart';
+import 'package:free_book_reader/models/models.dart';
+import 'package:free_book_reader/ui/common.dart' show Cover;
+
 import 'helpers/test_app.dart';
 
 void main() {
@@ -21,14 +25,34 @@ void main() {
     expect(find.text('Sources: Project Gutenberg, LibriVox, DOAB, Open Library and HathiTrust.'), findsOneWidget);
   });
 
-  // The web build announced these as checkboxes: Flutter gives an ActionChip a selected state.
-  testWidgets('example books are plain buttons, not things to select', (tester) async {
+  // The web build announced chips as checkboxes: these are plain buttons, named by the title.
+  // UI review 2026-11-18, #17: a cover and a title each.
+  testWidgets('examples show a cover and a title, and search by title', (tester) async {
     final handle = tester.ensureSemantics();
-    await pumpApp(tester, await TestEnv.create());
-    final chip = find.descendant(of: find.byKey(const Key('example-books')), matching: find.byType(ActionChip)).first;
-    expect(tester.getSemantics(chip),
+    final env = await TestEnv.create();
+    await pumpApp(tester, env);
+    final examples = find.byKey(const Key('example-books'));
+    expect(find.descendant(of: examples, matching: find.byType(Cover)), findsNWidgets(4));
+    final first = find.byKey(const Key('example-1342'));
+    expect(tester.getSemantics(first),
         containsSemantics(label: 'Pride and Prejudice', isButton: true, hasSelectedState: false));
+    await tester.tap(first);
+    await tester.pumpAndSettle();
+    expect(env.api.queries.single.title, 'Pride and Prejudice');
     handle.dispose();
+  });
+
+  testWidgets('the sources are a compact row of links', (tester) async {
+    await pumpApp(tester, await TestEnv.create(), size: const Size(1280, 800));
+    for (final (id, name) in [
+      ('gutenberg', 'Project Gutenberg'), ('librivox', 'LibriVox'), ('doab', 'DOAB'),
+      ('openlibrary', 'Open Library'), ('hathitrust', 'HathiTrust'),
+    ]) {
+      final link = find.byKey(Key('about-link-$id'));
+      expect(tester.widget(link), isA<TextButton>(), reason: id);
+      expect(find.descendant(of: link, matching: find.text(name)), findsOneWidget, reason: id);
+      expect(tester.getRect(link).bottom, lessThanOrEqualTo(800), reason: id);
+    }
   });
 
   testWidgets('has a search box and a submit button with accessible names', (tester) async {
@@ -76,18 +100,6 @@ void main() {
     expect(env.api.queries.single.q, 'emma');
   });
 
-  testWidgets('shows example books that can be searched with one tap', (tester) async {
-    final env = await TestEnv.create();
-    await pumpApp(tester, env);
-    final examples = find.descendant(
-        of: find.byKey(const Key('example-books')), matching: find.byType(ActionChip));
-    expect(examples, findsAtLeastNWidgets(3));
-    await tester.tap(examples.first);
-    await tester.pumpAndSettle();
-    expect(env.api.queries, hasLength(1));
-    expect(find.byKey(const Key('results-page')), findsOneWidget);
-  });
-
   testWidgets('links to an About page for each of the five sources', (tester) async {
     await pumpApp(tester, await TestEnv.create());
     for (final id in ['gutenberg', 'librivox', 'doab', 'openlibrary', 'hathitrust']) {
@@ -112,5 +124,22 @@ void main() {
   testWidgets('has no saved-books list yet (arrives with accounts)', (tester) async {
     await pumpApp(tester, await TestEnv.create());
     expect(find.byKey(const Key('saved-books')), findsNothing);
+  });
+
+  // UI review 2026-11-18, #18: one reading serif for titles; body text and the reader are unchanged.
+  test('titles use Literata', () {
+    final t = FreeBookReaderApp.theme(Brightness.light).textTheme;
+    for (final style in [t.headlineLarge, t.headlineMedium, t.headlineSmall, t.titleLarge, t.titleMedium]) {
+      expect(style!.fontFamily, 'Literata');
+    }
+    expect(t.bodyLarge!.fontFamily, isNot('Literata'));
+    expect(t.titleSmall!.fontFamily, isNot('Literata'));
+  });
+
+  testWidgets('the dropdowns keep the body font', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    expect(tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).style?.fontFamily,
+        isNot('Literata'));
+    expect(tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).style, isNotNull);
   });
 }

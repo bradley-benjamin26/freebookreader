@@ -506,3 +506,39 @@ class TestWorkFields:
             book("librivox", "2", "Emma", ["Austen, Jane"], format="audio"),
         ])
         assert len(works[0].authors) == 1
+
+
+class TestAuthorNames:
+    """UI review 2026-11-18 #14: "Mary Wollstonecraft Shelley and Mary Shelley" was one person twice."""
+
+    def frankenstein(self, ol_authors, gutenberg_authors=("Shelley, Mary Wollstonecraft, 1797-1851",)):
+        works = merge_books([
+            book("gutenberg", "84", "Frankenstein", list(gutenberg_authors)),
+            book("openlibrary", "OL1M", "Frankenstein", list(ol_authors), identifiers={"gutenberg": ["84"]}),
+        ])
+        assert len(works) == 1
+        return works[0]
+
+    def test_a_shorter_spelling_of_the_same_author_is_dropped(self):
+        assert self.frankenstein(["Mary Shelley"]).authors == ["Mary Wollstonecraft Shelley"]
+
+    def test_coauthors_with_one_surname_are_kept(self):
+        works = merge_books([book("gutenberg", "1", "Poems", ["Shelley, Percy Bysshe", "Shelley, Mary Wollstonecraft"])])
+        assert works[0].authors == ["Percy Bysshe Shelley", "Mary Wollstonecraft Shelley"]
+
+    def test_author_order_follows_the_text_record(self):
+        work = self.frankenstein(["Mary Shelley", "Percy Bysshe Shelley"])
+        assert work.authors == ["Mary Wollstonecraft Shelley", "Percy Bysshe Shelley"]
+
+    def test_a_shorter_name_in_the_same_record_is_kept(self):
+        works = merge_books([book("gutenberg", "1", "Letters", ["Mary Shelley", "Mary Wollstonecraft Shelley"])])
+        assert works[0].authors == ["Mary Shelley", "Mary Wollstonecraft Shelley"]
+
+    def test_an_author_name_with_no_letters_does_not_break_the_merge(self):
+        assert self.frankenstein(["Mary Shelley", "?"]).authors[0] == "Mary Wollstonecraft Shelley"
+
+    def test_the_longer_spelling_takes_the_shorter_ones_place(self):
+        # UI review 2026-11-18 #19: the text record's order holds even when its spelling is the shorter one.
+        work = self.frankenstein(["Percy Bysshe Shelley", "Mary Wollstonecraft Shelley"],
+                                 gutenberg_authors=["Shelley, Mary", "Shelley, Percy Bysshe"])
+        assert work.authors == ["Mary Wollstonecraft Shelley", "Percy Bysshe Shelley"]

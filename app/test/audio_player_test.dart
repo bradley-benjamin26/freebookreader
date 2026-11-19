@@ -44,6 +44,13 @@ void main() {
       expect(find.textContaining('13 hr 6 min'), findsWidgets);
     });
 
+    testWidgets('starts at the top on a wide screen (UI review #21)', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env, size: const Size(1280, 800));
+      await openAudio(tester, env);
+      expect(tester.getTopLeft(find.byKey(const Key('audio-title'))).dy, lessThanOrEqualTo(100));
+    });
+
     testWidgets('has the player but no text viewer', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
@@ -299,6 +306,44 @@ void main() {
       env.audio.emitStatus(playing: false);
       await tester.pumpAndSettle();
       expect(playLabel(tester), 'Play');
+    });
+  });
+
+  // UI review 2026-11-18, #15.
+  group('times and the playing chapter', () {
+    testWidgets('the full player shows time played and time left', (tester) async {
+      final env = await TestEnv.create(response: modified((pride) {
+        final book = (pride['books'] as List).cast<Map<String, dynamic>>().firstWhere((b) => b['source'] == 'librivox');
+        ((book['chapters'] as List).first as Map<String, dynamic>)['duration_seconds'] = 1200;
+      }));
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('play-pause')));
+      await tester.pumpAndSettle();
+      final url = Uri.parse(env.audio.calls.last.split(' ').last);
+      env.audio.emitPosition(url, const Duration(minutes: 1, seconds: 5));
+      await tester.pumpAndSettle();
+      expect(tester.widget<Text>(find.byKey(const Key('position-time'))).data, '1:05');
+      expect(tester.widget<Text>(find.byKey(const Key('position-remaining'))).data, '-18:55');
+      // At the two ends of the slider, not side by side.
+      final slider = tester.getRect(find.byKey(const Key('position-slider')));
+      expect(tester.getRect(find.byKey(const Key('position-remaining'))).right, greaterThan(slider.right - 40));
+      expect(tester.getRect(find.byKey(const Key('position-time'))).left, lessThan(slider.left + 40));
+      for (final key in ['position-time', 'position-remaining']) {
+        expect(find.ancestor(of: find.byKey(Key(key)), matching: find.byType(ExcludeSemantics)), findsWidgets);
+      }
+    });
+
+    testWidgets('the playing chapter has an icon', (tester) async {
+      final env = await TestEnv.create();
+      await pumpApp(tester, env);
+      await openAudio(tester, env);
+      await tester.tap(find.byKey(const Key('chapter-1')));
+      await tester.pumpAndSettle();
+      Iterable<Icon> icons(int i) => tester.widgetList<Icon>(
+          find.descendant(of: find.byKey(Key('chapter-$i')), matching: find.byType(Icon)));
+      expect(icons(1).single.semanticLabel, 'Current chapter');
+      expect(icons(0), isEmpty);
     });
   });
 

@@ -131,6 +131,9 @@ class TextReaderEngine extends ChangeNotifier implements ReaderEngine {
   @override
   ReadAloud? get readAloud => _readAloud;
 
+  @override
+  List<ReaderChapter> get contents => const [];
+
   /// The first word on screen: where reading aloud starts.
   int get _firstWord => _scrolling ? (_scroll?.anchor() ?? _anchor) : _anchor;
 

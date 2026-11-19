@@ -7,7 +7,12 @@ import 'common.dart';
 import 'results_page.dart';
 import 'search_bar.dart';
 
-const exampleSearches = ['Pride and Prejudice', 'Frankenstein', 'Moby Dick', 'The Odyssey'];
+const exampleBooks = [
+  (title: 'Pride and Prejudice', gutenberg: 1342),
+  (title: 'Frankenstein', gutenberg: 84),
+  (title: 'Moby Dick', gutenberg: 2701),
+  (title: 'The Odyssey', gutenberg: 1727),
+];
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -22,7 +27,8 @@ class HomePage extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
-        child: Center(
+        child: Align(
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 640),
             child: ScrollColumn(
@@ -30,7 +36,7 @@ class HomePage extends StatelessWidget {
               children: [
                 const SizedBox(height: 8),
                 Heading('Free Book Reader',
-                    key: const Key('home-heading'),
+                    key: const Key('home-heading'), level: 1,
                     style: text.headlineMedium,
                     textAlign: TextAlign.center),
                 const SizedBox(height: 16),
@@ -47,35 +53,60 @@ class HomePage extends StatelessWidget {
                 const SizedBox(height: 24),
                 Heading('Try one of these', style: text.titleMedium),
                 const SizedBox(height: 8),
-                Wrap(
+                SingleChildScrollView(
                   key: const Key('example-books'),
-                  spacing: 8,
-                  children: [
-                    for (final example in exampleSearches)
-                      // Flutter gives an ActionChip a selected state, which the web announces as a checkbox.
-                      Semantics(
-                        button: true,
-                        focusable: true,
-                        label: example,
-                        onTap: () => _search(context, SearchField.title, example),
-                        excludeSemantics: true,
-                        child: ActionChip(
-                          label: Text(example),
-                          onPressed: () => _search(context, SearchField.title, example),
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      for (final example in exampleBooks)
+                        // One button named by the title (an ActionChip was announced as a checkbox on the web).
+                        Semantics(
+                          key: Key('example-${example.gutenberg}'),
+                          button: true,
+                          focusable: true,
+                          label: example.title,
+                          onTap: () => _search(context, SearchField.title, example.title),
+                          excludeSemantics: true,
+                          child: InkWell(
+                            onTap: () => _search(context, SearchField.title, example.title),
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: SizedBox(
+                                width: 96,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Cover(
+                                        title: example.title,
+                                        url: 'https://www.gutenberg.org/cache/epub/${example.gutenberg}'
+                                            '/pg${example.gutenberg}.cover.medium.jpg',
+                                        width: 96),
+                                    const SizedBox(height: 4),
+                                    Text(example.title,
+                                        style: text.bodyMedium, maxLines: 2, overflow: TextOverflow.ellipsis),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Heading('Where the books come from', style: text.titleMedium),
-                for (final id in sourceIds)
-                  ListTile(
-                    key: Key('about-link-$id'),
-                    title: Text('About ${sourceName(id)}'),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(builder: (_) => AboutPage(sourceId: id))),
-                  ),
+                Wrap(
+                  children: [
+                    for (final id in sourceIds)
+                      TextButton(
+                        key: Key('about-link-$id'),
+                        onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(builder: (_) => AboutPage(sourceId: id))),
+                        child: Text(sourceName(id)),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),

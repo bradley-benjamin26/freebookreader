@@ -20,6 +20,7 @@ def test_defaults():
     assert settings.max_concurrent_searches == 20
     assert settings.search_admission_seconds == 3
     assert settings.outage_cooldown_hours == 24
+    assert settings.outage_failures == 3
     assert settings.search_cache_seconds == 300
 
 
@@ -30,6 +31,7 @@ def test_environment_overrides():
         "FBR_MAX_CONCURRENT_SEARCHES": "3",
         "FBR_SEARCH_ADMISSION_SECONDS": "1.5",
         "FBR_OUTAGE_COOLDOWN_HOURS": "1",
+        "FBR_OUTAGE_FAILURES": "5",
         "FBR_SEARCH_CACHE_SECONDS": "0",
     })
     assert settings.gutendex_url == "http://gutendex:8000"
@@ -37,6 +39,7 @@ def test_environment_overrides():
     assert settings.max_concurrent_searches == 3
     assert settings.search_admission_seconds == 1.5
     assert settings.outage_cooldown_hours == 1
+    assert settings.outage_failures == 5
     assert settings.search_cache_seconds == 0
 
 

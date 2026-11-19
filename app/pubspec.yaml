@@ -25,3 +25,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Titles (UI review 2026-11-18). Literata 3.103 variable, SIL OFL 1.1 (assets/fonts/OFL.txt).
+  fonts:
+    - family: Literata
+      fonts:
+        - asset: assets/fonts/Literata[opsz,wght].ttf

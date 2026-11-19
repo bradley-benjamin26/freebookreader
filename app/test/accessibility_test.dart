@@ -91,7 +91,20 @@ void main() {
             containsSemantics(isHeader: true));
         handle.dispose();
       });
+
+      // UI review 2026-11-18, #8.
+      testWidgets('${entry.key} title is heading level 1', (tester) async {
+        final env = await TestEnv.create();
+        await pumpApp(tester, env);
+        await entry.value.go(tester, env);
+        expect(tester.getSemantics(find.byKey(Key(entry.value.heading))).getSemanticsData().headingLevel, 1);
+      });
     }
+
+    testWidgets('a section heading is level 2', (tester) async {
+      await pumpApp(tester, await TestEnv.create());
+      expect(tester.getSemantics(find.text('Try one of these')).getSemanticsData().headingLevel, 2);
+    });
   });
 
   group('section titles and labels (WCAG 1.3.1, 2.4.6, 4.1.2; review 2026-10-11, #23)', () {
@@ -140,6 +153,16 @@ void main() {
     });
   });
 
+  // UI review 2026-11-18, #7: one choice of several is a radio button, not a checkbox (4.1.2).
+  testWidgets('format choices are one-of-a-group', (tester) async {
+    await pumpApp(tester, await TestEnv.create());
+    await searchFor(tester, 'pride');
+    for (final key in ['all', 'text', 'audio']) {
+      expect(tester.getSemantics(find.byKey(Key('filter-format-$key'))),
+          containsSemantics(isInMutuallyExclusiveGroup: true), reason: key);
+    }
+  });
+
   group('resize text to 200% (WCAG 1.4.4) and reflow at 320px (1.4.10)', () {
     for (final entry in screens.entries) {
       testWidgets('${entry.key}: nothing overflows', (tester) async {
@@ -169,6 +192,31 @@ void main() {
       expect(screen.contains(tester.getCenter(find.byKey(const Key('search-field')))), isTrue);
       expect(tester.getRect(find.byKey(const Key('search-submit'))).right,
           lessThanOrEqualTo(smallPhone.width));
+    });
+
+    testWidgets('result cards fit at 200% text on a small phone', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
+      await searchFor(tester, 'pride');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('the search row fits at 200% text on a small phone', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
+      expect(tester.takeException(), isNull);
+      final screen = Offset.zero & smallPhone;
+      for (final key in ['search-in', 'search-field', 'search-submit']) {
+        final rect = tester.getRect(find.byKey(Key(key)));
+        expect(screen.contains(rect.topLeft) && screen.contains(rect.bottomRight - const Offset(1, 1)), isTrue,
+            reason: key);
+      }
+    });
+
+    testWidgets('on a 390 px phone Search in sits beside the box (UI review #11)', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: const Size(390, 844));
+      final field = tester.getRect(find.byKey(const Key('search-field')));
+      final searchIn = tester.getCenter(find.byKey(const Key('search-in')));
+      expect(searchIn.dy, inInclusiveRange(field.top, field.bottom));
+      expect(searchIn.dx, lessThan(field.left));
     });
 
     testWidgets('results: nothing needs sideways scrolling', (tester) async {
@@ -206,9 +254,13 @@ void main() {
   });
 
   group('keyboard (WCAG 2.1.1, 2.1.2, 2.4.3)', () {
-    testWidgets('home: Tab reaches the search box, then the button; Enter searches', (tester) async {
+    testWidgets('home: Tab reaches Search in, the search box, then the button; Enter searches', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final focused = FocusManager.instance.primaryFocus!.context!;
+      expect(focused.findAncestorWidgetOfExactType<DropdownButton<SearchField>>()?.key, const Key('search-in'));
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
       final field = find.descendant(of: find.byKey(const Key('search-field')), matching: find.byType(EditableText));

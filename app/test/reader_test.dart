@@ -10,6 +10,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:free_book_reader/reader/reader_engine.dart';
 import 'package:free_book_reader/reader/reader_settings.dart';
 import 'package:free_book_reader/storage/bookmark_store.dart';
 
@@ -286,7 +287,8 @@ void main() {
     testWidgets('the engine opens with the defaults', (tester) async {
       final env = await readerEnv(tester);
       await openBook(tester, env, 'w-pride', gutenberg);
-      expect(env.engines.last.settings, const ReaderSettings());
+      // Auto reaches the engine resolved; the test platform is light.
+      expect(env.engines.last.settings, const ReaderSettings(theme: ReaderTheme.light));
     });
 
     // Persona round one (Ruth, Morgan): see the text before settling in; on web the sheet covers the book.
@@ -367,6 +369,8 @@ void main() {
       await openSettings(tester);
       expect(find.descendant(of: find.byKey(const Key('font-size-value')), matching: find.text('18')),
           findsOneWidget);
+      final value = tester.widget<Text>(find.text('18'));
+      expect(value.style?.fontFamily, isNot('Literata'), reason: 'UI review #24: the labels around it are not the title serif');
     });
 
     testWidgets('font size stops at the limits', (tester) async {
@@ -479,6 +483,77 @@ void main() {
       expect(tester.getSemantics(find.byKey(const Key('theme-dark'))), containsSemantics(isSelected: true));
       expect(tester.getSemantics(find.byKey(const Key('theme-light'))),
           isNot(containsSemantics(isSelected: true)));
+    });
+  });
+
+  // UI review 2026-11-18, #4.
+  group('contents', () {
+    testWidgets('Contents opens a list and goes to the chosen chapter', (tester) async {
+      final env = await TestEnv.create();
+      env.engines.contents = const [
+        ReaderChapter(title: 'Letter I', locator: 'fake:2'),
+        ReaderChapter(title: 'Chapter 1', locator: 'fake:5'),
+      ];
+      await pumpApp(tester, env);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(tester.getSemantics(find.byKey(const Key('contents-button'))), containsSemantics(label: 'Contents'));
+      await tester.tap(find.byKey(const Key('contents-button')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('contents-sheet')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('contents-1')));
+      await tester.pumpAndSettle();
+      expect(env.engines.last.wentTo.single.locator, 'fake:5');
+      expect(find.byKey(const Key('contents-sheet')), findsNothing);
+    });
+
+    testWidgets('no Contents button when the book has none', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(find.byKey(const Key('contents-button')), findsNothing);
+    });
+  });
+
+  group('following the system', () {
+    void darkSystem(WidgetTester tester) {
+      tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+    }
+
+    testWidgets('the reader is dark on a dark system', (tester) async {
+      darkSystem(tester);
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.dark);
+      final box = tester.widget<ColoredBox>(find.descendant(
+          of: find.byKey(const Key('reader-surface')), matching: find.byType(ColoredBox)).first);
+      expect(box.color, const Color(0xFF121212));
+    });
+
+    testWidgets('an explicit Light stays light in dark mode', (tester) async {
+      darkSystem(tester);
+      final env = await readerEnv(tester, prefs: {'reader_settings': '{"theme":"light"}'});
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
+    });
+
+    testWidgets('the reader follows a brightness change while open', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      expect(env.engines.last.settings!.theme, ReaderTheme.light);
+      darkSystem(tester);
+      await tester.pumpAndSettle();
+      expect(env.engines.last.applied.last.theme, ReaderTheme.dark);
+    });
+
+    testWidgets('the settings sheet offers Auto, Light and Dark', (tester) async {
+      final env = await readerEnv(tester);
+      await openBook(tester, env, 'w-pride', gutenberg);
+      await openSettings(tester);
+      for (final k in ['theme-system', 'theme-light', 'theme-dark']) {
+        expect(find.byKey(Key(k)), findsOneWidget);
+      }
+      expect(find.text('Auto'), findsOneWidget);
+      expect(tester.getSemantics(find.byKey(const Key('theme-system'))), containsSemantics(isSelected: true));
     });
   });
 

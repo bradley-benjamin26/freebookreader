@@ -57,6 +57,7 @@ class Settings:
     # (review 2026-10-11, #3: waiting without a limit took a search past the 15 s the spec allows).
     search_admission_seconds: float = 3
     outage_cooldown_hours: float = 24
+    outage_failures: int = 3          # failures in a row before the cooldown starts
     # How long a source's answer to a query is reused (audit 2026-10-27, F1). 0 turns the cache off.
     search_cache_seconds: float = 300
     cors_origins: tuple[str, ...] = ("*",)
@@ -91,6 +92,7 @@ class Settings:
             max_concurrent_searches=int(_number(get("MAX_CONCURRENT_SEARCHES", cls.max_concurrent_searches))),
             search_admission_seconds=_number(get("SEARCH_ADMISSION_SECONDS", cls.search_admission_seconds)),
             outage_cooldown_hours=_number(get("OUTAGE_COOLDOWN_HOURS", cls.outage_cooldown_hours)),
+            outage_failures=max(1, int(_number(get("OUTAGE_FAILURES", cls.outage_failures)))),
             search_cache_seconds=_number(get("SEARCH_CACHE_SECONDS", cls.search_cache_seconds)),
             cors_origins=tuple(o.strip() for o in origins.split(",")) if origins else cls.cors_origins,
             project_name=file.get("projectName") or None,
@@ -126,7 +128,8 @@ def build_search_service(settings: Settings, client: httpx.Client) -> SearchServ
         DoabSource(client=client, base_url=settings.doab_url),
         HathiTrustSource(HathiIndex(settings.hathitrust_index)),
     ]
-    outage = OutageTracker(cooldown=timedelta(hours=settings.outage_cooldown_hours))
+    outage = OutageTracker(cooldown=timedelta(hours=settings.outage_cooldown_hours),
+                           failures=settings.outage_failures)
     return SearchService(sources=sources, outage=outage, timeout_seconds=settings.search_timeout_seconds,
                          cache_seconds=settings.search_cache_seconds)
 
