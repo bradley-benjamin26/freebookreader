@@ -177,6 +177,17 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('the search row fits at 200% text on a small phone', (tester) async {
+      await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
+      expect(tester.takeException(), isNull);
+      final screen = Offset.zero & smallPhone;
+      for (final key in ['search-in', 'search-field', 'search-submit']) {
+        final rect = tester.getRect(find.byKey(Key(key)));
+        expect(screen.contains(rect.topLeft) && screen.contains(rect.bottomRight - const Offset(1, 1)), isTrue,
+            reason: key);
+      }
+    });
+
     testWidgets('results: nothing needs sideways scrolling', (tester) async {
       await pumpApp(tester, await TestEnv.create(), size: smallPhone, textScale: 2.0);
       await searchFor(tester, 'pride');
@@ -212,9 +223,13 @@ void main() {
   });
 
   group('keyboard (WCAG 2.1.1, 2.1.2, 2.4.3)', () {
-    testWidgets('home: Tab reaches the search box, then the button; Enter searches', (tester) async {
+    testWidgets('home: Tab reaches Search in, the search box, then the button; Enter searches', (tester) async {
       final env = await TestEnv.create();
       await pumpApp(tester, env);
+      await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+      await tester.pump();
+      final focused = FocusManager.instance.primaryFocus!.context!;
+      expect(focused.findAncestorWidgetOfExactType<DropdownButton<SearchField>>()?.key, const Key('search-in'));
       await tester.sendKeyEvent(LogicalKeyboardKey.tab);
       await tester.pump();
       final field = find.descendant(of: find.byKey(const Key('search-field')), matching: find.byType(EditableText));

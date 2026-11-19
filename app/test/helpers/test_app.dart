@@ -121,7 +121,9 @@ Future<void> searchFor(WidgetTester tester, String text) async {
 
 /// Picks what the search box searches in: anything, title, author, subject or isbn.
 Future<void> chooseSearchField(WidgetTester tester, String field) async {
-  await tester.tap(find.byKey(Key('search-in-$field')));
+  await tester.tap(find.byKey(const Key('search-in')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('search-in-$field')).last);
   await tester.pumpAndSettle();
 }
 

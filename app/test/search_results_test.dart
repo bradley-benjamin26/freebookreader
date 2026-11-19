@@ -12,6 +12,9 @@ import 'package:free_book_reader/util/format.dart';
 import 'helpers/fixtures.dart';
 import 'helpers/test_app.dart';
 
+SearchField? searchIn(WidgetTester tester) =>
+    tester.widget<DropdownButton<SearchField>>(find.byKey(const Key('search-in'))).value;
+
 void main() {
   group('the list', () {
     testWidgets('shows a row for each work, in a single column', (tester) async {
@@ -142,11 +145,11 @@ void main() {
 
     testWidgets('the choices are labelled as a group and show which one is chosen', (tester) async {
       await pumpApp(tester, await TestEnv.create());
-      expect(tester.getSemantics(find.byKey(const Key('search-in'))), containsSemantics(label: 'Search in'));
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isTrue);
+      // The dropdown is a button named by the group and the current choice.
+      expect(tester.getSemantics(find.byKey(const Key('search-in'))).label, startsWith('Search in'));
+      expect(searchIn(tester), SearchField.anything);
       await chooseSearchField(tester, 'author');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-author'))).selected, isTrue);
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-anything'))).selected, isFalse);
+      expect(searchIn(tester), SearchField.author);
     });
 
     testWidgets('a search from the home page keeps the choice on the results page', (tester) async {
@@ -154,7 +157,7 @@ void main() {
       await pumpApp(tester, env);
       await chooseSearchField(tester, 'title');
       await searchFor(tester, 'Emma');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
       await searchFor(tester, 'Persuasion');
       expect(env.api.queries.map((q) => q.title), ['Emma', 'Persuasion']);
     });
@@ -190,7 +193,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('filter-format-audio')));
       await tester.pumpAndSettle();
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
       expect(env.api.queries.last.title, 'The Time Machine');
       expect(env.api.queries.last.format, BookFormat.audio);
     });
@@ -567,7 +570,7 @@ void main() {
       tester.view.physicalSize = phone;
       await tester.pumpAndSettle();
       expect(tester.widget<TextField>(find.byKey(const Key('search-field'))).controller!.text, 'Franken');
-      expect(tester.widget<ChoiceChip>(find.byKey(const Key('search-in-title'))).selected, isTrue);
+      expect(searchIn(tester), SearchField.title);
     });
 
     testWidgets('on mobile the filters sit under the search box and above the results',
