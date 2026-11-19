@@ -64,6 +64,10 @@ class _AudioPageState extends State<AudioPage> {
                       ListTile(
                         key: Key('chapter-$i'),
                         selected: controller.chapter == i,
+                        // Not by colour alone.
+                        leading: controller.chapter == i
+                            ? const Icon(Icons.graphic_eq, semanticLabel: 'Current chapter')
+                            : const SizedBox(width: 24),
                         title: Text(chapter.title),
                         trailing: Text(formatDuration(chapter.durationSeconds) ?? ''),
                         onTap: () => controller.playChapter(i),

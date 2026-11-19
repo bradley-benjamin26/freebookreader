@@ -1,6 +1,14 @@
 // Text shown (and spoken by screen readers) for durations, names and actions.
 import '../models/models.dart';
 
+/// A player's clock: "0:05", "12:05", "1:02:03". Below zero is "0:00".
+String formatClock(Duration d) {
+  final s = d.isNegative ? 0 : d.inSeconds;
+  String two(int n) => n.toString().padLeft(2, '0');
+  final h = s ~/ 3600, m = s % 3600 ~/ 60, sec = s % 60;
+  return h > 0 ? '$h:${two(m)}:${two(sec)}' : '$m:${two(sec)}';
+}
+
 /// "13 hr 6 min", "1 hr", "18 min", "45 sec"; null when unknown.
 String? formatDuration(int? seconds) {
   if (seconds == null || seconds <= 0) return null;
